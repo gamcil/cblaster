@@ -6,31 +6,31 @@ This tool leverages the identical proteins functionality of NCBI entrez to
 fetch the genomic context of BLAST hit accessions, then reports groups of
 hits that are co-located in their respective genomes.
 
+## Dependencies
+`clusterblaster` requires `diamond` (alternatively, `diamond-aligner` if installed via
+apt) to be on your system `$PATH`.
+
+The only external Python dependency is `click`, which is used for the command-line
+interface.
+
 ## Usage
-`$ python3 clusterblaster.py -h`
+`$ python3 clusterblaster.py --help`
 
 ```
-blaster.py [-h] [-n] [-g GAP] [-c CONSERVED] [-b]
-           [-p {diamond,kblastp}] [-e EVALUE] [-d PIDENT] [-v QCOVHSP]
-           [-t THREADS]
-           query blast_db funco_db
+Usage: clusterblaster.py [OPTIONS] QUERY DATABASE
 
-Search for BLAST hits clustered on same genomic scaffold.
+  Run clusterblaster.
 
-positional arguments:
-  query                 Path to FASTA file with query protein sequences
-  blast_db              Path to BLAST database being searched
-
-Output options:
-  -g, --gap             Maximum gap length (bp) between hits
-  -c, --conserved       Number of query sequences that must be conserved
-                        in a cluster of hits
-BLAST options:
-  -p, --program         Program to use in search (diamond or blastp)
-  -e, --evalue          Hit e-value cutoff (def. <= 0.01)
-  -d, --pident          Hit identity percentage cutoff (def. >= 0.3)
-  -v, --qcovhsp         Hit HSP coverage cutoff (def. >= 0.5)
-  -c, --threads         Number of CPUs to use
+Options:
+  -g, --gap INTEGER               Maximum gap length (bp) between hits
+  -c, --conserve INTEGER          Number of query sequences that must be
+                                  conserved in hits
+  -p, --program [diamond|blastp]  Program to use in search (def. "diamond")
+  -e, --evalue FLOAT              E-value cutoff (def. <= 0.01)
+  -d, --pident FLOAT              Percent identity cutoff (def. >= 30.00)
+  -v, --qcovhsp FLOAT             HSP coverage cutoff (def. >= 50.00)
+  -c, --cpus INTEGER              Number of CPUs to use
+  --help                          Show this message and exit.
 ```
 
 ## Example
@@ -100,7 +100,7 @@ AAS90113.1	KJK60766.1	93.3	99.0	34536-36128	3.5e-278
 The above is an excerpt from a search of aflatoxin cluster protein sequences
 against other Aspergillus genomes.
 
-Output is formatted as follows:
+Output is formatted as follows (tab-separated):
 ```
 Organism name
 -------------
