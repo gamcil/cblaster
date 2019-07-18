@@ -40,7 +40,7 @@ class Organism:
     def __repr__(self):
         separator = '-' * len(self.full_name)
         scaffolds = '\n'.join([
-            str(scaffold) for scaffold in self.scaffolds.values()
+            str(scaffold) + '\n' for scaffold in self.scaffolds.values()
             if scaffold.clusters
         ])
         if scaffolds:
@@ -79,6 +79,8 @@ class Scaffold:
             )
             seperator = '-' * len(self.accession)
             return f'{self.accession}\n{seperator}\n{clusters}'
+        # TODO: refactor to reporting function so can
+        #       toggle showing single hits?
         # if self.hits:
         #     hits = '\n'.join(str(hit) for hit in self.hits)
         #     return (f'{self.accession} -- Only single hits found:\n'
@@ -141,20 +143,27 @@ class Hit:
 @click.command()
 @click.argument('query')  # help='Path to FASTA file with query sequences')
 @click.argument('database')  # help='Path to BLAST database being searched')
-@click.option('-g', '--gap', default=20000,
+@click.option('-g', '--gap',
+              default=20000,
               help='Maximum gap length (bp) between hits')
-@click.option('-c', '--conserve', default=3,
+@click.option('-c', '--conserve',
+              default=3,
               help='Number of query sequences that must be conserved in hits')
-@click.option('-p', '--program', default='diamond',
+@click.option('-p', '--program',
+              default='diamond',
               type=click.Choice(['diamond', 'blastp']),
               help='Program to use in search (def. "diamond")')
-@click.option('-e', '--evalue', default=0.001,
+@click.option('-e', '--evalue',
+              default=0.001,
               help='E-value cutoff (def. <= 0.01)')
-@click.option('-d', '--pident', default=30.00,
+@click.option('-d', '--pident',
+              default=30.00,
               help='Percent identity cutoff (def. >= 30.00)')
-@click.option('-v', '--qcovhsp', default=50.00,
+@click.option('-v', '--qcovhsp',
+              default=50.00,
               help='HSP coverage cutoff (def. >= 50.00)')
-@click.option('-c', '--cpus', default=1,
+@click.option('-c', '--cpus',
+              default=1,
               help='Number of CPUs to use')
 def clusterblaster(
     query, database, gap, conserve, program,
@@ -307,7 +316,6 @@ def ncbi_genomic_context(hits):
         try:
             hit = hitmap.pop(protein)
         except KeyError:
-            click.echo('Could not find')
             continue
 
         hit.start = int(start)
