@@ -11,13 +11,6 @@ Process:
     5. Iterate scaffolds, report hits if enough genes are conserved (-c),
        printing spaces between hits if gaps is above a threshold (-g)
 
-Similar to MultiGeneBlast, but:
-    1. Uses kblastp/diamond which are way quicker
-    2. Performs no synteny analysis, instead querying either
-       funcoDB/NCBI for genomic context and doing basic text
-       based analysis to determine if genes are close
-       (again, way quicker)
-
 Cameron Gilchrist
 2019-03-27
 """
@@ -116,7 +109,10 @@ class Scaffold:
 
 
 class Hit:
-    """ Handle BLAST hits.
+    """ Stores BLAST hits and their genomic contexts.
+
+        Instantiate with BLAST results, then update with context after
+        querying NCBI Entrez.
     """
     def __init__(self, query, subject, identity, coverage, evalue):
         self.query = query
@@ -304,7 +300,7 @@ def ncbi_genomic_context(hits):
             continue
 
         if ipg == previous:
-            continue
+            continue  # IPG efetch can return multiple results
         previous = ipg
 
         if organism not in organisms:
