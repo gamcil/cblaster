@@ -10,7 +10,7 @@ hits that are co-located in their respective genomes.
 `clusterblaster` requires `diamond` (alternatively, `diamond-aligner` if installed via
 apt) to be on your system `$PATH`.
 
-The only external Python dependency is `click`, which is used for the command-line
+This script has only been tested in Python 3.6. The only external Python dependency is `click`, which is used for the command-line
 interface.
 
 ## Usage
@@ -34,7 +34,8 @@ Options:
 ```
 
 ## Example
-1. Build your diamond database
+1. Build your diamond database (must be sequences from NCBI with GenBank accessions for
+   the search to work)
 ```
 diamond makedb database.fasta
 ```
@@ -80,6 +81,7 @@ AAS90093.1	KJK60793.1	99.1	100.0	10427-17052	0.0
 AAS90110.1	KJK60791.1	97.0	100.0	17695-19731	5.5e-145
 AAS90111.1	KJK60794.1	97.0	100.0	21009-26450	0.0
 AAS90095.1	KJK60796.1	97.3	100.0	26829-32674	0.0
+
 JZEE01000729.1
 --------------
 AAS90096.1	KJK60754.1	97.9	100.0	1414-2857	2.9e-236
@@ -108,4 +110,35 @@ Scaffold
 --------
 query   subject     identity (%)   coverage (%)    start - end   e-value
 ...
+```
+
+
+
+
+1. Use `ncbi-genome-download` to obtain proteins from NCBI, e.g.
+
+```
+ncbi-genome-download -F protein-fasta -g Aspergillus fungi
+```
+
+2. Decompress and concatenate FASTA files
+
+```bash
+$ for folder in */; do mv $folder/*.gz -t .; done
+$ pigz -dc *.gz > database.fasta
+```
+
+3. Build a `diamond` database from the concatenated FASTA files
+
+```bash
+$ diamond makedb --in database.fasta --out database
+$ ls
+database.fasta
+database.dmnd
+```
+
+4. Use `clusterblaster` with the newly created database
+
+```bash
+$ clusterblaster query.fa database.dmnd <options>
 ```
