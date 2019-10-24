@@ -1,10 +1,15 @@
 # clusterblaster
-Find clustered hits from a BLAST search
+`clusterblaster` is a tool for finding clusters of co-located homologous sequences
+in BLAST searches.
 
-## Process
-This tool leverages the identical proteins functionality of NCBI entrez to
-fetch the genomic context of BLAST hit accessions, then reports groups of
-hits that are co-located in their respective genomes.
+## Outline
+1. Perform BLAST search, remotely (via BLAST API) or locally (via `diamond`)
+2. Parse results, save hits meeting user-defined thresholds for identity, coverage and
+   e-value
+3. Query the Identical Protein Group (IPG) resource to fetch the position of each hit on
+   their respective genomic scaffolds
+4. Look for clusters of co-located hits meeting thresholds for intergenic distance and
+   minimum number of conserved sequences
 
 ## Installation
 `clusterblaster` can be installed via pip:
@@ -58,8 +63,8 @@ If we wanted to be stricter, we could change those values with the following:
 ```
 
 You can also pass in NCBI search queries using `-eq / --entrez_query` to pre-filter
-the database to be searched, which can result in vastly reduced run-times and more
-targeted results. For example, to only search against Aspergillus sequences:
+the target database, which can result in vastly reduced run-times and more
+targeted results. For example, to only search against *Aspergillus* sequences:
 
 ```bash
 ~$ cblaster -qf query.fasta --entrez_query "Aspergillus"[ORGN]
@@ -78,9 +83,9 @@ Alternatively, a local DIAMOND database can be searched by specifying:
 For this to work, the database must consist of sequences derived from NCBI, such that
 their identifiers can be used for retrieval of sequences/genomic context.
 The easiest way to set this up is via NCBI's batch assembly download option.
-For example, to build a database of Aspergillus protein sequences:
+For example, to build a database of *Aspergillus* protein sequences:
 
-1. Search the NCBI Assembly database for Aspergillus genomes
+1. Search the NCBI Assembly database for *Aspergillus* genomes
 
 ![Search for Aspergillus assemblies](img/search.png)
 
@@ -114,3 +119,12 @@ database.dmnd
 Alternatively, you could use
 [`ncbi-genome-download`](https://github.com/kblin/ncbi-genome-download)
 to retrieve the sequences from the command line.
+
+
+## Citation
+If you found this tool useful, please cite:
+
+```
+1. Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
+2. Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
+```
