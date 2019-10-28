@@ -41,16 +41,59 @@ def start(
     """Launch a remote BLAST search using NCBI BLAST API.
 
     Usage guidelines:
+
         1. Don't contact server more than once every 10 seconds
         2. Don't poll for a single RID more than once a minute
         3. Use URL parameter email/tool
         4. Run scripts weekends or 9pm-5am Eastern time on weekdays if >50 searches
 
-    Common URL API: https://ncbi.github.io/blast-cloud/dev/api.html
+    For a full description of the parameters, see:
 
-    Further BLAST documentation:
-    https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp
-    https://www.ncbi.nlm.nih.gov/books/NBK279684/
+        1. `BLAST API documentation<https://ncbi.github.io/blast-cloud/dev/api.html>`
+        2. `BLAST documentation
+        <https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp>`
+
+    Parameters
+    ----------
+    query_file: str
+        Path to a query FASTA file
+    query_ids: list, tuple
+        Collection of NCBI sequence identifiers
+    database: str
+        Target NCBI BLAST database
+    program: str
+        BLAST variant to run
+    megablast: bool
+        Enable megaBLAST option (only with BLASTn)
+    filtering: str
+        Low complexity filtering
+    evalue: float
+        E-value cutoff
+    nucl_reward: int
+        Reward for matching bases (only with BLASTN/megaBLAST)
+    nucl_penalty: int
+        Penalty for mismatched bases (only with BLASTN/megaBLAST)
+    gap_costs: str
+        Gap existence and extension costs
+    matrix: str
+        Scoring matrix name
+    hitlist_size: int
+        Number of database sequences to keep
+    threshold: int
+        Neighbouring score for initial words
+    word_size: int
+        Size of word for initial matches
+    comp_based_stats: int
+        Composition based statistics algorithm
+    entrez_query: str
+        NCBI Entrez search term for pre-filtering the BLAST database
+
+    Returns
+    -------
+    rid: str
+        Request Identifier (RID) assigned to the search
+    rtoe: int
+        Request Time Of Execution (RTOE), estimated run time (in seconds) of the search
     """
     parameters = {
         "CMD": "PUT",
@@ -135,7 +178,15 @@ def check(rid):
 
 
 def retrieve(rid):
-    """Retrieve BLAST results corresponding to a given Request Identifier (RID)."""
+    """Retrieve BLAST results corresponding to a given Request Identifier (RID).
+
+    Returns
+    -------
+    list
+        List containing BLAST search results, with non-TSV elements (HTML, #info lines)
+        removed. Each element in the returned list corresponds to one row in the BLAST
+        table (still need to be split by tab).
+    """
     parameters = {
         "CMD": "Get",
         "RID": rid,
@@ -160,7 +211,17 @@ def retrieve(rid):
 
 
 def poll(rid):
-    """Poll BLAST API with given Request Identifier (RID) until results are returned."""
+    """Poll BLAST API with given Request Identifier (RID) until results are returned.
+
+    As per NCBI usage guidelines, this function will only poll once per minute; this is
+    calculated each time such that wait is constant (i.e. accounts for differing
+    response time on the status check).
+
+    Returns
+    -------
+    list:
+        Output of retrieve()
+    """
     previous = 0
     while True:
         current = time.time()
@@ -185,14 +246,36 @@ def parse(
     query_file=None,
     query_ids=None,
     max_evalue=0.01,
-    min_identity=0.3,
-    min_coverage=0.5,
+    min_identity=30,
+    min_coverage=50,
 ):
     """Parse Tabular results from remote BLAST search performed via API.
 
     Since the API provides no option for returning query coverage, which is a metric we
     want to use for filtering hits, query sequences must be passed to this function so
     that their lengths can be compared to the alignment length.
+
+    Parameters
+    ----------
+    handle: open file handle
+        File handle (or file handle-like) object corresponding to BLAST results. Note
+        that this function expects an iterable of tab-delimited lines and performs no
+        validation/error checking
+    query_file: str
+        Path to query file
+    query_ids: list, tuple
+        Collection of NCBI sequence identifiers
+    max_evalue: float
+        Maximum e-value
+    min_identity: float
+        Minimum percent identity
+    min_coverage: float
+        Minimum percent query coverage
+
+    Returns
+    -------
+    list
+        List of Hit instances corresponding to criteria passing BLAST hits
     """
     sequences = helpers.get_sequences(query_file, query_ids)
 
@@ -241,6 +324,27 @@ def search(
     retrieves and parses the results.
 
     It is also possible to call other BLAST variants using the `program` argument.
+
+    Parameters
+    ----------
+    rid: str
+        Request Identifier (RID) of a web BLAST search
+    query_file: str
+        Path to query FASTA file
+    query_ids: list, tuple
+        Collection of NCBI sequence identifiers
+    min_identity: float
+        Minimum percent identity
+    min_coverage: float
+        Minimum percent query coverage
+    max_evalue: float
+        Maximum e-value
+
+    Returns
+    -------
+    list
+        List of Organism instances, containing Scaffold instances that store Hits and
+        clusters of Hits.
     """
     if not rid:
         LOG.info("Launching new remote BLAST search")

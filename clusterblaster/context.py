@@ -88,6 +88,8 @@ def parse_IPG_table(results_handle, hits, conserve=3, gap=20000):
         Results from identical protein groups search.
     hits : list
         Hits that were used to query NCBI.
+    conserve: int
+    gap: int
 
     Returns
     -------
@@ -104,7 +106,7 @@ def parse_IPG_table(results_handle, hits, conserve=3, gap=20000):
         if not line or line.startswith("Id\tSource") or line.isspace():
             continue
 
-        ipg, _, accession, start, end, _, protein, _, organism, strain, assembly = line.split(
+        ipg, _, accession, start, end, strand, protein, _, organism, strain, assembly = line.split(
             "\t"
         )
 
@@ -127,7 +129,7 @@ def parse_IPG_table(results_handle, hits, conserve=3, gap=20000):
         except KeyError:
             continue
 
-        hit.start, hit.end = int(start), int(end)
+        hit.start, hit.end, hit.strand = int(start), int(end), strand
         organisms[organism].scaffolds[accession].hits.append(hit)
 
     for organism in organisms.values():

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This module stores the classes (Organism, Scaffold, Hit) used in clusterblaster
+This module stores the classes (Organism, Scaffold, Hit) used in clusterblaster.
 """
 
 import re
@@ -16,7 +16,22 @@ def generate_header_string(text, symbol="-"):
 
 
 def generate_cluster_table(hits, decimals=4, show_headers=True):
-    """Generate human-readable summary of a hit cluster."""
+    """Generate human-readable summary of a hit cluster.
+
+    Parameters
+    ----------
+    hits: list
+        Collection of Hit instances.
+    decimals: int
+        How many decimal points to show.
+    show_headers: bool
+        Show column headers in output.
+
+    Returns
+    -------
+    str
+        Summary table
+    """
     rows = [h.values(decimals) for h in hits]
 
     headers = [
@@ -28,17 +43,18 @@ def generate_cluster_table(hits, decimals=4, show_headers=True):
         "Bitscore",
         "Start",
         "End",
+        "Strand",
     ]
 
     if show_headers:
         rows.insert(0, headers)
 
     # Get lengths of longest values in each column for spacing purposes
-    lengths = [max(len(hit[i]) for hit in rows) for i in range(8)]
+    lengths = [max(len(hit[i]) for hit in rows) for i in range(9)]
 
     # Right-fill each column value with whitespace to width for that column
     return "\n".join(
-        "  ".join(f"{hit[i]:{lengths[i]}}" for i in range(8)) for hit in rows
+        "  ".join(f"{hit[i]:{lengths[i]}}" for i in range(9)) for hit in rows
     )
 
 
@@ -156,4 +172,5 @@ class Hit:
             f"{self.bitscore:.{decimals}}",
             str(self.start),
             str(self.end),
+            self.strand,
         ]
