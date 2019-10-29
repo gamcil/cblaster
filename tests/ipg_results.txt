@@ -1,0 +1,6 @@
+Id	Source	Nucleotide Accession	Start	Stop	Strand	Protein	Protein Name	Organism	Strain	Assembly
+1	INSDC	scaffold_1	14044	14641	-	s1	Prot1	Test organism	STRAIN 1	
+2	INSDC	scaffold_2	11815	13459	+	s2	Prot2	Test organism	STRAIN 1	
+2	INSDC		11815	13459	+	s2	Prot2	Test organism	STRAIN 123	
+3	INSDC	scaffold_1	9656	11184	+	s3	Prot3	Test organism	STRAIN 1	
+4	INSDC	scaffold_1	9656	11184	+	s4	Prot4	Test organism STRAIN 2	STRAIN 2	

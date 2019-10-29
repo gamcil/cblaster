@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="jig" content="ncbitoggler"/>
+<meta name="ncbitoggler" content="animation:'none'"/>
+<title>NCBI Blast:</title>
+<script type="text/javascript" src="/core/jig/1.14.8/js/jig.min.js             "></script>
+<script type="text/javascript">    jQuery.getScript("/core/alerts/alerts.js", function() {
+        galert(['div#header', 'body > *:nth-child(1)'])
+    });</script>
+<link rel="stylesheet" type="text/css" href="css/header.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/google-fonts.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/footer.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/main.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/blastRes.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/print.css" media="print" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" type="text/css" href="css/ie6_or_less.css" />
+<![endif]-->
+<script type="text/javascript" src="js/utils.js"></script>
+<script type="text/javascript" src="js/results.js"></script>
+</head>
+
+<body id="type-a" class="noToggleCheck" >
+<div id="wrap">
+		        	
+    <header id="page_header" role="banner">
+    <ul class="skip_nav">
+        <li><a accesskey="1" title="NCBI Homepage" href="https://www.ncbi.nlm.nih.gov/">NCBI Home</a></li>
+        <li><a accesskey="2" title="MyNCBI" href="https://www.ncbi.nlm.nih.gov/myncbi">Sign in to NCBI</a></li>
+        <li><a accesskey="3" title="Skip to main content" href="#content">Skip to Main Content</a></li>
+        <li><a accesskey="4" title="Skip to navigation" href="#navcontent">Skip to Navigation</a></li>
+        <li><a accesskey="0" title="About NCBI Accesskeys" href="https://www.ncbi.nlm.nih.gov/guide/browsers/#accesskeys">About NCBI Accesskeys</a></li>
+    </ul>
+    <nav class="blue_nav_bar">
+            <div class="nih">
+                <a id="page_header_6" href="https://www.nih.gov/" class="left norm_height">
+                    <img src="images/nih_logo.svg" alt="NIH logo" class="left"/></a>
+                <a id="page_header_7" href="https://www.nlm.nih.gov/" class="left header_link">U.S. National Library of Medicine</a>
+            </div>
+
+            <div class="left">
+                <img src="images/arrow.svg" class="left norm_height" alt=""/>
+            </div>
+
+            
+            <div class="ncbi">
+                <a id="page_header_8" href="https://www.ncbi.nlm.nih.gov/" class="header_link">
+                    <span class="ncbi_name">NCBI</span>
+                    <span class="med_hidden">National Center for Biotechnology Information</span></a>
+
+                    <div class="right sign-in">
+                        <ul class="myncbi2">
+                            <li id="myncbiusername">
+                                <span id="mnu">
+                                  <a id="mnu_0" href="https://www.ncbi.nlm.nih.gov/account/settings/" title="Edit account settings"></a>
+                                </span>
+                            </li>
+                            <li id="myncbi"><a id="myncbi_0"  href="https://www.ncbi.nlm.nih.gov/myncbi/">My NCBI</a></li>
+                            <li id="myncbi_sign_in"><a id="myncbi_sign_in_0" href="https://www.ncbi.nlm.nih.gov/account/?back_url=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DGet%26FORMAT%5FOBJECT%3DSearchInfo%26RID%3DVCZM3MWB014">Sign in to NCBI</a></li>
+                            <li id="myncbi_register"><a id="myncbi_register_0" href="https://www.ncbi.nlm.nih.gov/account/register/?back_url=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DGet%26FORMAT%5FOBJECT%3DSearchInfo%26RID%3DVCZM3MWB014">Register</a></li>
+                            <li id="myncbi_sign_out"><a id="myncbi_sign_out_0" href="https://www.ncbi.nlm.nih.gov/account/signout/?back_url=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DGet%26FORMAT%5FOBJECT%3DSearchInfo%26RID%3DVCZM3MWB014">Sign Out</a></li>
+                        </ul>
+                    </div>
+            </div>
+        </nav>
+
+        <div class="bg-gray header-div">
+        <nav class="top-nav" id="navcontent" role="navigation">
+            <a class="lf" href="Blast.cgi">BLAST <sup>&reg;</sup></a> <span id="brc"><span class="brcrmbsign">&raquo;</span> <a href="Blast.cgi?PAGE=Nucleotides&amp;PROGRAM=blastn&amp;PAGE_TYPE=BlastSearch&amp;BLAST_SPEC=">blastn suite</a> <span class="brcrmbsign">&raquo;</span> RID-VCZM3MWB014</span>
+            <span class="rf">            
+            <ul id="blnav">
+                <li  class="first "><a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastHome" title="BLAST Home">Home</a></li>
+                <li  class="recent "><a href="Blast.cgi?CMD=GetSaved&amp;RECENT_RESULTS=on" title="Unexpired BLAST jobs">Recent Results</a></li>                
+                <li  class="saved "><a href="Blast.cgi?CMD=GetSaved" title="Saved sets of BLAST search parameters">Saved Strategies</a></li>
+                <li  class= "last documentation "> <a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs" title="BLAST documentation">Help</a></li>                
+            </ul>
+            </span>
+        </nav>
+        </div>                
+        </header>
+
+        <div id="content-wrap">
+
+                <div class="pageTitle">                            
+                   Format Request Status                   
+                </div>
+		<div class="inlineDiv resHeader">				   
+				   <a  id="frmPage"  class="READY" href="#" submitForm="reformat">[Formatting options] </a>                   
+                </div>
+                <h2 id="jtitle" >Job Title: </h2>
+								
+                <div id="content">                
+                <!--<ul id="msg" class="msg"><li class=""><p class=""></p><p class=""></p><p class=""></p></ul> -->
+                <ul id="msg" class="msg"><li class=""></li></ul>
+                <p><!--
+                QBlastInfoBegin
+	                Status=READY
+                QBlastInfoEnd
+                --></p> 
+                <!--
+QBlastInfoBegin
+	ThereAreHits=yes
+QBlastInfoEnd
+--><p>
+               
+                <SCRIPT LANGUAGE="JavaScript"><!--
+                    var tm = "";
+                    if (tm != "") {                    
+                        setTimeout('document.forms[0].submit();',tm);
+                    }
+                //--></SCRIPT>                                
+                <table id="statInfo" class="READY">
+                <tr><td>Request ID</td><td> <b>VCZM3MWB014</b></td></tr>
+                <tr class="odd"><td>Status</td><td>Searching</td></tr>
+                <tr><td>Submitted at</td><td></td></tr>
+                <tr class="odd"><td>Current time</td><td></td></tr>
+                <tr><td>Time since submission</td><td></td></tr>
+                </table>
+                <p class="READY">This page will be automatically updated in <b></b> seconds</p>       
+                <form action="Blast.cgi" enctype="application/x-www-form-urlencoded" method="POST" id="results">
+                <input name="FORMAT_OBJECT" type="hidden" value="SearchInfo"><input name="RID" type="hidden" value="VCZM3MWB014"><input name="SEARCH_DB_STATUS" type="hidden" value="43"><input name="USER_TYPE" type="hidden" value="2"><input name="_PGR" type="hidden" value="0">                
+                <input name="_PGR" type="hidden" value="0" >
+                <input name="CMD" type="hidden" value="Get">
+               
+                </form>
+                                
+				</div><!-- /#content -->
+				<form action="Blast.cgi" enctype="application/x-www-form-urlencoded"  method="post" name="reformat" id="reformat">				
+				   <input name="QUERY_INFO" type="hidden" value="" />    				
+				   <input name="ENTREZ_QUERY" type="hidden" value="" />
+                   <input name="CDD_RID" type="hidden" value="" />
+                   <input name="CDD_SEARCH_STATE" type="hidden" value="" />
+                   <input name="RID" type="hidden" value="VCZM3MWB014" />
+				   <input name="STEP_NUMBER" type="hidden" value="" />
+				   <input name="CMD" type="hidden" value="Web"/>				
+				   <input NAME="PAGE_TYPE" type="hidden"  value="BlastFormatting"/>
+				
+				   <!-- TO DO: test all of those changes -->				   	
+				   <!-- Psi blast params  PSI_BLAST_PARAMS - commented- using forms[0] from fromatter> -->
+				   <!-- Current Formatting options FORMATTING_OPTIONS- commented- using forms[0] from fromatter> -->
+				   <!-- Current Search options CURR_SAVED_OPTIONS - commented- using forms[0] from fromatter> -->
+                 </form>				
+        </div><!-- /#content-wrap -->
+
+          <footer id="page_footer">
+    <div class="foot_wrap">
+      <div class="left col two_col">
+        BLAST is a registered trademark of the National Library of Medicine
+      </div>
+      <div class="right">
+        <a class="help_desk" data-jig="ncbihelpwindow" target="_blank" href="https://support.nlm.nih.gov/knowledgebase/category/?id=CAT-01239"
+          Ncbi_App=blast&amp;Page=blastresults&Time=2019-10-28T01:58:27&amp;Host=blast339&amp;ncbi_phid=50C93247DB6838310000000000000001&amp;ncbi_session=50C93247DB683831_0000SID&amp;from=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DGet%26FORMAT%5FOBJECT%3DSearchInfo%26RID%3DVCZM3MWB014" id="page_footer_59"> Support center
+        </a>
+        <a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=MailList">Mailing list</a>
+        <a href="https://www.youtube.com/playlist?list=PLH-TjWpFfWrtjzMCIvUe-YbrlIeFQlKMq" target="_blank" id="page_footer_54">
+          <img class="icon-medium gray-medium" src="images/youtube.svg" alt="">
+            <span class="icon-fallback-text">YouTube</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- bottom section of footer -->
+    <div class="col" id="contentinfo">
+      <ul class="right inline_list logos">
+        <li>
+          <a href="https://www.nlm.nih.gov" id="page_footer_60">
+            <img class="gray-medium" src="images/nlm-logo.svg" alt="">
+              <span class="icon-fallback-text">National Library Of Medicine</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.nih.gov" id="page_footer_61">
+            <img class="gray-medium" src="images/nih-logo.svg" alt="">
+              <span class="icon-fallback-text">National Institutes Of Health</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.hhs.gov" id="page_footer_62">
+            <img class="gray-medium" src="images/hhs-logo.svg" alt="">
+              <span class="icon-fallback-text">U.S. Department of Health &amp; Human Services</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.usa.gov" id="page_footer_63">
+            <img class="icon-large-wide gray-medium" src="images/usagov-logo.svg" alt="">
+              <span class="icon-fallback-text">USA.gov</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="footer_padding">
+
+        <div class="footer_border h-card">
+
+          <a href="https://www.ncbi.nlm.nih.gov/" class="u-url" id="page_footer_64">
+            <h3 role="heading" aria-level="3" class="ncbi_blue p-org">NCBI</h3>
+          </a>
+
+          <address>
+
+            <a href="https://www.ncbi.nlm.nih.gov/" class="u-url p-org" id="page_footer_65">National Center for Biotechnology Information,</a>
+            <a href="https://www.nlm.nih.gov/" id="page_footer_66"> U.S. National Library of Medicine</a>
+
+            <span class="h-adr">
+              <span class="p-street-address">8600 Rockville Pike</span>,
+              <span class="p-locality">Bethesda</span>
+              <span class="p-region"> MD</span>,
+              <span class="p-postal-code">20894</span>
+              <span class="p-country-name">USA</span>
+            </span>
+
+          </address>
+
+        </div>
+        <div class="inline_list about_list">
+          <a href="https://www.ncbi.nlm.nih.gov/home/about/policies.shtml" id="page_footer_67">Policies and Guidelines</a>
+          |
+          <a href="https://www.ncbi.nlm.nih.gov/home/about/contact.shtml" id="page_footer_68">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script type="text/javascript" src="js/header.js"> </script>
+        <script type="text/javascript" src="/portal/portal3rc.fcgi/rlib/js/InstrumentOmnitureBaseJS/InstrumentNCBIBaseJS/InstrumentPageStarterJS.js"></script>
+<!--
+<script type="text/javascript" src="://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/supportedbrowsers/js/nonportalbc_min.js"></script>
+<script type="text/javascript">$("#browsers_ajax").browserCheck();</script>
+-->
+   </div><!--/#wrap-->
+</body>
+
+</html>
+

@@ -1,0 +1,652 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="jig" content="ncbitoggler ncbiautocomplete"/>
+<meta name="ncbi_app" content="static" />
+<meta name="ncbi_pdid" content="blastformatreq" />
+<meta name="ncbi_stat" content="false" />
+<meta name="ncbi_sessionid" content="55BA31F0DB67E831_0000SID" />
+<meta name="ncbi_phid" content="55BA31F0DB67E8310000000000000001" />
+<title>NCBI Blast</title>
+<link rel="stylesheet" type="text/css" href="css/header.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/google-fonts.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/footer.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/main.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/common.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/blastReq.css" media="screen" />
+<!--[if IE]>
+<link rel="stylesheet" type="text/css" href="css/blastReqIE.css" media="screen" />
+<![endif]-->
+<link rel="stylesheet" type="text/css" href="css/print.css" media="print" />
+
+
+<!--[if lte IE 6]>
+<link rel="stylesheet" type="text/css" href="css/ie6_or_less.css" />
+<![endif]-->
+<script type="text/javascript" src="/core/jig/1.14.8/js/jig.min.js             "></script>   
+<script type="text/javascript" src="js/utils.js"></script>
+<script type="text/javascript" src="js/blast.js"></script>
+<script type="text/javascript" src="js/format.js"></script>
+
+</head>
+
+<body id="type-a">
+
+<div id="wrap">
+		        	
+    <header id="page_header" role="banner">
+    <ul class="skip_nav">
+        <li><a accesskey="1" title="NCBI Homepage" href="https://www.ncbi.nlm.nih.gov/">NCBI Home</a></li>
+        <li><a accesskey="2" title="MyNCBI" href="https://www.ncbi.nlm.nih.gov/myncbi">Sign in to NCBI</a></li>
+        <li><a accesskey="3" title="Skip to main content" href="#content">Skip to Main Content</a></li>
+        <li><a accesskey="4" title="Skip to navigation" href="#navcontent">Skip to Navigation</a></li>
+        <li><a accesskey="0" title="About NCBI Accesskeys" href="https://www.ncbi.nlm.nih.gov/guide/browsers/#accesskeys">About NCBI Accesskeys</a></li>
+    </ul>
+    <nav class="blue_nav_bar">
+            <div class="nih">
+                <a id="page_header_6" href="https://www.nih.gov/" class="left norm_height">
+                    <img src="images/nih_logo.svg" alt="NIH logo" class="left"/></a>
+                <a id="page_header_7" href="https://www.nlm.nih.gov/" class="left header_link">U.S. National Library of Medicine</a>
+            </div>
+
+            <div class="left">
+                <img src="images/arrow.svg" class="left norm_height" alt=""/>
+            </div>
+
+            
+            <div class="ncbi">
+                <a id="page_header_8" href="https://www.ncbi.nlm.nih.gov/" class="header_link">
+                    <span class="ncbi_name">NCBI</span>
+                    <span class="med_hidden">National Center for Biotechnology Information</span></a>
+
+                    <div class="right sign-in">
+                        <ul class="myncbi2">
+                            <li id="myncbiusername">
+                                <span id="mnu">
+                                  <a id="mnu_0" href="https://www.ncbi.nlm.nih.gov/account/settings/" title="Edit account settings"></a>
+                                </span>
+                            </li>
+                            <li id="myncbi"><a id="myncbi_0"  href="https://www.ncbi.nlm.nih.gov/myncbi/">My NCBI</a></li>
+                            <li id="myncbi_sign_in"><a id="myncbi_sign_in_0" href="https://www.ncbi.nlm.nih.gov/account/?back_url=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DPUT%26COMPOSITION%5FBASED%5FSTATISTICS%3D2%26DATABASE%3Dnr%5Fv5%26DB%5FDISPLAY%5FNAME%3Dnr%26ENTREZ%5FQUERY%3D%26EXPECT%3D0%2E01%26FILTER%3DF%26FULL%5FDBNAME%3Dnr%5Fv5%26GAPCOSTS%3D11%2B1%26HITLIST%5FSIZE%3D0%26JOB%5FTITLE%3D%2BQBE85648%2E1%2B%26MATRIX%3DBLOSUM62%26MYNCBI%5FUSER%3D8755848028%26MYNCBI%5FUSER%3D8755848028%26NUM%5FQUERIES%3D3%26ORG%5FDBS%3Dgiless%5Fdbvers5%26PROGRAM%3Dblastp%26QUERY%5FINFO%3D%2BQBE85648%2E1%2B%26QUERY%5FLENGTH%3D1094%26RID%3DVCZM3MWB014%26RTOE%3D18%26THRESHOLD%3D11%26USER%5FTYPE%3D2%26USER%5FTYPE%3D2%26WORD%5FSIZE%3D6">Sign in to NCBI</a></li>
+                            <li id="myncbi_register"><a id="myncbi_register_0" href="https://www.ncbi.nlm.nih.gov/account/register/?back_url=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DPUT%26COMPOSITION%5FBASED%5FSTATISTICS%3D2%26DATABASE%3Dnr%5Fv5%26DB%5FDISPLAY%5FNAME%3Dnr%26ENTREZ%5FQUERY%3D%26EXPECT%3D0%2E01%26FILTER%3DF%26FULL%5FDBNAME%3Dnr%5Fv5%26GAPCOSTS%3D11%2B1%26HITLIST%5FSIZE%3D0%26JOB%5FTITLE%3D%2BQBE85648%2E1%2B%26MATRIX%3DBLOSUM62%26MYNCBI%5FUSER%3D8755848028%26MYNCBI%5FUSER%3D8755848028%26NUM%5FQUERIES%3D3%26ORG%5FDBS%3Dgiless%5Fdbvers5%26PROGRAM%3Dblastp%26QUERY%5FINFO%3D%2BQBE85648%2E1%2B%26QUERY%5FLENGTH%3D1094%26RID%3DVCZM3MWB014%26RTOE%3D18%26THRESHOLD%3D11%26USER%5FTYPE%3D2%26USER%5FTYPE%3D2%26WORD%5FSIZE%3D6">Register</a></li>
+                            <li id="myncbi_sign_out"><a id="myncbi_sign_out_0" href="https://www.ncbi.nlm.nih.gov/account/signout/?back_url=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DPUT%26COMPOSITION%5FBASED%5FSTATISTICS%3D2%26DATABASE%3Dnr%5Fv5%26DB%5FDISPLAY%5FNAME%3Dnr%26ENTREZ%5FQUERY%3D%26EXPECT%3D0%2E01%26FILTER%3DF%26FULL%5FDBNAME%3Dnr%5Fv5%26GAPCOSTS%3D11%2B1%26HITLIST%5FSIZE%3D0%26JOB%5FTITLE%3D%2BQBE85648%2E1%2B%26MATRIX%3DBLOSUM62%26MYNCBI%5FUSER%3D8755848028%26MYNCBI%5FUSER%3D8755848028%26NUM%5FQUERIES%3D3%26ORG%5FDBS%3Dgiless%5Fdbvers5%26PROGRAM%3Dblastp%26QUERY%5FINFO%3D%2BQBE85648%2E1%2B%26QUERY%5FLENGTH%3D1094%26RID%3DVCZM3MWB014%26RTOE%3D18%26THRESHOLD%3D11%26USER%5FTYPE%3D2%26USER%5FTYPE%3D2%26WORD%5FSIZE%3D6">Sign Out</a></li>
+                        </ul>
+                    </div>
+            </div>
+        </nav>
+
+        <div class="bg-gray header-div">
+        <nav class="top-nav" id="navcontent" role="navigation">
+            <a class="lf" href="Blast.cgi">BLAST <sup>&reg;</sup></a> <span id="brc"><span class="brcrmbsign">&raquo;</span> blastp suite</span>
+            <span class="rf">            
+            <ul id="blnav">
+                <li  class="first "><a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastHome" title="BLAST Home">Home</a></li>
+                <li  class="recent "><a href="Blast.cgi?CMD=GetSaved&amp;RECENT_RESULTS=on" title="Unexpired BLAST jobs">Recent Results</a></li>                
+                <li  class="saved "><a href="Blast.cgi?CMD=GetSaved" title="Saved sets of BLAST search parameters">Saved Strategies</a></li>
+                <li  class= "last documentation "> <a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs" title="BLAST documentation">Help</a></li>                
+            </ul>
+            </span>
+        </nav>
+        </div>                
+        </header>
+        <div id="content-wrap">
+
+		<div class="pageTitle">                            
+                   Format Request
+                   <span id="frmRequestPrTr"></span>                   
+                </div>
+				<!-- Do errors this way -->				
+				<!--<ul class="msg"><li class=""><p></p></li></ul>-->
+				<ul id="msgR" class="msg"><li class=""></li></ul>
+                <div id="content">
+				<form action="Blast.cgi" enctype="application/x-www-form-urlencoded" method="post" name="FormatForm" id="FormatForm">				
+
+<script language="JavaScript">
+
+ <!--
+
+//document.images['BlastHeaderGif'].src = 'html/head_formating.gif';
+
+// -->
+
+</script>
+
+
+
+<!--
+                <p class='info'>
+<strong>Job submitted.</strong>
+We estimate that results will be ready in 16 seconds or less.
+
+</p>
+-->
+
+<div class="fbtn">
+<!--
+<a href="javascript:document.forms[0].submit();">
+<img align="middle" alt="Format button" border="0" src="FormatPage_files/format_but.gif">
+</a>
+-->
+</div>
+
+<dl class="summary  query title db">
+<dd>
+</dd>
+
+<!-- <span class=" query title db">-->
+<dt class="hidden query">Query</dt><dd class="hidden query">QBE85648.1</dd>
+<dt class="hidden db">Database</dt><dd class="hidden db">nr_v5</dd>
+<dt class="hidden title">Job title</dt><dd class="hidden title">QBE85648.1</dd>
+<dt class="hidden entrez">Entrez Query</dt><dd class="hidden entrez"><span class="note entrez">Note: Your search is limited to records matching this Entrez query</span></dd>
+<!-- </span> -->
+<dt><label for="rid">Request ID</label></dt><dd><input name="RID" size="50" type="text" value="VCZM3MWB014" id="rid" />
+<input type="submit" value="View report" name="ViewReport" class="button" />
+<!-- <img border="0" id="viewRpButton" src="images/veiwRpButton.jpg" class="viewReport"  alt="View report"  mouseovImg="images/veiwRpButtonOver.jpg" mouseoutImg="images/veiwRpButton.jpg" mousedownImg="images/veiwRpButtonDown.jpg" mouseupImg="images/veiwRpButtonOver.jpg"  />-->
+<input type="checkbox" name="NEWWINRES"  form="FormatForm" winType="const" id="nw" class="newwin"  />
+<label for="nw">Show results in a new window</label>
+</dd>
+<dt>Format<br/>
+<!--<a class='help' href="#">[Help]</a></dt> -->
+
+<dd>
+<table id="filterResults" class="options blastp ">
+
+<tr class="paramSet xgl">
+<td class="hd"><label for="FORMAT_OBJECT">Show</label></td>
+<td>
+<div class="fi">
+<select id="FORMAT_OBJECT" class="reset" name="FORMAT_OBJECT" defVal="Alignment">
+<option value="Alignment" >Alignment</option>
+<option value="PSSM_Scoremat" >PssmWithParameters</option>
+<option value="Bioseq"  >Bioseq</option>
+</select>
+<label for="FORMAT_TYPE">as</label>
+<select name="FORMAT_TYPE" id="FORMAT_TYPE" class="reset" defVal="HTML">
+<option value="HTML"  >HTML</option>
+<option value="Text"  >Plain text</option>
+<option value="ASN.1"  >ASN.1</option>
+<option value="XML"  >XML</option>
+<option value="XML2"  >XML2</option>
+<option value="JSON2"  >JSON2</option>
+<option value="XML2_S"  >XML2_S</option>
+<option value="JSON2_S"  >JSON2_S</option>
+<option value="SAM_SQ"  >SAM_SQ</option>
+<option value="SAM"  >SAM</option>
+</select>
+<input name="PSSM_FORMAT_TYPE" value="Text" size="3" id="pssmFormat" type="text" class="hidden dispType" />
+<input name="BIOSEQ_FORMAT_TYPE" value="ASN.1" size="3" id="bioseqFormat" type="text" class="hidden dispType" />
+<input name="PSSM_SC_FORMAT_TYPE" value="ASN.1" size="3" id="pssmScFormat" type="text" class="hidden dispType" />
+<a class="resetAll" id="resetAll" >Reset form to defaults</a>
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Alignments object formatting help" id="formatHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<p class="helpbox ui-ncbitoggler-slave" id="hlp1">
+These options control formatting of alignments in results pages. The
+default is HTML, but other formats (including plain text) are available.
+PSSM and PssmWithParameters are representations of Position Specific Scoring Matrices and are only available for PSI-BLAST. 
+The Advanced view option allows the database descriptions to be sorted by various indices in a table.
+</p>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+
+<tr class="odd paramSet">
+<td class="hd"><label for="ALIGNMENT_VIEW">Alignment View</label></td>
+<td>
+<div class="fi">
+<select name="ALIGNMENT_VIEW" id="ALIGNMENT_VIEW" defVal="Pairwise" class="reset">
+<option value="Pairwise"  >Pairwise</option>
+<option value="PairwiseWithIdentities"  >Pairwise with dots for identities</option>
+<option value="QueryAnchored"  >Query-anchored with dots for identities</option>
+<option value="QueryAnchoredNoIdentities"  >Query-anchored with letters for identities</option>
+<option value="FlatQueryAnchored"  >Flat query-anchored with dots for identities</option>
+<option value="FlatQueryAnchoredNoIdentities"  >Flat query-anchored with letters for identities</option>
+<option value="Tabular"  >Hit Table</option>
+</select>
+
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Alignments view options help" id="alnViewHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<p class="helpbox ui-ncbitoggler-slave" id="hlp2">
+Choose how to view alignments.
+The default "pairwise" view shows how each subject sequence aligns
+individually to the query sequence. The "query-anchored" view shows how
+all subject sequences align to the query sequence. For each view type,
+you can choose to show "identities" (matching residues) as letters or
+dots.
+<a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp#alignment_view" target="helpWin" title="Additional alignments view options help">more...</a>
+</p>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+
+<tr class="paramSet">
+<td class="hd"><label>Display</label></td>
+<td class="cb">
+<div class="fi">
+<input name="SHOW_OVERVIEW" id="SHOW_OVERVIEW" type="checkbox" class="cb reset" defVal="checked" checked="checked" />
+<label class="rb" for="SHOW_OVERVIEW">Graphical Overview</label>
+
+<span id="shl" >
+<input name="SHOW_LINKOUT" id="SHOW_LINKOUT" type="checkbox" class="cb reset" defVal="checked" checked="checked" />
+<label class="rb" for="SHOW_LINKOUT">Linkout</label>
+</span>
+<span id="gts" >
+<input name="GET_SEQUENCE" id="GET_SEQUENCE" type="checkbox" class="cb reset" defVal="checked" checked="checked" />
+<label class="rb" for="GET_SEQUENCE">Sequence Retrieval</label>
+</span>
+
+<input name="NCBI_GI" id="NCBI_GI" type="checkbox" class="cb reset hidden" defVal="unchecked"  />
+<label class="rb hidden" for="NCBI_GI">NCBI-gi</label>
+<span id="scf" >
+<input name="SHOW_CDS_FEATURE" id="SHOW_CDS_FEATURE" type="checkbox" class="cb reset blastn" defVal="unchecked"  />
+<label for="SHOW_CDS_FEATURE" class="blastn">CDS feature</label>
+</span>
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Alignments display options help" id="displayHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<ul class="helpbox ui-ncbitoggler-slave" id="hlp3">
+<li>Graphical Overview: Graphical Overview: Show graph of similar sequence regions aligned to  query.
+<a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp#show_overview" target="helpWin" title="Graphical Overview help">more...</a>
+</li>
+<li>NCBI-gi: Show NCBI gi identifiers.
+</li>
+<li>CDS feature: Show annotated coding region and translation.
+<a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp#show_cds_feature" title="CDS feature help" target="helpWin" >more...</a>
+</li></ul>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+
+
+<tr class="paramSet odd xgl">
+<td class="hd"><label>Masking</label></td>
+<td>
+<div class="fi">
+<label for="MASK_CHAR"> Character: </label>
+<select name="MASK_CHAR" id="MASK_CHAR"  class="reset" defVal="2">
+<option value="0"  >X for protein, n for nucleotide</option>
+<option value="2" selected="selected" >Lower Case</option>
+</select>
+<label for="MASK_COLOR"> Color:</label>
+<select name="MASK_COLOR" id="MASK_COLOR" class="reset" defVal="1">
+<option value="0"  >Black
+</option>
+
+<option value="1" selected="selected" >Grey
+</option>
+
+<option value="2"  >Red
+</option>
+
+</select>
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Alignments masking help" id="maskingHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<ul class="helpbox ui-ncbitoggler-slave" id="hlp4">
+<li>Masking Character: Display masked (filtered) sequence regions as lower-case or as specific letters (N for nucleotide, P for protein).
+</li>
+<li>Masking Color: Display masked sequence regions in the given color.</li>
+</ul>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+
+
+<tr id="lr" class="paramSet xgl">
+<td class="hd"><label>Limit results</label></td>
+<td>
+<div class="fi">
+<label for="FRM_DESCRIPTIONS">Descriptions:</label>
+<select name="DESCRIPTIONS" id="FRM_DESCRIPTIONS" class="reset" defVal="100">
+<option value="0"      >0</option>
+<option value="10"     >10</option>
+<option value="50"     >50</option>
+<option value="100"   selected="selected" >100</option>
+<option value="250"    >250</option>
+<option value="500"    >500</option>
+<option value="1000"   >1000</option>
+<option value="5000"   >5000</option>
+<option value="10000"  >10000</option>
+<option value="20000"  >20000</option>
+</select>
+
+<label for="FRM_NUM_OVERVIEW">Graphical overview:</label>
+<select name="NUM_OVERVIEW" id="FRM_NUM_OVERVIEW" class="reset" defVal="100">
+<option value="0"     >0</option>
+<option value="10"    >10</option>
+<option value="50"    >50</option>
+<option value="100"  selected="selected" >100</option>
+<option value="250"   >250</option>
+<option value="500"  >500</option>
+<option value="1000"  >1000</option>
+</select>
+<span id="frmAln">
+<label for="FRM_ALIGNMENTS">Alignments:</label>
+<select name="ALIGNMENTS" id="FRM_ALIGNMENTS" class="reset" defVal="100">
+<option value="0"      >0</option>
+<option value="10"     >10</option>
+<option value="50"     >50</option>
+<option value="100"   selected="selected" >100</option>
+<option value="250"    >250</option>
+<option value="500"    >500</option>
+<option value="1000"   >1000</option>
+<option value="5000"   >5000</option>
+<option value="10000"  >10000</option>
+<option value="20000"  >20000</option>
+</select>
+</span>
+<label for="FRM_LINE_LENGTH">Line length:</label>
+<select name="LINE_LENGTH" id="FRM_LINE_LENGTH" class="reset" defVal="60">
+<option value="60"     >60</option>
+<option value="90"     >90</option>
+<option value="120"     >120</option>
+<option value="150"     >150</option>
+</select>
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Limit number of descriptions/alignments help" id="numHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<ul class="helpbox ui-ncbitoggler-slave" id="hlp5">
+<li>Descriptions: Show short descriptions for up to the given number of  sequences.</li> 
+<li>Alignments:  Show alignments for up to the given number of sequences, in order of statistical significance.</li>
+<li>Line lenghth:  Number of letters to show on one line in an alignment.</li>
+</ul>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+
+<tr class="paramSet odd xgl ">
+<td class="hd"></td>
+<td>
+<div class="">
+<label for="qorganism">Organism</label>
+<span class="instr">Type common name, binomial, taxid, or group name. Only 20 top taxa will be shown.</span><br/>
+<input name="FORMAT_ORGANISM" size="55"  type="text" id="qorganism" value="" data-jigconfig="dictionary:'taxids_sg',isCrossDomain:false" autocomplete="off" data-jig="ncbiautocomplete" class="reset">
+<input type="checkbox" name="FORMAT_ORG_EXCLUDE"  class="oExclR cb" id="orgExcl"/>        
+<input type="hidden" value = "1" name="FORMAT_NUM_ORG" id="numOrg" />
+<label for="orgExcl" class="right">exclude</label>
+<a href="#" title="Add organism" id="addOrg"><img border="0" src="css/images/addOrg.jpg" id="addOrgIm"   alt="Add organism"  mouseovImg="css/images/addOrgOver.jpg" mouseoutImg="css/images/addOrg.jpg" mousedownImg="css/images/addOrgDown.jpg" mouseupImg="css/images/addOrgOver.jpg"  /></a>
+<div id="orgs">
+
+</div>
+<div class="fi">
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Limit results by organism help" id="organismHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<p class="helpbox ui-ncbitoggler-slave" id="hlp6">
+Show only sequences from the given organism.
+</p>
+</div><!-- ARIA -->
+</div>
+</div>
+</td>
+</tr>
+
+<tr class="paramSet xgl hidden">
+<td class="hd"></td>
+<td>
+<div class="fi">
+<label for="FORMAT_EQ_TEXT">Entrez query:</label>
+<input name="FORMAT_EQ_TEXT" id="FORMAT_EQ_TEXT" size="60" type="text" value="" class="reset" />
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Limit results by Entrez query help" id="entrezHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<p class="helpbox ui-ncbitoggler-slave" id="hlp7">
+Show only those sequences that match the given Entrez query.
+<a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp#limit_result" target="helpWin" title="Additional limit results by Entrez query help"  target="helpWin">more...</a>
+</p>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+
+  
+<tr class="paramSet odd xgl">
+<td class="hd"></td>
+<td>
+<div class="fi">
+<label for="EXPECT_LOW">Expect Min:</label> <input name="EXPECT_LOW" id="EXPECT_LOW" size="10" type="text" value="" class="reset"/>
+<label for="EXPECT_HIGH">Expect Max:</label> <input name="EXPECT_HIGH" id="EXPECT_HIGH" size="10" type="text" value="" class="reset" />
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Limit results by expect value range help" id="expectHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<p class="helpbox ui-ncbitoggler-slave" id="hlp8">
+Show only sequences with expect values in the given range.
+<a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp#expect_range" target="helpWin" title="Additional limit results by expect value range help">more...</a>
+</p>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+<tr class="paramSet xgl">
+<td class="hd"></td>
+<td>
+ <div class="fi">
+<label for="PERC_IDENT_LOW">Percent Identity Min:</label> <input name="PERC_IDENT_LOW" id="PERC_IDENT_LOW" size="10" type="text" value="" class="reset"/>
+<label for="PERC_IDENT_HIGH">Percent Identity Max:</label> <input name="PERC_IDENT_HIGH" id="PERC_IDENT_HIGH" size="10" type="text" value="" class="reset" />
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="Limit results by percent identity range help" id="percIdentHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<p class="helpbox ui-ncbitoggler-slave" id="hlp10">
+ Show only sequences with percent identity values in the given range.  
+</p>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>      
+<tr class="psiBlast odd paramSet xgl ">
+<td class="hd"><label>Format for</label></td>
+<td>
+<div class="fi">
+<input name="RUN_PSIBLAST_FORM" id="RUN_PSIBLAST" type="checkbox" class="cb psiBlast hidden"  />
+<label for="I_THRESH">PSI-BLAST with inclusion threshold:</label>
+<input name="I_THRESH" id="I_THRESH" size="10" type="text" value="" defVal="0.005" />
+<a class="helplink  ui-ncbitoggler" data-jig="ncbitoggler" title="PSI BLAST formatting help" id="psiHelp" href="#"><span class="ui-ncbitoggler-master-text"><span>[?]</span></span>
+<span class="ui-icon ui-icon-triangle-1-e"></span></a>
+<div class="ui-helper-reset" aria-live="assertive" >
+<ul class="helpbox ui-ncbitoggler-slave" id="hlp9">
+<li>Format for PSI-BLAST: The Position-Specific Iterated BLAST (PSI-BLAST) program performs iterative searches with a protein query, 
+in which sequences found in one round of search are used to build a custom score model for the next round.
+<a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp#psiblast" target="helpWin" title="Additional PSI BLAST formatting help">more...</a>
+</li>  
+<li>Inclusion Threshold: This sets the statistical significance threshold for including a sequence in the model used 
+by PSI-BLAST to create the PSSM on the next iteration.</li> 
+</ul>
+</div><!-- ARIA -->
+</div>
+</td>
+</tr>
+</table>
+</dd>
+</dl>
+
+<input name="RID" value="VCZM3MWB014" type="hidden" />
+<input name="CDD_RID" value="" type="hidden" />
+<input name="CDD_SEARCH_STATE" type="hidden" value="" />
+
+<input name="STEP_NUMBER" value="" id="stepNumber" type="hidden" />
+<input name="CMD" value="Get" type="hidden" />
+<input name="FORMAT_EQ_OP" value="AND" type="hidden" />
+<input name="RESULTS_PAGE_TARGET" type="hidden" id="resPageTarget" value="Blast_Results_for_989036055" />
+<input name="QUERY_INFO" type="hidden" value="QBE85648.1" />                   		
+<input name="ENTREZ_QUERY" type="hidden" value="" />
+<input name="QUERY_INDEX" type="hidden" value="0"/>
+<input name="NUM_QUERIES" type="hidden" value="3"/>
+<input name="CONFIG_DESCR" type="hidden" value="2,3,4,5,6,7,8" />
+
+
+
+
+<!-- Those params are set in the template (blastn.dat, blastp.dat etc. -->
+<input name="BLAST_PROGRAMS" type="hidden" value="blastp"/>
+<input name="PAGE" type="hidden" value="Proteins"/>
+<input name="PROGRAM" type="hidden" value="blastp"/>
+<input name="MEGABLAST" type="hidden" value="" />
+<input name="RUN_PSIBLAST" type="hidden" value="" />
+<input name="BLAST_SPEC" id="blastSpec" type="hidden" value=""/>
+
+
+<input name="QUERY" type="hidden" value=""/>
+<input name="JOB_TITLE" type="hidden" value="QBE85648.1"/>
+<input name="QUERY_TO" type="hidden" value=""/>
+<input name="QUERY_FROM" type="hidden" value=""/>
+<input name="SUBJECTS_FROM" type="hidden" value=""/>
+<input name="SUBJECTS_TO" type="hidden" value=""/>
+<input name="EQ_TEXT" type="hidden" value=""/>
+<input name="ORGN" type="hidden" value=""/>
+<input name="EQ_MENU" type="hidden" value=""/>
+<input name="ORG_EXCLUDE" type="hidden" value=""/>
+<input name="PHI_PATTERN" type="hidden" value=""/>
+<input name="EXPECT" type="hidden" value="0.01"/>									
+<input name="DATABASE" type="hidden" value="nr_v5"/>
+<input name="DB_GROUP" type="hidden" value=""/>
+<input name="SUBGROUP_NAME" type="hidden" value=""/>
+
+<input name="GENETIC_CODE" type="hidden" value=""/>
+<input name="WORD_SIZE" type="hidden" value="6"/>
+<input name="MATCH_SCORES" type="hidden" value=""/>			
+<input name="MATRIX_NAME" type="hidden" value=""/>				
+<input name="GAPCOSTS" type="hidden" value="11 1"/>
+<input name="MAX_NUM_SEQ" id="maxNumSeq" type="hidden" value=""/>					
+<input name="COMPOSITION_BASED_STATISTICS" type="hidden" value="2"/>			
+<input name="NEWWIN" type="hidden" value=""/>
+<input name="SHORT_QUERY_ADJUST" type="hidden" value=""/>
+<input name="FILTER" type="hidden" value="F;"/>
+<input name="REPEATS" type="hidden" value=""/>
+<input name="ID_FOR_PSSM" type="hidden" value=""/>
+<input name="EXCLUDE_MODELS" type="hidden" value=""/>
+<input name="EXCLUDE_SEQ_UNCULT" type="hidden" value=""/>
+<input name="WP_PROTEINS" type="hidden" value=""/>
+<input name="SEQ_FROM_TYPE" type="hidden" value=""/>
+<input name="ENTREZ_QUERY" type="hidden" value=""/>
+<input name="ENTREZ_QUERY_PRESET" type="hidden" value=""/>
+<input name="ENTREZ_QUERY_PRESET_EXCL" type="hidden" value=""/>
+<input name="NUM_ORG" type="hidden" value = "1" />
+
+<!-- PSSM -->
+<input name="LCASE_MASK" type="hidden" value=""/>
+<input name="TEMPLATE_TYPE" type="hidden" value=""/>
+<input name="TEMPLATE_LENGTH" type="hidden" value=""/>
+<input name="I_THRESH" type="hidden" value=""/>
+<input name="PSI_PSEUDOCOUNT" type="hidden" value=""/>
+<input name="DI_THRESH" type="hidden" id="diThresh" value=""/>
+<input name="HSP_RANGE_MAX" type="hidden" value=""/>
+
+
+
+<input name="ADJUSTED_FOR_SHORT_QUERY" type="hidden" value=""/>
+<input name="MIXED_QUERIES" type="hidden" value=""/>
+<input name="MIXED_DATABASE" id="mixedDb" type="hidden" value=""/>
+<input name="BUILD_NAME"  type="hidden" value=""/>
+<input name="ORG_DBS"  type="hidden" value="giless_dbvers5"/>
+<input name="WWW_BLAST_TYPE" type="hidden" value=""/>
+
+<!--QBlastInfoBegin
+    RID = VCZM3MWB014
+    RTOE = 18
+QBlastInfoEnd
+-->
+</form>		                              		
+				
+				</div><!-- /#content -->
+
+        </div><!-- /#content-wrap -->
+
+		  <footer id="page_footer">
+    <div class="foot_wrap">
+      <div class="left col two_col">
+        BLAST is a registered trademark of the National Library of Medicine
+      </div>
+      <div class="right">
+        <a class="help_desk" data-jig="ncbihelpwindow" target="_blank" href="https://support.nlm.nih.gov/knowledgebase/category/?id=CAT-01239"
+          Ncbi_App=blast&amp;Page=blastformatreq&Time=2019-10-28T01:37:09&amp;Host=blast349&amp;ncbi_phid=55BA31F0DB67E8310000000000000001&amp;ncbi_session=55BA31F0DB67E831_0000SID&amp;from=https%3A%2F%2Fblast%2Encbi%2Enlm%2Enih%2Egov%2FBlast%2Ecgi%3FCMD%3DPUT%26COMPOSITION%5FBASED%5FSTATISTICS%3D2%26DATABASE%3Dnr%5Fv5%26DB%5FDISPLAY%5FNAME%3Dnr%26ENTREZ%5FQUERY%3D%26EXPECT%3D0%2E01%26FILTER%3DF%26FULL%5FDBNAME%3Dnr%5Fv5%26GAPCOSTS%3D11%2B1%26HITLIST%5FSIZE%3D0%26JOB%5FTITLE%3D%2BQBE85648%2E1%2B%26MATRIX%3DBLOSUM62%26MYNCBI%5FUSER%3D8755848028%26MYNCBI%5FUSER%3D8755848028%26NUM%5FQUERIES%3D3%26ORG%5FDBS%3Dgiless%5Fdbvers5%26PROGRAM%3Dblastp%26QUERY%5FINFO%3D%2BQBE85648%2E1%2B%26QUERY%5FLENGTH%3D1094%26RID%3DVCZM3MWB014%26RTOE%3D18%26THRESHOLD%3D11%26USER%5FTYPE%3D2%26USER%5FTYPE%3D2%26WORD%5FSIZE%3D6" id="page_footer_59"> Support center
+        </a>
+        <a href="Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=MailList">Mailing list</a>
+        <a href="https://www.youtube.com/playlist?list=PLH-TjWpFfWrtjzMCIvUe-YbrlIeFQlKMq" target="_blank" id="page_footer_54">
+          <img class="icon-medium gray-medium" src="images/youtube.svg" alt="">
+            <span class="icon-fallback-text">YouTube</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- bottom section of footer -->
+    <div class="col" id="contentinfo">
+      <ul class="right inline_list logos">
+        <li>
+          <a href="https://www.nlm.nih.gov" id="page_footer_60">
+            <img class="gray-medium" src="images/nlm-logo.svg" alt="">
+              <span class="icon-fallback-text">National Library Of Medicine</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.nih.gov" id="page_footer_61">
+            <img class="gray-medium" src="images/nih-logo.svg" alt="">
+              <span class="icon-fallback-text">National Institutes Of Health</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.hhs.gov" id="page_footer_62">
+            <img class="gray-medium" src="images/hhs-logo.svg" alt="">
+              <span class="icon-fallback-text">U.S. Department of Health &amp; Human Services</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.usa.gov" id="page_footer_63">
+            <img class="icon-large-wide gray-medium" src="images/usagov-logo.svg" alt="">
+              <span class="icon-fallback-text">USA.gov</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="footer_padding">
+
+        <div class="footer_border h-card">
+
+          <a href="https://www.ncbi.nlm.nih.gov/" class="u-url" id="page_footer_64">
+            <h3 role="heading" aria-level="3" class="ncbi_blue p-org">NCBI</h3>
+          </a>
+
+          <address>
+
+            <a href="https://www.ncbi.nlm.nih.gov/" class="u-url p-org" id="page_footer_65">National Center for Biotechnology Information,</a>
+            <a href="https://www.nlm.nih.gov/" id="page_footer_66"> U.S. National Library of Medicine</a>
+
+            <span class="h-adr">
+              <span class="p-street-address">8600 Rockville Pike</span>,
+              <span class="p-locality">Bethesda</span>
+              <span class="p-region"> MD</span>,
+              <span class="p-postal-code">20894</span>
+              <span class="p-country-name">USA</span>
+            </span>
+
+          </address>
+
+        </div>
+        <div class="inline_list about_list">
+          <a href="https://www.ncbi.nlm.nih.gov/home/about/policies.shtml" id="page_footer_67">Policies and Guidelines</a>
+          |
+          <a href="https://www.ncbi.nlm.nih.gov/home/about/contact.shtml" id="page_footer_68">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script type="text/javascript" src="js/header.js"> </script>
+   </div><!--/#wrap-->
+
+<script type="text/javascript" src="/portal/portal3rc.fcgi/rlib/js/InstrumentOmnitureBaseJS/InstrumentNCBIBaseJS/InstrumentPageStarterJS.js"></script>
+<!--
+<script type="text/javascript" src="://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/supportedbrowsers/js/nonportalbc_min.js"></script>
+<script type="text/javascript">$("#browsers_ajax").browserCheck();</script>
+-->
+</body>
+
+</html>
+
+ 
