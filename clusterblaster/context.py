@@ -30,6 +30,8 @@ def find_clusters(hits, conserve=3, gap=20000):
     groups: list
         Groups of Hit objects.
     """
+    if conserve < 0 or gap < 0:
+        raise ValueError("Expected positive integer")
 
     total_hits = len(hits)
     if total_hits < conserve:
@@ -41,7 +43,7 @@ def find_clusters(hits, conserve=3, gap=20000):
     while i < total_hits:
         reset, last = False, i
         for j in range(i + 1, total_hits):
-            if hits[j].end - hits[j - 1].start > gap:
+            if hits[j].start - hits[j - 1].end > gap:
                 reset, last = True, j - 1  # Gap is too big
             elif j == total_hits - 1:
                 reset, last = True, j  # At the last element
