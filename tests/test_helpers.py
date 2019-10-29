@@ -5,7 +5,6 @@ Test suite for classes
 """
 
 from pathlib import Path
-from contextlib import contextmanager
 
 import shutil
 
@@ -54,36 +53,6 @@ def test_efetch_sequences():
             "seq2": "DEF",
             "seq3": "GHI",
         }
-
-
-@contextmanager
-def does_not_raise():
-    yield
-
-
-@pytest.mark.parametrize(
-    "ids, expectation",
-    [
-        (["seq1", "seq2", "seq3"], does_not_raise()),
-        (("seq1", "seq2", "seq3"), does_not_raise()),
-        ({"seq1", "seq2", "seq3"}, does_not_raise()),
-        ({}, pytest.raises(ValueError)),
-    ],
-)
-def test_prepare_query_ids_iterable(ids, expectation):
-    with expectation:
-        helpers.prepare_query_ids(ids)
-
-
-def test_prepare_query_ids_file(tmp_path):
-    file = tmp_path / "test"
-    file.write_text("seq1\nseq2\nseq3")
-    helpers.prepare_query_ids(str(file.resolve()))
-
-
-def test_prepare_query_ids_file_not_found():
-    with pytest.raises(FileNotFoundError):
-        helpers.prepare_query_ids("x")
 
 
 def test_get_sequences_query_file(mocker):
