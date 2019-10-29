@@ -7,8 +7,6 @@ This module handles BLAST search using local tools (DIAMOND and BLASTp).
 import logging
 import subprocess
 
-from pathlib import Path
-
 from tempfile import NamedTemporaryFile as NTF
 
 from clusterblaster import helpers
@@ -106,7 +104,6 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
 
 def _search_file(fasta, database, **kwargs):
     """Launcher function for `diamond` and `blastp` modes."""
-    LOG.info("Searching %s against %s", fasta, database)
     return parse(diamond(fasta, database, **kwargs))
 
 
@@ -117,9 +114,6 @@ def _search_ids(ids, database, **kwargs):
     NamedTemporaryFile. So, first obtain the sequences for each ID from NCBI via
     efetch_sequences, then write those to an NTF and pass to _local_BLAST.
     """
-    ids = helpers.prepare_query_ids(ids)
-    LOG.info("Searching %s with IDs: %s", database, ids)
-
     with NTF("w") as fasta:
         for header, sequence in helpers.efetch_sequences(ids).items():
             fasta.write(f">{header}\n{sequence}\n")
