@@ -8,7 +8,6 @@ import pytest
 
 from pathlib import Path
 
-import requests
 import requests_mock
 
 from clusterblaster import remote
