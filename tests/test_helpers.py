@@ -5,6 +5,7 @@ Test suite for classes
 """
 
 from pathlib import Path
+from contextlib import contextmanager
 
 import shutil
 
@@ -18,24 +19,6 @@ from clusterblaster import helpers
 
 
 TEST_DIR = Path(__file__).resolve().parent
-
-# response = requests.post(
-#     "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-#     params={"db": "protein", "rettype": "fasta"},
-#     files={"id": ",".join(headers)},
-# )
-# if response.status_code != 200:
-#     raise requests.HTTPError(
-#         f"Error fetching sequences from NCBI [code {response.status_code}]."
-#         " Bad query IDs?"
-#     )
-# sequences = {}
-# for key, value in parse_fasta(response.text.split("\n")).items():
-#     for header in headers:
-#         if header not in sequences and header in key:
-#             sequences[header] = value
-#             break
-# return sequences
 
 
 def test_efetch_sequences_request():
@@ -71,6 +54,36 @@ def test_efetch_sequences():
             "seq2": "DEF",
             "seq3": "GHI",
         }
+
+
+@contextmanager
+def does_not_raise():
+    yield
+
+
+@pytest.mark.parametrize(
+    "ids, expectation",
+    [
+        (["seq1", "seq2", "seq3"], does_not_raise()),
+        (("seq1", "seq2", "seq3"), does_not_raise()),
+        ({"seq1", "seq2", "seq3"}, does_not_raise()),
+        ({}, pytest.raises(ValueError)),
+    ],
+)
+def test_prepare_query_ids_iterable(ids, expectation):
+    with expectation:
+        helpers.prepare_query_ids(ids)
+
+
+def test_prepare_query_ids_file(tmp_path):
+    file = tmp_path / "test"
+    file.write_text("seq1\nseq2\nseq3")
+    helpers.prepare_query_ids(str(file.resolve()))
+
+
+def test_prepare_query_ids_file_not_found():
+    with pytest.raises(FileNotFoundError):
+        helpers.prepare_query_ids("x")
 
 
 def test_get_sequences_query_file(mocker):
