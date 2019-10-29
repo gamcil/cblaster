@@ -20,6 +20,18 @@ LOG = logging.getLogger(__name__)
 BLAST_API_URL = "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
 
 
+def _prepare_input(query_file=None, query_ids=None):
+    """Prepare query input for BLAST POST request.
+    Query file is read into str; ID list is converted to newline delimited str.
+    """
+    if query_file and not query_ids:
+        with open(query_file) as handle:
+            return handle.read()
+    if query_ids:
+        return "\n".join(query_ids)
+    raise ValueError("Expected 'query_file' or 'query_ids'")
+
+
 def start(
     query_file=None,
     query_ids=None,
@@ -95,6 +107,8 @@ def start(
     rtoe: int
         Request Time Of Execution (RTOE), estimated run time (in seconds) of the search
     """
+    query = _prepare_input(query_file, query_ids)
+
     parameters = {
         "CMD": "PUT",
         "DATABASE": database,
@@ -123,12 +137,6 @@ def start(
         parameters["THRESHOLD"] = threshold
 
     LOG.debug(parameters)
-
-    if query_file and not query_ids:
-        with open(query_file) as handle:
-            query = handle.read()
-    elif query_ids:
-        query = "\n".join(query_ids)
 
     response = requests.post(BLAST_API_URL, files={"QUERY": query}, params=parameters)
 
@@ -210,7 +218,7 @@ def retrieve(rid):
     ]
 
 
-def poll(rid):
+def poll(rid, delay=60, max_retries=-1):
     """Poll BLAST API with given Request Identifier (RID) until results are returned.
 
     As per NCBI usage guidelines, this function will only poll once per minute; this is
@@ -222,10 +230,13 @@ def poll(rid):
     list:
         Output of retrieve()
     """
-    previous = 0
+    if delay < 60:
+        raise ValueError("Delay must be at least 60s")
+
+    retries, previous = 0, 0
     while True:
         current = time.time()
-        wait = previous - current + 60
+        wait = previous - current + delay
         if wait > 0:
             time.sleep(wait)
             previous = current + wait
@@ -236,6 +247,11 @@ def poll(rid):
         if check(rid):
             LOG.info("Search has completed successfully")
             break
+
+        if max_retries > 0 and retries == max_retries:
+            raise ValueError(f"Reached maximum retry limit {max_retries}")
+
+        retries += 1
 
     LOG.info("Retrieving results from NCBI")
     return retrieve(rid)
@@ -303,7 +319,7 @@ def parse(
             hits.append(hit)
 
     if len(hits) == 0:
-        raise SystemExit("No results found")
+        raise ValueError("No results found")
 
     return hits
 

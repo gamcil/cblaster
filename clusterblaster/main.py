@@ -8,6 +8,7 @@ for running clusterblaster.
 
 import argparse
 import logging
+import sys
 
 from clusterblaster import local, remote, context
 
@@ -81,14 +82,14 @@ def clusterblaster(
 
     if output:
         LOG.info("Writing summary to %s", output.name)
-        summarise(organisms.values(), output=output)
+        summarise(organisms, output=output)
     else:
-        summarise(organisms.values())
+        summarise(organisms)
 
     return organisms
 
 
-def get_arguments():
+def get_arguments(args):
     """Parse arguments."""
 
     parser = argparse.ArgumentParser(
@@ -189,7 +190,7 @@ def get_arguments():
         help="Minimum percent query coverage for a BLAST hit to be saved (def. 50)",
     )
 
-    arguments = parser.parse_args()
+    arguments = parser.parse_args(args)
 
     if arguments.mode == "remote":
         if not arguments.database:
@@ -208,7 +209,7 @@ def get_arguments():
 
 
 def main():
-    args = get_arguments()
+    args = get_arguments(sys.argv[1:])
     clusterblaster(**vars(args))
 
 

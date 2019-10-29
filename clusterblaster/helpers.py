@@ -50,6 +50,20 @@ def parse_fasta(handle):
     return sequences
 
 
+def efetch_sequences_request(headers):
+    response = requests.post(
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
+        params={"db": "protein", "rettype": "fasta"},
+        files={"id": ",".join(headers)},
+    )
+    if response.status_code != 200:
+        raise requests.HTTPError(
+            f"Error fetching sequences from NCBI [code {response.status_code}]."
+            " Bad query IDs?"
+        )
+    return response
+
+
 def efetch_sequences(headers):
     """Retrieve protein sequences from NCBI for supplied accessions.
 
@@ -65,16 +79,7 @@ def efetch_sequences(headers):
         A list of valid NCBI sequence identifiers (accession, GI, etc). Should
         correspond to an entry in the Protein database.
     """
-    response = requests.post(
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-        params={"db": "protein", "rettype": "fasta"},
-        files={"id": ",".join(headers)},
-    )
-    if response.status_code != 200:
-        raise requests.HTTPError(
-            f"Error fetching sequences from NCBI [code {response.status_code}]."
-            " Bad query IDs?"
-        )
+    response = efetch_sequences_request(headers)
     sequences = {}
     for key, value in parse_fasta(response.text.split("\n")).items():
         for header in headers:

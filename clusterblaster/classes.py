@@ -68,8 +68,8 @@ class Organism:
 
     def __str__(self):
         total_scaffolds = len(self.scaffolds)
-        total_hits = sum(len(s.hits) for s in self.scaffolds)
-        return "{} {} [{} hits on {} scaffolds]".format(
+        total_hits = sum(len(s.hits) for s in self.scaffolds.values())
+        return "ORGANISM: {} {} [{} hits on {} scaffolds]".format(
             self.name, self.strain, total_hits, total_scaffolds
         )
 
@@ -113,7 +113,7 @@ class Scaffold:
         self.clusters = []
 
     def __str__(self):
-        return "{} [{} hits in {} clusters]".format(
+        return "SCAFFOLD: {} [{} hits in {} clusters]".format(
             self.accession, len(self.hits), len(self.clusters)
         )
 
@@ -133,10 +133,6 @@ class Scaffold:
 
         return report
 
-    @property
-    def protein_uids(self):
-        return ",".join(hit.target for hit in self.hits)
-
 
 class Hit:
     """The Hit class stores BLAST hits and their genomic contexts.
@@ -145,7 +141,18 @@ class Hit:
     genomic information after NCBI is queried for IPG.
     """
 
-    def __init__(self, query, subject, identity, coverage, evalue, bitscore):
+    def __init__(
+        self,
+        query,
+        subject,
+        identity,
+        coverage,
+        evalue,
+        bitscore,
+        start=None,
+        end=None,
+        strand=None,
+    ):
         self.query = query
 
         if "gb" in subject or "ref" in subject:
@@ -156,20 +163,37 @@ class Hit:
         self.identity = float(identity)
         self.coverage = float(coverage)
         self.evalue = float(evalue)
-        self.start = None
-        self.end = None
+
+        self.start = int(start) if start is not None else None
+        self.end = int(end) if end is not None else None
+        self.strand = strand
 
     def __str__(self):
-        return "\t".join(self.report())
+        return f"HIT: {self.query} - {self.subject} [{self.identity}, {self.coverage}]"
 
     def values(self, decimals=4):
+        """Format all attributes of this hit for printing.
+
+        Parameters
+        ----------
+        decimals: int
+            Maximum number of decimal points to report. Note that this applies to
+            rounding, not necessarily display; i.e. if the attribute is 50 and
+            decimals=4, this function will return '50', not '50.0000'. The e-value is
+            also capped using this parameter, but using exponent formatting.
+
+        Returns
+        -------
+        list
+            All attributes of this Hit, formatted as str.
+        """
         return [
             self.query,
             self.subject,
-            f"{self.identity:.{decimals}}",
-            f"{self.coverage:.{decimals}}",
-            f"{self.evalue:.{decimals}}",
-            f"{self.bitscore:.{decimals}}",
+            f"{round(self.identity, decimals):g}",
+            f"{round(self.coverage, decimals):g}",
+            f"{self.evalue:.{decimals}g}",
+            f"{round(self.bitscore, decimals):g}",
             str(self.start),
             str(self.end),
             self.strand,

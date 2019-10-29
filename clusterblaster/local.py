@@ -35,7 +35,7 @@ def parse(results, min_identity=30, min_coverage=50, max_evalue=0.01):
         Hit objects representing each hit that surpasses the scoring thresholds.
     """
     hits = []
-    for row in results.split("\n")[:-1]:
+    for row in results[:-1]:
         hit = Hit(*row.split("\t"))
         if (
             hit.identity > min_identity
@@ -99,13 +99,12 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
         stdout=subprocess.PIPE,
         check=True,
     )
-    return results.stdout.decode()
+    return results.stdout.decode().split("\n")
 
 
 def _search_file(fasta, database, **kwargs):
     """Launcher function for `diamond` and `blastp` modes."""
-    results = parse(diamond(fasta, database, **kwargs))
-    return parse(results)
+    return parse(diamond(fasta, database, **kwargs))
 
 
 def _search_ids(ids, database, **kwargs):
@@ -118,6 +117,7 @@ def _search_ids(ids, database, **kwargs):
     with NTF("w") as fasta:
         for header, sequence in helpers.efetch_sequences(ids).items():
             fasta.write(f">{header}\n{sequence}\n")
+        fasta.seek(0)
         results = _search_file(fasta.name, database, **kwargs)
     return results
 
