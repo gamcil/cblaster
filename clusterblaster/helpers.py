@@ -4,8 +4,6 @@
 This module stores small helper functions.
 """
 
-from pathlib import Path
-
 import shutil
 import requests
 
@@ -28,22 +26,6 @@ def form_command(parameters):
         else:
             command.extend([key, value])
     return command
-
-
-def prepare_query_ids(query_ids):
-    """Handle query ID input.
-    Accepts either an iterable of str IDs or path to newline delimited text file
-    containing IDs.
-    """
-    if isinstance(query_ids, (list, tuple, set)):
-        return query_ids
-    if isinstance(query_ids, str):
-        if not Path(query_ids).exists():
-            raise FileNotFoundError("No file exists at given path")
-        return [
-            line.strip() for line in Path(query_ids).read_text().split("\n") if line
-        ]
-    raise ValueError("Expected an iterable of str, or path to query ID file")
 
 
 def parse_fasta(handle):
