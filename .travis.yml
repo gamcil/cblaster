@@ -1,0 +1,12 @@
+language: python
+install:
+  - pip install -r requirements.txt
+  - pip install -e .
+  - pip install pytest-cov
+  - pip install pytest-mock
+  - pip install requests-mock
+  - pip install coveralls
+script:
+  - pytest --cov=synthaser/
+after_success:
+  - coveralls
