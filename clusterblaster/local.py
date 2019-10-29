@@ -106,6 +106,7 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
 
 def _search_file(fasta, database, **kwargs):
     """Launcher function for `diamond` and `blastp` modes."""
+    LOG.info("Searching %s against %s", fasta, database)
     return parse(diamond(fasta, database, **kwargs))
 
 
@@ -116,10 +117,8 @@ def _search_ids(ids, database, **kwargs):
     NamedTemporaryFile. So, first obtain the sequences for each ID from NCBI via
     efetch_sequences, then write those to an NTF and pass to _local_BLAST.
     """
-    if isinstance(ids, str) and Path(ids).exists():
-        _file = ids
-        ids = [line.strip() for line in Path(ids).read_text().split("\n") if line]
-        LOG.info("Parsed %s, found IDs: %s", _file, ids)
+    ids = helpers.prepare_query_ids(ids)
+    LOG.info("Searching %s with IDs: %s", database, ids)
 
     with NTF("w") as fasta:
         for header, sequence in helpers.efetch_sequences(ids).items():
