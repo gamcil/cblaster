@@ -7,6 +7,6 @@ install:
   - pip install requests-mock
   - pip install coveralls
 script:
-  - pytest --cov=synthaser/
+  - pytest --cov=clusterblaster/
 after_success:
   - coveralls
