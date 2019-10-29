@@ -37,7 +37,9 @@ def prepare_query_ids(query_ids):
     """
     if isinstance(query_ids, (list, tuple, set)):
         return query_ids
-    if isinstance(query_ids, str) and Path(query_ids).exists():
+    if isinstance(query_ids, str):
+        if not Path(query_ids).exists():
+            raise FileNotFoundError("No file exists at given path")
         return [
             line.strip() for line in Path(query_ids).read_text().split("\n") if line
         ]
