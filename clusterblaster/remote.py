@@ -28,8 +28,7 @@ def _prepare_input(query_file=None, query_ids=None):
         with open(query_file) as handle:
             return handle.read()
     if query_ids:
-        _ids = helpers.prepare_query_ids(query_ids)
-        return "\n".join(_ids)
+        return "\n".join(query_ids)
     raise ValueError("Expected 'query_file' or 'query_ids'")
 
 
