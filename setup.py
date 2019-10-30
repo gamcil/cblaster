@@ -9,8 +9,10 @@ with open("README.md") as readme:
 
 def get_version():
     """Get version number from __init__.py"""
-    version_file = Path("clusterblaster/__init__.py").read_text()
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
+    version_file = Path(__file__).resolve().parent / "clusterblaster" / "__init__.py"
+    version_match = re.search(
+        r"^__version__ = ['\"]([^'\"]*)['\"]", version_file.read_text(), re.M
+    )
     if version_match:
         return version_match.group(1)
     raise RuntimeError("Failed to find version string")
