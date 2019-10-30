@@ -44,12 +44,18 @@ def start(
     gap_costs="11 1",
     matrix="BLOSUM62",
     hitlist_size=10000,
+    alignments=10000,
+    descriptions=10000,
     threshold=11,
     word_size=6,
     comp_based_stats=2,
     entrez_query=None,
 ):
     """Launch a remote BLAST search using NCBI BLAST API.
+
+    Note that the HITLIST_SIZE, ALIGNMENTS and DESCRIPTIONS parameters are all set to
+    10000 to ensure that ALL hits are returned. By default, this is capped at 100 and
+    will result in different results for identical queries.
 
     Usage guidelines:
 
@@ -117,8 +123,8 @@ def start(
         "GAPCOSTS": gap_costs,
         "MATRIX": matrix,
         "HITLIST_SIZE": hitlist_size,
-        "ALIGNMENTS": 10000,
-        "DESCRIPTIONS": 10000,
+        "ALIGNMENTS": alignments,
+        "DESCRIPTIONS": descriptions,
         "WORD_SIZE": word_size,
         "COMPOSITION_BASED_STATISTICS": comp_based_stats,
     }
@@ -185,12 +191,8 @@ def check(rid):
         raise ValueError("Search completed, but found no hits")
 
 
-def retrieve(rid):
+def retrieve(rid, hitlist_size=10000, alignments=10000, descriptions=10000):
     """Retrieve BLAST results corresponding to a given Request Identifier (RID).
-
-    Note that the HITLIST_SIZE, ALIGNMENTS and DESCRIPTIONS parameters are all set to -1
-    to ensure that ALL hits are returned. By default, this is capped at 100 and will
-    result in different results for identical queries.
 
     Returns
     -------
@@ -204,9 +206,9 @@ def retrieve(rid):
         "RID": rid,
         "FORMAT_TYPE": "Tabular",
         "FORMAT_OBJECT": "Alignment",
-        "HITLIST_SIZE": -1,
-        "ALIGNMENTS": -1,
-        "DESCRIPTIONS": -1,
+        "HITLIST_SIZE": hitlist_size,
+        "ALIGNMENTS": alignments,
+        "DESCRIPTIONS": descriptions,
         "NCBI_GI": "F",
     }
 
@@ -250,6 +252,7 @@ def poll(rid, delay=60, max_retries=-1):
             previous = current
 
         LOG.info("Checking search status...")
+
         if check(rid):
             LOG.info("Search has completed successfully!")
             return
@@ -258,9 +261,6 @@ def poll(rid, delay=60, max_retries=-1):
             raise ValueError(f"Reached maximum retry limit {max_retries}")
 
         retries += 1
-
-    # LOG.info("Retrieving results...")
-    # return retrieve(rid)
 
 
 def parse(

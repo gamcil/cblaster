@@ -151,7 +151,9 @@ def test_retrieve(retrieve_response):
             "&RID=RID"
             "&FORMAT_TYPE=Tabular"
             "&FORMAT_OBJECT=Alignment"
-            # "&HITLIST_SIZE=0"
+            "&HITLIST_SIZE=10000"
+            "&ALIGNMENTS=10000"
+            "&DESCRIPTIONS=10000"
             "&NCBI_GI=F"
         )
 
