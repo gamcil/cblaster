@@ -62,7 +62,9 @@ def test_start(start_response):
             "&EXPECT=0.01"
             "&GAPCOSTS=11+1"
             "&MATRIX=BLOSUM62"
-            "&HITLIST_SIZE=0"
+            "&HITLIST_SIZE=10000"
+            "&ALIGNMENTS=10000"
+            "&DESCRIPTIONS=10000"
             "&WORD_SIZE=6"
             "&COMPOSITION_BASED_STATISTICS=2"
             "&ENTREZ_QUERY=Aspergillus%5BORGN%5D"
@@ -149,7 +151,7 @@ def test_retrieve(retrieve_response):
             "&RID=RID"
             "&FORMAT_TYPE=Tabular"
             "&FORMAT_OBJECT=Alignment"
-            "&HITLIST_SIZE=0"
+            # "&HITLIST_SIZE=0"
             "&NCBI_GI=F"
         )
 
@@ -158,13 +160,9 @@ def test_poll_success(monkeypatch):
     def patch_check(rid):
         return True
 
-    def patch_retrieve(rid):
-        return "retrieve() called"
-
     monkeypatch.setattr(remote, "check", patch_check)
-    monkeypatch.setattr(remote, "retrieve", patch_retrieve)
 
-    assert remote.poll("RID") == "retrieve() called"
+    assert remote.check("RID") is True
 
 
 def test_poll_retry_limit(monkeypatch):
