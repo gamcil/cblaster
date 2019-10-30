@@ -36,7 +36,7 @@ def summarise(organisms, output=None):
     if output:
         output.write(summary)
     else:
-        print(summary)
+        print(summary, end="", flush=True)
 
 
 def clusterblaster(
