@@ -1,6 +1,7 @@
 # clusterblaster
 [![Build Status](https://travis-ci.org/gamcil/clusterblaster.svg?branch=master)](https://travis-ci.org/gamcil/clusterblaster)
 [![Coverage Status](https://coveralls.io/repos/github/gamcil/clusterblaster/badge.svg?branch=master)](https://coveralls.io/github/gamcil/clusterblaster?branch=master)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 `clusterblaster` is a tool for finding clusters of co-located homologous sequences
 in BLAST searches.

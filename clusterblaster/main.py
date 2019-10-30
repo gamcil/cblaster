@@ -12,6 +12,7 @@ import sys
 
 from clusterblaster import __version__, local, remote, context
 
+logging.getLogger("urllib3").propagate = False  # hide requests logging
 
 logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(message)s",
