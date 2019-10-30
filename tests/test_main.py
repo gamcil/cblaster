@@ -63,6 +63,7 @@ def test_clusterblaster(mocker, tmp_path):
 def test_get_arguments_remote_defaults():
     assert vars(main.get_arguments(["-qf", "test"])) == {
         "output": None,
+        "debug": False,
         "query_ids": None,
         "query_file": "test",
         "mode": "remote",
