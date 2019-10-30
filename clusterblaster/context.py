@@ -4,12 +4,17 @@
 This module handles the querying of NCBI for the genomic context of sequences.
 """
 
+import logging
+
 from collections import defaultdict
 
 import requests
 import operator
 
 from clusterblaster.classes import Organism, Scaffold
+
+
+LOG = logging.getLogger(__name__)
 
 
 def efetch_IPGs(ids, output_handle=None):
@@ -26,12 +31,16 @@ def efetch_IPGs(ids, output_handle=None):
         data={"id": ",".join(ids)},
     )
 
+    LOG.debug("IPG search URL: %s", response.url)
+    LOG.debug("IPG search IDs: %s", ids)
+
     if response.status_code != 200:
         raise requests.HTTPError(
             "Error fetching sequences from NCBI [code {response.status_code}]."
         )
 
     if output_handle:
+        LOG.info("Writing IPG output to %s", output_handle.name)
         output_handle.write(response.text)
 
     return response
@@ -82,10 +91,12 @@ def parse_IPG_table(results_handle, hits):
 
         # Only make new Organism instance if not already one of this name/strain
         if strain not in organisms[organism]:
+            LOG.debug("New organism: %s %s", organism, strain)
             organisms[organism][strain] = Organism(name=organism, strain=strain)
 
         # Add new scaffold
         if accession not in organisms[organism][strain].scaffolds:
+            LOG.debug("New scaffold: %s", accession)
             organisms[organism][strain].scaffolds[accession] = Scaffold(accession)
 
         try:
@@ -157,7 +168,9 @@ def find_clusters_in_hits(hits, conserve=3, gap=20000):
                 i = j
                 break
 
-    return [group for group in groups if len(group) >= conserve]
+    # Only save groups that have enough conserved QUERY hits
+    # i.e. filter out blocks of hits only related to one query sequence
+    return [group for group in groups if len(set(h.query for h in group)) >= conserve]
 
 
 def find_clusters_in_organism(organism, conserve=3, gap=20000):
@@ -165,12 +178,21 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000):
     for scaffold in organism.scaffolds.values():
         scaffold.clusters = find_clusters_in_hits(scaffold.hits, conserve, gap)
 
+        LOG.debug(
+            "Organism: %s, Scaffold: %s, Clusters: %i",
+            organism.full_name,
+            scaffold.accession,
+            len(scaffold.clusters),
+        )
+
 
 def search(hits, conserve, gap):
     """Get genomic context for a collection of BLAST hits."""
     groups = efetch_IPGs([hit.subject for hit in hits])
+
     organisms = parse_IPG_table(groups.text.split("\n"), hits)
 
+    LOG.info("Finding hit clusters in %i organisms", len(organisms))
     for organism in organisms:
         find_clusters_in_organism(organism, conserve, gap)
 

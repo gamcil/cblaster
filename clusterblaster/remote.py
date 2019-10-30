@@ -14,7 +14,6 @@ from clusterblaster import helpers
 from clusterblaster.classes import Hit
 
 
-logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 BLAST_API_URL = "https://blast.ncbi.nlm.nih.gov/Blast.cgi"
@@ -44,7 +43,7 @@ def start(
     nucl_penalty=None,
     gap_costs="11 1",
     matrix="BLOSUM62",
-    hitlist_size=0,
+    hitlist_size=10000,
     threshold=11,
     word_size=6,
     comp_based_stats=2,
@@ -118,6 +117,8 @@ def start(
         "GAPCOSTS": gap_costs,
         "MATRIX": matrix,
         "HITLIST_SIZE": hitlist_size,
+        "ALIGNMENTS": 10000,
+        "DESCRIPTIONS": 10000,
         "WORD_SIZE": word_size,
         "COMPOSITION_BASED_STATISTICS": comp_based_stats,
     }
@@ -136,11 +137,10 @@ def start(
         # Does not apply to blastn
         parameters["THRESHOLD"] = threshold
 
-    LOG.debug(parameters)
-
     response = requests.post(BLAST_API_URL, files={"QUERY": query}, params=parameters)
 
-    LOG.debug(response.url)
+    LOG.debug("Search parameters: %s", parameters)
+    LOG.debug("Search URL: %s", response.url)
 
     rid, rtoe = re.findall(r"(?:RID|RTOE) = (.+?)[\n\s]", response.text)
     return rid, int(rtoe)
@@ -188,6 +188,10 @@ def check(rid):
 def retrieve(rid):
     """Retrieve BLAST results corresponding to a given Request Identifier (RID).
 
+    Note that the HITLIST_SIZE, ALIGNMENTS and DESCRIPTIONS parameters are all set to -1
+    to ensure that ALL hits are returned. By default, this is capped at 100 and will
+    result in different results for identical queries.
+
     Returns
     -------
     list
@@ -200,7 +204,9 @@ def retrieve(rid):
         "RID": rid,
         "FORMAT_TYPE": "Tabular",
         "FORMAT_OBJECT": "Alignment",
-        "HITLIST_SIZE": 0,
+        "HITLIST_SIZE": -1,
+        "ALIGNMENTS": -1,
+        "DESCRIPTIONS": -1,
         "NCBI_GI": "F",
     }
 
@@ -245,16 +251,16 @@ def poll(rid, delay=60, max_retries=-1):
 
         LOG.info("Checking search status...")
         if check(rid):
-            LOG.info("Search has completed successfully")
-            break
+            LOG.info("Search has completed successfully!")
+            return
 
         if max_retries > 0 and retries == max_retries:
             raise ValueError(f"Reached maximum retry limit {max_retries}")
 
         retries += 1
 
-    LOG.info("Retrieving results from NCBI")
-    return retrieve(rid)
+    # LOG.info("Retrieving results...")
+    # return retrieve(rid)
 
 
 def parse(
@@ -363,23 +369,25 @@ def search(
         clusters of Hits.
     """
     if not rid:
-        LOG.info("Launching new remote BLAST search")
+        LOG.info("Launching new search")
 
         # Start search, get request identifier (RID) and completion ETA (RTOE)
         rid, rtoe = start(query_file=query_file, query_ids=query_ids, **kwargs)
-        LOG.debug("RID: %s, RTOE: %s", rid, rtoe)
+
+        LOG.info("Request Identifier (RID): %s", rid)
+        LOG.info("Request Time Of Execution (RTOE): %ss", rtoe)
 
         # Wait the RTOE (sec) before bothering to poll
         time.sleep(rtoe)
 
-        LOG.info("Polling NCBI for completion status of search %s", rid)
-        results = poll(rid)
-    else:
-        LOG.info("Retrieving results for search %s", rid)
-        results = retrieve(rid)
+        LOG.info("Polling NCBI for completion status")
+        poll(rid)
+
+    LOG.info("Retrieving results for search %s", rid)
+    results = retrieve(rid)
 
     # Parse results for hits
-    LOG.info("Parsing results")
+    LOG.info("Parsing results...")
     results = parse(
         results,
         query_file=query_file,

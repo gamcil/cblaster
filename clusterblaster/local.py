@@ -13,7 +13,6 @@ from clusterblaster import helpers
 from clusterblaster.classes import Hit
 
 
-logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 

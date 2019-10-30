@@ -6,6 +6,10 @@ This module stores the classes (Organism, Scaffold, Hit) used in clusterblaster.
 
 import re
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 
 def generate_header_string(text, symbol="-"):
     """Generate an underlined header string.

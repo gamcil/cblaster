@@ -10,10 +10,16 @@ import argparse
 import logging
 import sys
 
-from clusterblaster import local, remote, context
+from clusterblaster import __version__, local, remote, context
 
-logging.basicConfig(level=logging.INFO)
-LOG = logging.getLogger(__name__)
+
+logging.basicConfig(
+    format="[%(asctime)s] %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.INFO,
+)
+
+LOG = logging.getLogger()
 
 
 def summarise(organisms, output=None):
@@ -52,7 +58,7 @@ def clusterblaster(
     """Run clusterblaster."""
 
     if mode == "local":
-        LOG.info("Launching local search against %s", database)
+        LOG.info("Starting clusterblaster in local mode")
         results = local.search(
             database,
             query_file=query_file,
@@ -64,7 +70,7 @@ def clusterblaster(
         )
 
     elif mode == "remote":
-        LOG.info("Launching remote search via NCBI BLAST API")
+        LOG.info("Starting clusterblaster in remote mode")
         results = remote.search(
             query_file=query_file,
             query_ids=query_ids,
@@ -103,6 +109,12 @@ def get_arguments(args):
         "--output",
         type=argparse.FileType("w"),
         help="Save output to this file path",
+    )
+    parser.add_argument(
+        "--version", action="version", version="%(prog)s " + __version__
+    )
+    parser.add_argument(
+        "-d", "--debug", help="Print debugging information", action="store_true"
     )
 
     _inputs = parser.add_argument_group("Input")
@@ -169,21 +181,21 @@ def get_arguments(args):
 
     filters = parser.add_argument_group("Filtering")
     filters.add_argument(
-        "-e",
+        "-me",
         "--max_evalue",
         type=float,
         default=0.01,
         help="Maximum e-value for a BLAST hit to be saved (def. 0.01)",
     )
     filters.add_argument(
-        "-d",
+        "-mi",
         "--min_identity",
         type=float,
         default=30,
         help="Minimum percent identity for a BLAST hit to be saved (def. 30)",
     )
     filters.add_argument(
-        "-v",
+        "-mc",
         "--min_coverage",
         type=float,
         default=50,
@@ -210,7 +222,24 @@ def get_arguments(args):
 
 def main():
     args = get_arguments(sys.argv[1:])
-    clusterblaster(**vars(args))
+
+    if args.debug:
+        LOG.setLevel(logging.DEBUG)
+
+    clusterblaster(
+        query_file=args.query_file,
+        query_ids=args.query_ids,
+        mode=args.mode,
+        database=args.database,
+        gap=args.gap,
+        conserve=args.conserve,
+        min_identity=args.min_identity,
+        min_coverage=args.min_coverage,
+        max_evalue=args.max_evalue,
+        entrez_query=args.entrez_query,
+        output=args.output,
+        rid=args.rid,
+    )
 
 
 if __name__ == "__main__":
