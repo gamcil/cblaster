@@ -73,6 +73,8 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
         Search results, taken directly from stdout of the subprocess call.
     """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
+    LOG.debug("diamond path: %s", diamond)
+
     parameters = {
         "args": [diamond, "blastp"],
         "--query": fasta,
@@ -92,12 +94,14 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
         "--query-cover": str(min_coverage),
         "--max-hsps": "1",
     }
+
+    command = helpers.form_command(parameters)
+    LOG.debug("Parameters: %s", command)
+
     results = subprocess.run(
-        helpers.form_command(parameters),
-        stderr=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        check=True,
+        command, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE, check=True
     )
+
     return results.stdout.decode().split("\n")
 
 
