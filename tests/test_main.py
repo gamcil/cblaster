@@ -36,7 +36,7 @@ def test_summarise(capsys, tmp_path):
     # Test stdout
     main.summarise(organisms)
     captured = capsys.readouterr()
-    assert captured.out == "mocked\n\n\nmocked\n"
+    assert captured.out == "mocked\n\n\nmocked"
 
 
 def test_clusterblaster(mocker, tmp_path):
