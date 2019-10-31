@@ -35,7 +35,7 @@ def test_summarise(capsys, tmp_path):
     # Test stdout
     main.summarise(organisms)
     captured = capsys.readouterr()
-    assert captured.out == "mocked\n\n\nmocked"
+    assert captured.out == "mocked\n\n\nmocked\n"
 
 
 def test_clusterblaster(mocker, tmp_path):
@@ -62,6 +62,7 @@ def test_clusterblaster(mocker, tmp_path):
 def test_get_arguments_remote_defaults():
     assert vars(main.get_arguments(["-qf", "test"])) == {
         "output": None,
+        "binary": None,
         "debug": False,
         "query_ids": None,
         "query_file": "test",

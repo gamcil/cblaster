@@ -10,7 +10,7 @@ import argparse
 import logging
 import sys
 
-from clusterblaster import __version__, local, remote, context
+from clusterblaster import __version__, local, remote, context, helpers
 
 logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(message)s", datefmt="%H:%M:%S"
@@ -36,7 +36,56 @@ def summarise(organisms, output=None):
     if output:
         output.write(summary)
     else:
-        print(summary, end="", flush=True)
+        print(summary, flush=True)
+
+
+def count_queries(cluster, queries):
+    """Count number of hits for each query in a cluster of hits."""
+    counts = [0] * len(queries)
+    for index, query in enumerate(queries):
+        for hit in cluster:
+            if query == hit.query:
+                counts[index] += 1
+    return counts
+
+
+def generate_binary_table(organisms, queries, headers=True, output=None):
+    """Generate a binary summary table.
+
+    Format:
+    Organism  Scaffold  Query1  Query2  Query3  Query4
+    Org 1     Scaf_1    2       1       1       1
+    Org 1     Scaf_3    0       1       0       1
+    Org 2     Scaf_1    1       0       1       1
+    """
+    columns = len(queries) + 4
+
+    rows = [
+        [
+            organism.full_name,
+            accession,
+            *(str(count) for count in count_queries(cluster, queries)),
+            str(cluster[0].start),
+            str(cluster[-1].end),
+        ]
+        for organism in organisms
+        for accession, scaffold in organism.scaffolds.items()
+        for cluster in scaffold.clusters
+    ]
+
+    if headers:
+        rows.insert(0, ["Organism", "Scaffold", *queries, "Start", "End"])
+
+    lengths = [max(len(row[i]) for row in rows) for i in range(columns)]
+
+    table = "\n".join(
+        "  ".join(f"{row[i]:{lengths[i]}}" for i in range(columns)) for row in rows
+    )
+
+    if output:
+        output.write(table)
+    else:
+        print(table, flush=True)
 
 
 def clusterblaster(
@@ -51,6 +100,7 @@ def clusterblaster(
     max_evalue=0.01,
     entrez_query=None,
     output=None,
+    binary=None,
     rid=None,
 ):
     """Run clusterblaster."""
@@ -84,6 +134,14 @@ def clusterblaster(
     LOG.info("Fetching genomic context of hits from NCBI")
     organisms = context.search(results, conserve, gap)
 
+    if binary:
+        LOG.info("Writing binary summary table to %s", binary.name)
+        if query_file:
+            with open(query_file) as handle:
+                query_ids = list(helpers.parse_fasta(handle))
+
+        generate_binary_table(organisms, query_ids, output=binary)
+
     if output:
         LOG.info("Writing summary to %s", output.name)
         summarise(organisms, output=output)
@@ -107,6 +165,12 @@ def get_arguments(args):
         "--output",
         type=argparse.FileType("w"),
         help="Save output to this file path",
+    )
+    parser.add_argument(
+        "-b",
+        "--binary",
+        type=argparse.FileType("w"),
+        help="Save binary format table to this file path",
     )
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + __version__
@@ -236,6 +300,7 @@ def main():
         max_evalue=args.max_evalue,
         entrez_query=args.entrez_query,
         output=args.output,
+        binary=args.binary,
         rid=args.rid,
     )
 
