@@ -64,9 +64,9 @@ def generate_binary_table(organisms, queries, headers=True, output=None):
         [
             organism.full_name,
             accession,
-            *(str(count) for count in count_queries(cluster, queries)),
             str(cluster[0].start),
             str(cluster[-1].end),
+            *(str(count) for count in count_queries(cluster, queries)),
         ]
         for organism in organisms
         for accession, scaffold in organism.scaffolds.items()
@@ -74,7 +74,7 @@ def generate_binary_table(organisms, queries, headers=True, output=None):
     ]
 
     if headers:
-        rows.insert(0, ["Organism", "Scaffold", *queries, "Start", "End"])
+        rows.insert(0, ["Organism", "Scaffold", "Start", "End", *queries])
 
     lengths = [max(len(row[i]) for row in rows) for i in range(columns)]
 
