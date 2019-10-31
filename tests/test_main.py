@@ -5,7 +5,6 @@ Test suite for main.py
 """
 
 import pytest
-import pytest_mock
 
 from clusterblaster import local, context, main, classes, remote
 
