@@ -6,6 +6,9 @@ This module stores small helper functions.
 
 import shutil
 import requests
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 def get_program_path(aliases):
@@ -56,11 +59,16 @@ def efetch_sequences_request(headers):
         params={"db": "protein", "rettype": "fasta"},
         files={"id": ",".join(headers)},
     )
+
+    LOG.debug("Efetch IDs: %s", headers)
+    LOG.debug("Efetch URL: %s", response.url)
+
     if response.status_code != 200:
         raise requests.HTTPError(
             f"Error fetching sequences from NCBI [code {response.status_code}]."
             " Bad query IDs?"
         )
+
     return response
 
 
@@ -79,7 +87,9 @@ def efetch_sequences(headers):
         A list of valid NCBI sequence identifiers (accession, GI, etc). Should
         correspond to an entry in the Protein database.
     """
+    LOG.info("Querying NCBI for sequences of: %s", headers)
     response = efetch_sequences_request(headers)
+
     sequences = {}
     for key, value in parse_fasta(response.text.split("\n")).items():
         for header in headers:
