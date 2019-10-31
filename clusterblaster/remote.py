@@ -43,9 +43,7 @@ def start(
     nucl_penalty=None,
     gap_costs="11 1",
     matrix="BLOSUM62",
-    hitlist_size=10000,
-    alignments=10000,
-    descriptions=10000,
+    hitlist_size=500,
     threshold=11,
     word_size=6,
     comp_based_stats=2,
@@ -123,8 +121,8 @@ def start(
         "GAPCOSTS": gap_costs,
         "MATRIX": matrix,
         "HITLIST_SIZE": hitlist_size,
-        "ALIGNMENTS": alignments,
-        "DESCRIPTIONS": descriptions,
+        "ALIGNMENTS": hitlist_size,
+        "DESCRIPTIONS": hitlist_size,
         "WORD_SIZE": word_size,
         "COMPOSITION_BASED_STATISTICS": comp_based_stats,
     }
@@ -191,7 +189,7 @@ def check(rid):
         raise ValueError("Search completed, but found no hits")
 
 
-def retrieve(rid, hitlist_size=10000, alignments=10000, descriptions=10000):
+def retrieve(rid, hitlist_size=500):
     """Retrieve BLAST results corresponding to a given Request Identifier (RID).
 
     Returns
@@ -207,8 +205,8 @@ def retrieve(rid, hitlist_size=10000, alignments=10000, descriptions=10000):
         "FORMAT_TYPE": "Tabular",
         "FORMAT_OBJECT": "Alignment",
         "HITLIST_SIZE": hitlist_size,
-        "ALIGNMENTS": alignments,
-        "DESCRIPTIONS": descriptions,
+        "ALIGNMENTS": hitlist_size,
+        "DESCRIPTIONS": hitlist_size,
         "NCBI_GI": "F",
     }
 
