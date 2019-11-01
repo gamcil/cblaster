@@ -49,14 +49,14 @@ def count_queries(cluster, queries):
     return counts
 
 
-def generate_binary_table(organisms, queries, headers=True, output=None):
+def generate_binary_table(organisms, queries, human=False, headers=True, output=None):
     """Generate a binary summary table.
 
-    Format:
-    Organism  Scaffold  Query1  Query2  Query3  Query4
-    Org 1     Scaf_1    2       1       1       1
-    Org 1     Scaf_3    0       1       0       1
-    Org 2     Scaf_1    1       0       1       1
+    For example:
+
+    Organism  Scaffold  Start  End    Query1  Query2  Query3  Query4
+    Org 1     Scaf_1    1      20000  2       1       1       1
+    Org 1     Scaf_3    3123   40302  0       1       0       1
     """
     columns = len(queries) + 4
 
@@ -76,11 +76,14 @@ def generate_binary_table(organisms, queries, headers=True, output=None):
     if headers:
         rows.insert(0, ["Organism", "Scaffold", "Start", "End", *queries])
 
-    lengths = [max(len(row[i]) for row in rows) for i in range(columns)]
-
-    table = "\n".join(
-        "  ".join(f"{row[i]:{lengths[i]}}" for i in range(columns)) for row in rows
-    )
+    if human:
+        # Calculate lengths of each column for spacing
+        lengths = [max(len(row[i]) for row in rows) for i in range(columns)]
+        table = "\n".join(
+            "  ".join(f"{row[i]:{lengths[i]}}" for i in range(columns)) for row in rows
+        )
+    else:
+        table = "\n".join(",".join(row) for row in rows)
 
     if output:
         output.write(table)
@@ -92,6 +95,7 @@ def clusterblaster(
     query_file=None,
     query_ids=None,
     mode=None,
+    local_db=None,
     database=None,
     gap=20000,
     conserve=3,
@@ -101,6 +105,8 @@ def clusterblaster(
     entrez_query=None,
     output=None,
     binary=None,
+    binary_human=False,
+    binary_headers=False,
     rid=None,
 ):
     """Run clusterblaster."""
@@ -114,7 +120,6 @@ def clusterblaster(
             min_identity=min_identity,
             min_coverage=min_coverage,
             max_evalue=max_evalue,
-            entrez_query=entrez_query,
         )
 
     elif mode == "remote":
@@ -131,8 +136,8 @@ def clusterblaster(
         )
 
     LOG.info("Found %i hits meeting score thresholds", len(results))
-    LOG.info("Fetching genomic context of hits from NCBI")
-    organisms = context.search(results, conserve, gap)
+    LOG.info("Fetching genomic context of hits")
+    organisms = context.search(results, conserve, gap, local_db=local_db)
 
     if binary:
         LOG.info("Writing binary summary table to %s", binary.name)
@@ -140,7 +145,13 @@ def clusterblaster(
             with open(query_file) as handle:
                 query_ids = list(helpers.parse_fasta(handle))
 
-        generate_binary_table(organisms, query_ids, output=binary)
+        generate_binary_table(
+            organisms,
+            query_ids,
+            headers=binary_headers,
+            human=binary_human,
+            output=binary,
+        )
 
     if output:
         LOG.info("Writing summary to %s", output.name)
@@ -166,12 +177,28 @@ def get_arguments(args):
         type=argparse.FileType("w"),
         help="Save output to this file path",
     )
+
     parser.add_argument(
         "-b",
         "--binary",
         type=argparse.FileType("w"),
         help="Save binary format table to this file path",
     )
+    parser.add_argument(
+        "-bhr",
+        "--binary_human",
+        action="store_true",
+        default=False,
+        help="Print binary table in human readable format",
+    )
+    parser.add_argument(
+        "-bhe",
+        "--binary_headers",
+        action="store_true",
+        default=False,
+        help="Show headers in binary table",
+    )
+
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + __version__
     )
@@ -200,6 +227,13 @@ def get_arguments(args):
         help="Mechanism through which BLAST search will be performed (def. remote)",
         choices=["local", "remote"],
         default="remote",
+    )
+    search.add_argument(
+        "-ldb",
+        "--local_db",
+        help="Path to local JSON database, created using cblaster makedb. If this"
+        " argument is provided, genomic context will be fetched from this database"
+        " instead of through NCBI IPG.",
     )
     search.add_argument(
         "-db",
@@ -292,6 +326,7 @@ def main():
         query_file=args.query_file,
         query_ids=args.query_ids,
         mode=args.mode,
+        local_db=args.local_db,
         database=args.database,
         gap=args.gap,
         conserve=args.conserve,
@@ -301,6 +336,8 @@ def main():
         entrez_query=args.entrez_query,
         output=args.output,
         binary=args.binary,
+        binary_human=args.binary_human,
+        binary_headers=args.binary_headers,
         rid=args.rid,
     )
 
