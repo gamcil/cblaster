@@ -97,7 +97,7 @@ class Organism:
 
     @property
     def full_name(self):
-        if self.strain in self.name or not self.strain:
+        if not self.strain or self.strain in self.name:
             return f"{self.name}"
         return f"{self.name} {self.strain}"
 
