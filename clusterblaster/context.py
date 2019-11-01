@@ -11,6 +11,7 @@ from collections import defaultdict
 import requests
 import operator
 
+from clusterblaster import database
 from clusterblaster.classes import Organism, Scaffold
 
 
@@ -115,6 +116,31 @@ def parse_IPG_table(results_handle, hits):
     return [organism for strains in organisms.values() for organism in strains.values()]
 
 
+def query_local_DB(hits, database):
+    """Build Organisms/Scaffolds using database.DB instance."""
+
+    organisms = defaultdict(dict)
+
+    for hit in hits:
+        strain = database.proteins[hit.subject].strain
+        organism = database.proteins[hit.subject].organism
+        accession = database.proteins[hit.subject].scaffold
+
+        if strain not in organisms[organism]:
+            organisms[organism][strain] = Organism(name=organism, strain=strain)
+
+        if accession not in organisms[organism][strain].scaffolds:
+            organisms[organism][strain].scaffolds[accession] = Scaffold(accession)
+
+        hit.end = database.proteins[hit.subject].end
+        hit.start = database.proteins[hit.subject].start
+        hit.strand = database.proteins[hit.subject].strand
+
+        organisms[organism][strain].scaffolds[accession].hits.append(hit)
+
+    return [organism for strains in organisms.values() for organism in strains.values()]
+
+
 def find_clusters_in_hits(hits, conserve=3, gap=20000):
     """Find conserved hit blocks in a collection of BLAST hits.
 
@@ -142,6 +168,9 @@ def find_clusters_in_hits(hits, conserve=3, gap=20000):
 
     if total_hits < conserve:
         return []
+
+    if total_hits == 1 == conserve:
+        return [hits]
 
     hits.sort(key=operator.attrgetter("start"))
 
@@ -186,11 +215,14 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000):
         )
 
 
-def search(hits, conserve, gap):
+def search(hits, conserve, gap, local_db=None):
     """Get genomic context for a collection of BLAST hits."""
-    groups = efetch_IPGs([hit.subject for hit in hits])
-
-    organisms = parse_IPG_table(groups.text.split("\n"), hits)
+    if local_db:
+        db = database.DB.from_json(local_db)
+        organisms = query_local_DB(hits, db)
+    else:
+        groups = efetch_IPGs([hit.subject for hit in hits])
+        organisms = parse_IPG_table(groups.text.split("\n"), hits)
 
     LOG.info("Finding hit clusters in %i organisms", len(organisms))
     for organism in organisms:
