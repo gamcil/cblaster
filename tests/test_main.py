@@ -63,10 +63,13 @@ def test_get_arguments_remote_defaults():
     assert vars(main.get_arguments(["-qf", "test"])) == {
         "output": None,
         "binary": None,
+        "binary_headers": False,
+        "binary_human": False,
         "debug": False,
         "query_ids": None,
         "query_file": "test",
         "mode": "remote",
+        "local_db": None,
         "database": "nr",
         "entrez_query": None,
         "rid": None,
