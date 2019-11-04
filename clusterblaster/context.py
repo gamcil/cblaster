@@ -218,6 +218,7 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000):
 def search(hits, conserve, gap, local_db=None):
     """Get genomic context for a collection of BLAST hits."""
     if local_db:
+        LOG.info("Loading JSON database: %s", local_db)
         db = database.DB.from_json(local_db)
         organisms = query_local_DB(hits, db)
     else:
