@@ -10,7 +10,7 @@ import argparse
 import logging
 import sys
 
-from clusterblaster import __version__, local, remote, context, helpers
+from clusterblaster import __version__, local, remote, context, helpers, database
 
 logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(message)s", datefmt="%H:%M:%S"
@@ -91,6 +91,19 @@ def generate_binary_table(organisms, queries, human=False, headers=True, output=
         print(table, flush=True)
 
 
+def makedb(genbanks, filename, indent=None):
+    """Generate JSON and diamond databases."""
+    db = database.DB.from_files(genbanks)
+
+    LOG.info("Writing FASTA file with database sequences: %s", filename + ".faa")
+    LOG.info("Building DIAMOND database: %s", filename + ".dmnd")
+    db.makedb(filename)
+
+    LOG.info("Building JSON database: %s", filename + ".json")
+    with open(f"{filename}.json", "w") as handle:
+        db.to_json(handle, indent=indent)
+
+
 def clusterblaster(
     query_file=None,
     query_ids=None,
@@ -168,37 +181,10 @@ def get_arguments(args):
     parser = argparse.ArgumentParser(
         "clusterblaster",
         description="clusterblaster is a tool for finding clusters of homologous"
-        " proteins.",
+        " proteins. Type -h/--help after either subcommand for full description of"
+        " available arguments.",
         epilog="Cameron Gilchrist, 2019",
     )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=argparse.FileType("w"),
-        help="Save output to this file path",
-    )
-
-    parser.add_argument(
-        "-b",
-        "--binary",
-        type=argparse.FileType("w"),
-        help="Save binary format table to this file path",
-    )
-    parser.add_argument(
-        "-bhr",
-        "--binary_human",
-        action="store_true",
-        default=False,
-        help="Print binary table in human readable format",
-    )
-    parser.add_argument(
-        "-bhe",
-        "--binary_headers",
-        action="store_true",
-        default=False,
-        help="Show headers in binary table",
-    )
-
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + __version__
     )
@@ -206,8 +192,36 @@ def get_arguments(args):
         "-d", "--debug", help="Print debugging information", action="store_true"
     )
 
-    _inputs = parser.add_argument_group("Input")
-    inputs = _inputs.add_mutually_exclusive_group(required=True)
+    subparsers = parser.add_subparsers(dest="subcommand")
+
+    makedb = subparsers.add_parser(
+        "makedb", help="Generate JSON/diamond databases from GenBank files"
+    )
+    makedb.add_argument(
+        "genbank",
+        help="Path/s to GenBank files to use when building JSON/diamond databases",
+        nargs="+",
+    )
+    makedb.add_argument(
+        "filename",
+        help="Name to use when building JSON/diamond databases (with extensions"
+        " .json and .dmnd, respectively)",
+    )
+    makedb.add_argument(
+        "-i",
+        "--indent",
+        help="Number of spaces to use as indent in JSON database file. By default,"
+        " it will be printed on a single line (indent=None) to reduce size.",
+        type=int,
+        default=None,
+    )
+
+    search = subparsers.add_parser(
+        "search", help="Start a local/remote cblaster search"
+    )
+
+    _inputs = search.add_argument_group("Input")
+    inputs = _inputs.add_mutually_exclusive_group()
     inputs.add_argument(
         "-qf",
         "--query_file",
@@ -220,36 +234,64 @@ def get_arguments(args):
         help="A collection of valid NCBI sequence identifiers to be searched",
     )
 
-    search = parser.add_argument_group("Searching")
-    search.add_argument(
+    output = search.add_argument_group("Output")
+    output.add_argument(
+        "-o",
+        "--output",
+        type=argparse.FileType("w"),
+        help="Save output to this file path",
+    )
+    output.add_argument(
+        "-b",
+        "--binary",
+        type=argparse.FileType("w"),
+        help="Save binary format table to this file path",
+    )
+    output.add_argument(
+        "-bhr",
+        "--binary_human",
+        action="store_true",
+        default=False,
+        help="Print binary table in human readable format",
+    )
+    output.add_argument(
+        "-bhe",
+        "--binary_headers",
+        action="store_true",
+        default=False,
+        help="Show headers in binary table",
+    )
+
+    searching = search.add_argument_group("Searching")
+    searching.add_argument(
         "-m",
         "--mode",
         help="Mechanism through which BLAST search will be performed (def. remote)",
         choices=["local", "remote"],
         default="remote",
     )
-    search.add_argument(
+    searching.add_argument(
         "-ldb",
         "--local_db",
         help="Path to local JSON database, created using cblaster makedb. If this"
         " argument is provided, genomic context will be fetched from this database"
         " instead of through NCBI IPG.",
     )
-    search.add_argument(
+    searching.add_argument(
         "-db",
         "--database",
         help="Database to be searched. This should be either a path to a local"
         " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
         " database name (def. nr)",
     )
-    search.add_argument(
+    searching.add_argument(
         "-eq",
         "--entrez_query",
         help="An entrez search term for pre-search filtering of an NCBI database"
         " when using command line BLASTp (i.e. only used if 'remote' is passed to"
         ' --mode); e.g. "Aspergillus"[organism]',
     )
-    search.add_argument(
+    searching.add_argument(
         "--rid",
         help="Request Identifier (RID) for a web BLAST search. This is only used"
         " if 'remote' is passed to --mode. Useful if you have previously run a web BLAST"
@@ -257,7 +299,7 @@ def get_arguments(args):
         " search.",
     )
 
-    clusters = parser.add_argument_group("Clustering")
+    clusters = search.add_argument_group("Clustering")
     clusters.add_argument(
         "-g",
         "--gap",
@@ -275,7 +317,7 @@ def get_arguments(args):
         " block for it to be reported (def. 3)",
     )
 
-    filters = parser.add_argument_group("Filtering")
+    filters = search.add_argument_group("Filtering")
     filters.add_argument(
         "-me",
         "--max_evalue",
@@ -300,6 +342,9 @@ def get_arguments(args):
 
     arguments = parser.parse_args(args)
 
+    if arguments.subcommand == "makedb":
+        return arguments
+
     if arguments.mode == "remote":
         if not arguments.database:
             # Default to non-redundant database if --database is not given
@@ -322,24 +367,27 @@ def main():
     if args.debug:
         LOG.setLevel(logging.DEBUG)
 
-    clusterblaster(
-        query_file=args.query_file,
-        query_ids=args.query_ids,
-        mode=args.mode,
-        local_db=args.local_db,
-        database=args.database,
-        gap=args.gap,
-        conserve=args.conserve,
-        min_identity=args.min_identity,
-        min_coverage=args.min_coverage,
-        max_evalue=args.max_evalue,
-        entrez_query=args.entrez_query,
-        output=args.output,
-        binary=args.binary,
-        binary_human=args.binary_human,
-        binary_headers=args.binary_headers,
-        rid=args.rid,
-    )
+    if args.subcommand == "makedb":
+        makedb(args.genbank, args.filename, args.indent)
+    elif args.subcommand == "search":
+        clusterblaster(
+            query_file=args.query_file,
+            query_ids=args.query_ids,
+            mode=args.mode,
+            local_db=args.local_db,
+            database=args.database,
+            gap=args.gap,
+            conserve=args.conserve,
+            min_identity=args.min_identity,
+            min_coverage=args.min_coverage,
+            max_evalue=args.max_evalue,
+            entrez_query=args.entrez_query,
+            output=args.output,
+            binary=args.binary,
+            binary_human=args.binary_human,
+            binary_headers=args.binary_headers,
+            rid=args.rid,
+        )
 
 
 if __name__ == "__main__":
