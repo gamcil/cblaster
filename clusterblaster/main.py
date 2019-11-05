@@ -10,6 +10,8 @@ import argparse
 import logging
 import sys
 
+from pathlib import Path
+
 from clusterblaster import __version__, local, remote, context, helpers, database
 
 logging.basicConfig(
@@ -30,13 +32,10 @@ def summarise(organisms, output=None):
     """
     summary = "\n\n\n".join(
         organism.summary()
-        for organism in organisms
+        for organism in sorted(organisms, key=lambda o: o.compute_cluster_score())
         if organism.count_hit_clusters() > 0
     )
-    if output:
-        output.write(summary)
-    else:
-        print(summary, flush=True)
+    print(summary, file=output, flush=True)
 
 
 def count_queries(cluster, queries):
@@ -47,6 +46,44 @@ def count_queries(cluster, queries):
             if query == hit.query:
                 counts[index] += 1
     return counts
+
+
+def value_in_args(value, args):
+    """Check for value in list of argument values, removing if found.
+
+    This function is used with arguments that take multiple values, mainly --binary.
+
+    It checks the list for a specific value (e.g. 'hr' or 'he'). If found, the value
+    is removed from the list via pop() and True is returned. If the value is not in the
+    argument list, False is returned.
+
+    This facilitates users passing in values in different orders. For example, a user
+    could specify:
+
+        --binary he path/to/filename hr
+
+    Since this function explicitly checks for and removes 'he' and 'hr', the validation
+    function can still correctly parse the filename str.
+    """
+    try:
+        index = args.index(value)
+    except ValueError:
+        return False
+    return args.pop(index) is not None
+
+
+def validate_binary_args(args):
+    """Validate arguments for binary output table.
+
+    Checks for optional arguments 'hr' (human-readable format) and 'he'
+    (show headers).
+    """
+    if len(args) > 3:
+        raise ValueError("Too many arguments provided to --binary")
+    human = value_in_args("hr", args)
+    headers = value_in_args("he", args)
+    file = open(args[0], "w")
+    return (file, human, headers)
 
 
 def generate_binary_table(organisms, queries, human=False, headers=True, output=None):
@@ -85,10 +122,7 @@ def generate_binary_table(organisms, queries, human=False, headers=True, output=
     else:
         table = "\n".join(",".join(row) for row in rows)
 
-    if output:
-        output.write(table)
-    else:
-        print(table, flush=True)
+    print(table, file=output, flush=True)
 
 
 def makedb(genbanks, filename, indent=None):
@@ -238,28 +272,19 @@ def get_arguments(args):
     output.add_argument(
         "-o",
         "--output",
+        nargs="?",
+        default=sys.stdout,
         type=argparse.FileType("w"),
-        help="Save output to this file path",
+        help="Save output to a file.",
     )
     output.add_argument(
         "-b",
         "--binary",
-        type=argparse.FileType("w"),
-        help="Save binary format table to this file path",
-    )
-    output.add_argument(
-        "-bhr",
-        "--binary_human",
-        action="store_true",
-        default=False,
-        help="Print binary table in human readable format",
-    )
-    output.add_argument(
-        "-bhe",
-        "--binary_headers",
-        action="store_true",
-        default=False,
-        help="Show headers in binary table",
+        nargs="+",
+        help="Enable output of binary table. By default, will generate a comma-"
+        "delimited table; human-readable format can be specified by supplying"
+        " 'hr' to this argument. Headers can be toggled by supplying 'he'."
+        " e.g. cblaster --binary filename hr he ...",
     )
 
     searching = search.add_argument_group("Searching")
@@ -344,6 +369,11 @@ def get_arguments(args):
 
     if arguments.subcommand == "makedb":
         return arguments
+
+    if arguments.binary:
+        arguments.binary, bhuman, bheaders = validate_binary_args(arguments.binary)
+        setattr(arguments, "binary_human", bhuman)
+        setattr(arguments, "binary_headers", bheaders)
 
     if arguments.mode == "remote":
         if not arguments.database:
