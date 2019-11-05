@@ -186,7 +186,7 @@ class DB:
 
 
 def parse_genbank(handle):
-    """Parse a GenBank-format file for genes.
+    r"""Parse a GenBank-format file for genes.
 
     This function uses several regex patterns to extract gene positions. It first
     looks for scaffolds, by looking for blocks that start with LOCUS and end with //;
@@ -200,23 +200,54 @@ def parse_genbank(handle):
     ...
     CDS       /protein_id="Protein1"
               /translation="M..."
+
+    Regular Expressions:
+      protein
+        CDS\s+?.+?        # Match CDS feature start, whitespace then any char
+        (?P<start>\d+?)   # Grab first full number
+        \.\.              # which ends with ..
+        (?:.+?\.\.)*?     # Non-capturing group, to gobble up any characters
+                          # until the last .. before a number in compound locs.
+                          # Optional, so that simple locations (i.e. 1..100)
+                          # won't count .. twice and eat the following feature.
+        [<>]*?            # Optional, truncation (>, <)
+        (?P<end>\d+?)     # Final number in feature location
+        [<>)]*?           # Optional, truncation (>, <) or end parentheses
+        [\n\r]\s+?/       # Go until next qualifier (indicated by /)
+        .+?
+
+        # Positive lookahead
+        #   > optional non-capturing group with qualifier tag
+        #       > capturing group to get the value
+        # This setup means any qualifier can be parsed, if present, in any order
+        (?=(?:.+?/protein_id="(?P<protein_id>.+?)")?)
+        (?=(?:.+?/locus_tag="(?P<locus_tag>.+?)")?)
+        .+?
+        /translation="(?P<translation>.+?)"
+
     """
 
     patterns = {
-        "organism": re.compile(r'/organism="([A-Za-z0-9 ._-]+?)"'),
-        "strain": re.compile(r'/strain="(([A-Za-z0-9 ._-]+?))"'),
+        # Have to add \w before start of organism so whitespace before the
+        # organism name is not captured in the group
+        "organism": re.compile(r"ORGANISM\s+?(\w[\w .-]+?)[\n\r]"),
+        "strain": re.compile(r'/strain="(([\w .-]+?))"'),
         "scaffold": re.compile(
-            r"LOCUS\s+?(?P<accession>[A-Za-z0-9._]+?)\s+?.+?\/\/", re.DOTALL
+            r"LOCUS\s+?(?P<accession>[\w.]+?)\s+?.+?\/\/", re.DOTALL
         ),
-        # TODO: change location regex to take first/last from CDS locations
-        # TODO: also find locus_tag - optional OR w/ protein id?
         "protein": re.compile(
-            r"gene.+?"
-            r"(?P<start>\d+?)\.\.(?P<end>\d+?)"
-            r"[\n\r].+?"
-            r"CDS.+?"
-            r'/protein_id="(?P<protein_id>.+?)"'
-            r"[\n\r].+?"
+            r"CDS\s+?.+?"
+            r"(?P<start>\d+?)"
+            r"\.\."
+            r"(?:.+?\.\.)*?"
+            r"[<>)]*?"
+            r"(?P<end>\d+?)"
+            r"[<>)]*?"
+            r"[\n\r]\s+?/"
+            r".+?"
+            r'(?=(?:.+?/protein_id="(?P<protein_id>.+?)")?)'
+            r'(?=(?:.+?/locus_tag="(?P<locus_tag>.+?)")?)'
+            r".+?"
             r'/translation="(?P<translation>.+?)"',
             re.DOTALL,
         ),
@@ -232,7 +263,10 @@ def parse_genbank(handle):
         accession = scaffold.group("accession")
 
         if not organism:
-            organism = patterns["organism"].search(text).groups()[0]
+            try:
+                organism = patterns["organism"].search(text).groups()[0]
+            except (IndexError, AttributeError):
+                pass
 
         if not strain:
             try:
@@ -242,7 +276,7 @@ def parse_genbank(handle):
 
         proteins = [
             {
-                "id": gene.group("protein_id"),
+                "id": gene.group("protein_id") or gene.group("locus_tag"),
                 "start": int(gene.group("start")),
                 "end": int(gene.group("end")),
                 "strand": "-" if "complement(" in gene.group(0) else "+",
