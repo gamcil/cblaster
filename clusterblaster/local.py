@@ -107,6 +107,7 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
 
 def _search_file(fasta, database, **kwargs):
     """Launcher function for `diamond` and `blastp` modes."""
+    LOG.info("Starting DIAMOND search")
     return parse(diamond(fasta, database, **kwargs))
 
 
