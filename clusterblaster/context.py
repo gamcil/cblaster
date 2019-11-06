@@ -117,26 +117,41 @@ def parse_IPG_table(results_handle, hits):
 
 
 def query_local_DB(hits, database):
-    """Build Organisms/Scaffolds using database.DB instance."""
+    """Build Organisms/Scaffolds using database.DB instance.
+
+    Retrieves corresponding Protein object from the DB by passing it the Hit subject
+    attribute, which should be a 4 field '|' delimited header string containing the full
+    lineage of the protein (e.g. organism|strain|scaffold|protein).
+
+    Internally uses defaultdict to build up hierarchy of unique organisms, then returns
+    list of just each organism dictionary.
+    """
 
     organisms = defaultdict(dict)
 
     for hit in hits:
-        strain = database.proteins[hit.subject].strain
-        organism = database.proteins[hit.subject].organism
-        accession = database.proteins[hit.subject].scaffold
+        protein = database.proteins[hit.subject]
 
-        if strain not in organisms[organism]:
-            organisms[organism][strain] = Organism(name=organism, strain=strain)
+        # Mostly for readability..
+        org, strain, scaf = protein.organism, protein.strain, protein.scaffold
 
-        if accession not in organisms[organism][strain].scaffolds:
-            organisms[organism][strain].scaffolds[accession] = Scaffold(accession)
+        if strain not in organisms[org]:
+            organisms[org][strain] = Organism(org, strain)
 
-        hit.end = database.proteins[hit.subject].end
-        hit.start = database.proteins[hit.subject].start
-        hit.strand = database.proteins[hit.subject].strand
+        if scaf not in organisms[org][strain].scaffolds:
+            organisms[org][strain].scaffolds[scaf] = Scaffold(scaf)
 
-        organisms[organism][strain].scaffolds[accession].hits.append(hit)
+        # Want to report just protein ID, not lineage
+        hit.subject = protein.id
+
+        # Save genomic location on the Hit instance
+        hit.start = protein.start
+        hit.end = protein.end
+        hit.strand = protein.strand
+
+        organisms[protein.organism][protein.strain].scaffolds[
+            protein.scaffold
+        ].hits.append(hit)
 
     return [organism for strains in organisms.values() for organism in strains.values()]
 
@@ -206,7 +221,6 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000):
     """Run find_clusters() on all Hits on Scaffolds in an Organism instance."""
     for scaffold in organism.scaffolds.values():
         scaffold.clusters = find_clusters_in_hits(scaffold.hits, conserve, gap)
-
         LOG.debug(
             "Organism: %s, Scaffold: %s, Clusters: %i",
             organism.full_name,
@@ -215,17 +229,17 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000):
         )
 
 
-def search(hits, conserve, gap, local_db=None):
+def search(hits, conserve, gap, json=None):
     """Get genomic context for a collection of BLAST hits."""
-    if local_db:
-        LOG.info("Loading JSON database: %s", local_db)
-        db = database.DB.from_json(local_db)
+    if json:
+        LOG.info("Loading JSON database: %s", json)
+        db = database.DB.from_json(json)
         organisms = query_local_DB(hits, db)
     else:
         groups = efetch_IPGs([hit.subject for hit in hits])
         organisms = parse_IPG_table(groups.text.split("\n"), hits)
 
-    LOG.info("Finding hit clusters in %i organisms", len(organisms))
+    LOG.info("Searching for clustered hits across %i organisms", len(organisms))
     for organism in organisms:
         find_clusters_in_organism(organism, conserve, gap)
 
