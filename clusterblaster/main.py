@@ -10,8 +10,6 @@ import argparse
 import logging
 import sys
 
-from pathlib import Path
-
 from clusterblaster import __version__, local, remote, context, helpers, database
 
 logging.basicConfig(
@@ -32,7 +30,7 @@ def summarise(organisms, output=None):
     """
     summary = "\n\n\n".join(
         organism.summary()
-        for organism in sorted(organisms, key=lambda o: o.compute_cluster_score())
+        for organism in organisms
         if organism.count_hit_clusters() > 0
     )
     print(summary, file=output, flush=True)
@@ -72,18 +70,36 @@ def value_in_args(value, args):
     return args.pop(index) is not None
 
 
-def validate_binary_args(args):
-    """Validate arguments for binary output table.
+def validate_output_args(arguments):
+    """Validate arguments for outputs.
 
     Checks for optional arguments 'hr' (human-readable format) and 'he'
     (show headers).
     """
-    if len(args) > 3:
-        raise ValueError("Too many arguments provided to --binary")
-    human = value_in_args("hr", args)
-    headers = value_in_args("he", args)
-    file = open(args[0], "w")
-    return (file, human, headers)
+    for arg in ["output", "binary"]:
+
+        args = getattr(arguments, arg)
+
+        # By default, want to print human-readable output with headers to stdout.
+        # If binary, set flags to False and argument to None.
+        if not args:
+            setattr(arguments, f"{arg}_human", True if arg == "output" else False)
+            setattr(arguments, f"{arg}_headers", True if arg == "output" else False)
+            setattr(arguments, arg, sys.stdout if arg == "output" else None)
+            continue
+
+        setattr(arguments, f"{arg}_human", value_in_args("hr", args))
+        setattr(arguments, f"{arg}_headers", value_in_args("he", args))
+
+        if len(args) == 0:
+            raise ValueError(f"No file name detected for --{arg}")
+
+        if len(args) > 1:
+            # Since we should only have a single str remaining at this point,
+            # this should be sufficient validation
+            raise ValueError(f"Invalid arguments provided to --{arg}")
+
+        setattr(arguments, arg, open(args[0], "w"))
 
 
 def generate_binary_table(organisms, queries, human=False, headers=True, output=None):
@@ -142,7 +158,7 @@ def clusterblaster(
     query_file=None,
     query_ids=None,
     mode=None,
-    local_db=None,
+    json=None,
     database=None,
     gap=20000,
     conserve=3,
@@ -184,7 +200,7 @@ def clusterblaster(
 
     LOG.info("Found %i hits meeting score thresholds", len(results))
     LOG.info("Fetching genomic context of hits")
-    organisms = context.search(results, conserve, gap, local_db=local_db)
+    organisms = context.search(results, conserve, gap, json=json)
 
     if binary:
         LOG.info("Writing binary summary table to %s", binary.name)
@@ -272,10 +288,9 @@ def get_arguments(args):
     output.add_argument(
         "-o",
         "--output",
-        nargs="?",
-        default=sys.stdout,
-        type=argparse.FileType("w"),
-        help="Save output to a file.",
+        nargs="+",
+        help="Write results to file. Optionally, can provide 'hr' and 'he' to toggle"
+        " human-readable format and headers, respectively.",
     )
     output.add_argument(
         "-b",
@@ -296,8 +311,8 @@ def get_arguments(args):
         default="remote",
     )
     searching.add_argument(
-        "-ldb",
-        "--local_db",
+        "-j",
+        "--json",
         help="Path to local JSON database, created using cblaster makedb. If this"
         " argument is provided, genomic context will be fetched from this database"
         " instead of through NCBI IPG.",
@@ -370,10 +385,7 @@ def get_arguments(args):
     if arguments.subcommand == "makedb":
         return arguments
 
-    if arguments.binary:
-        arguments.binary, bhuman, bheaders = validate_binary_args(arguments.binary)
-        setattr(arguments, "binary_human", bhuman)
-        setattr(arguments, "binary_headers", bheaders)
+    validate_output_args(arguments)
 
     if arguments.mode == "remote":
         if not arguments.database:
@@ -404,7 +416,7 @@ def main():
             query_file=args.query_file,
             query_ids=args.query_ids,
             mode=args.mode,
-            local_db=args.local_db,
+            json=args.json,
             database=args.database,
             gap=args.gap,
             conserve=args.conserve,
