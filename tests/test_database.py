@@ -4,22 +4,13 @@ Test suite for database.py
 
 import subprocess
 
+from pathlib import Path
+
 import pytest
 
 from clusterblaster import database
 
-
-def test_get_genbank_paths(tmp_path):
-    d = tmp_path / "folder"
-    d.mkdir()
-
-    for ext in [".gb", ".gbk", ".genbank", ".fake", ""]:
-        _p = d / f"test{ext}"
-        _p.write_text("test")
-
-    paths = database.get_genbank_paths(d)
-
-    assert paths == [d / "test.genbank", d / "test.gb", d / "test.gbk"]
+TEST_DIR = Path(__file__).resolve().parent
 
 
 def test_diamond_makedb(mocker):
