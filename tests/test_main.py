@@ -36,7 +36,7 @@ def test_summarise(capsys, tmp_path):
     assert file.read_text() == "mocked\n\n\nmocked\n"
 
     # Test stdout
-    main.summarise(organisms)
+    main.summarise(organisms, output=sys.stdout)
     captured = capsys.readouterr()
     assert captured.out == "mocked\n\n\nmocked\n"
 
