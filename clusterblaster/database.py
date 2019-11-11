@@ -3,16 +3,13 @@ This module handles creation of local JSON databases for non-NCBI lookups.
 """
 
 
-import re
 import json
 import logging
 import subprocess
 
-from pathlib import Path
-
 from collections import defaultdict, namedtuple
 
-from clusterblaster import helpers
+from clusterblaster import helpers, genbank
 
 LOG = logging.getLogger(__name__)
 
@@ -201,7 +198,7 @@ class DB:
         for index, file in enumerate(files, 1):
             with open(file) as handle:
                 LOG.info("%i. %s", index, file)
-                database.add_organism(parse_genbank(handle))
+                database.add_organism(genbank.parse(handle))
 
         return database
 
@@ -239,146 +236,6 @@ class DB:
     def to_json(self, handle, indent=None):
         """Serialise to JSON and write to an open file handle."""
         json.dump(self.to_list(), handle, indent=indent)
-
-
-def parse_genbank(handle):
-    r"""Parse Proteins from a GenBank-format file.
-
-    This function uses several regex patterns to extract gene positions. It first
-    looks for scaffolds, by looking for blocks that start with LOCUS and end with //;
-    each match is iterated.
-
-    Another pattern is used inside each scaffold match to extract the start and end
-    position of CDS features, as well as its protein ID and translation. Therefore, a
-    minimal valid file should resemble something like:
-
-    .. code-block::
-
-        LOCUS     scaffold_1    ...
-        ...
-        ORGANISM  Organism name
-        ...
-        source    1..10000
-                  /organism="Organism name"
-                  /strain="STRAIN 123"
-                  ...
-        CDS       complement(join(1..100,200..300))
-                  ...
-                  /protein_id="Protein1"
-                  ...
-                  /translation="M..."
-        //
-        ...
-
-    If no organism or strain information can be identified, they will be set to 'NA',
-    and CDS features will be parsed as normal.
-
-    Regular Expressions:
-      protein
-        r"CDS\s+?"          1. Find start of CDS feature
-        r"(.*?)"            2. Save any location modifiers (complement, join)
-        r"(\d+?)\.\."       3. Capture start position, e.g. 10..
-        r"(?:.+?\.\.)*?"    4. Non-capture group, anything until .. before final
-                               number in location. Optional so that simple locations
-                               will also be parsed correctly.
-        r"[<>]*?"           5. Account for potential truncation symbols
-        r"(\d+?)"           6. Capture end position
-        r"[<>)]*?"          7. Truncations, end parentheses...
-        r"[\n\r]\s+?/"      8. Until next qualifier (starting with '/')
-        r"(?:.+?)*?"        9. Optional extra junk if next qualifier isn't identifier
-
-        r'(?:protein_id|locus_tag)="([\w.:-]+?)"'
-                           10. Get either locus tag or protein ID, whichever is first
-        r".+?"             11. Skip everything until translation
-        r'/translation="([A-Z\n\r\s ]+?)"'
-                           12. Get translation
-    """
-
-    patterns = {
-        "scaffold": re.compile(r"LOCUS\s+?(?P<accession>\b[\w.-]+?)\s.+?//", re.DOTALL),
-        "organism": re.compile(r"ORGANISM\s+?(?P<organism>\w[\w .-]+?)[\n\r]"),
-        "strain": re.compile(r'/strain="(?P<strain>([\w .-]+?))"'),
-        "protein": re.compile(
-            r"CDS\s+?"
-            r"([a-z<>(]*?)"  # join(complement( location modifiers, if any
-            r"(\d+?)\.\."  # start
-            r"(?:[0-9,.()]+?\.\.)*?"
-            r"[<>)]*?"
-            r"(\d+?)"  # end
-            r"[<>)]*?"
-            r"[\n\r]\s+?/"
-            "(.*?)"
-            r'/translation="([A-Z\n\r\s ]+?)"',  # translation
-            re.DOTALL,
-        ),
-        "identifier": re.compile(r'(protein_id|locus_tag|gene|ID)="([\w.:-]+?)"'),
-    }
-
-    raw = handle.read()
-    scaffolds = []
-    organism, strain = None, None
-
-    for scaffold in patterns["scaffold"].finditer(raw):
-
-        text = scaffold.group(0)
-        accession = scaffold.group("accession")
-
-        if not organism:
-            try:
-                organism = patterns["organism"].search(text).groups()[0]
-            except (IndexError, AttributeError):
-                pass
-
-        if not strain:
-            try:
-                strain = patterns["strain"].search(text).groups()[0]
-            except (IndexError, AttributeError):
-                pass
-
-        proteins = [
-            {
-                # Coincidentally, reverse alphabetical order is also preferred choice
-                # of protein identifier (i.e. protein_id -> locus_tag -> ID -> gene)
-                # So, reverse sort and take value of first match tuple
-                "id": sorted(patterns["identifier"].findall(gene[3]), reverse=True)[0][
-                    1
-                ],
-                "index": index,
-                "start": int(gene[1]),
-                "end": int(gene[2]),
-                "strand": "-" if "complement" in gene[0] else "+",
-                "sequence": gene[-1].replace(" ", "").replace("\n", ""),
-            }
-            for index, gene in enumerate(patterns["protein"].findall(text))
-        ]
-
-        if proteins:
-            scaffolds.append({"accession": accession, "proteins": proteins})
-
-    if not organism:
-        LOG.warning("Could not find organism, will be set to 'No_organism'")
-        organism = "No_organism"
-
-    if not strain:
-        LOG.warning("Could not find strain, will be set to 'No_strain'")
-        strain = "No_strain"
-
-    return {
-        "name": organism,
-        "strain": strain,
-        "file": handle.name,
-        "scaffolds": scaffolds,
-    }
-
-
-def get_genbank_paths(folder):
-    """Generate a collection of paths to GenBank files in a specified folder."""
-    if not Path(folder).is_dir():
-        raise ValueError("Expected valid folder")
-    valid_extensions = (".gb", ".gbk", ".genbank")
-    return [
-        file for file in Path(folder).iterdir() if str(file).endswith(valid_extensions)
-    ]
 
 
 def diamond_makedb(fasta, name):
