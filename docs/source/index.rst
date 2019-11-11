@@ -10,6 +10,7 @@ Welcome to cblaster's documentation!
    :maxdepth: 2
    :caption: Contents:
   
+   usage
    classes 
    context
    database
