@@ -21,16 +21,16 @@ in BLAST searches.
 `clusterblaster` can be installed via pip:
 
 ```bash
-~$ pip3 install clusterblaster --user
+$ pip3 install clusterblaster --user
 ```
 
 or by cloning the repository and installing:
 
 ```bash
-~$ git clone https://github.com/gamcil/clusterblaster.git
+$ git clone https://github.com/gamcil/clusterblaster.git
 ...
-~$ cd clusterblaster/
-~$ pip3 install .
+$ cd clusterblaster/
+$ pip3 install .
 ```
 
 ## Dependencies
@@ -44,93 +44,86 @@ on your system $PATH.
 ## Usage
 `clusterblaster` accepts FASTA files and collections of valid NCBI sequence identifiers
 (GIs, accession numbers) as input.
-There are two search modes, specified by the `--mode` argument.
-By default (i.e. `--mode` not given), it will be set to `remote`, which will launch a
-remote BLAST search using NCBI's BLAST API.
-Alternatively, `local` mode performs a search against a local `diamond` database, which
-is much quicker (albeit requires some initial setup).
-
-### Performing a remote search via the NCBI BLAST API
-At a minimum, a search could look like one of the following:
+A remote search can be performed as simply as:
 
 ```bash
-~$ cblaster -qf query.fasta 
-~$ cblaster -qi QBE85649.1 QBE85648.1 QBE85647.1 QBE85646.1 ...
+$ cblaster search -qf query.fasta
 ```
 
-This will launch a remote search against the non-redundant (nr) protein database,
-retrieve and parse the results, then report any blocks of hits to the terminal.
-By default, hits are only reported if they are above 30% percent identity and 50% query
-coverage, and have an e-value below 0.01.
-If we wanted to be stricter, we could change those values with the following:
+For example, to remotely search the
+[burnettramic acids gene cluster, *bua*](https://pubs.acs.org/doi/10.1021/acs.orglett.8b04042)
+, against the NCBI's nr database:
 
 ```bash
-~$ cblaster -qf query.fasta --min_identity 70 --min_coverage 90 --evalue 0.001
+$ cblaster search -qf bua.fasta
+[12:14:17] INFO - Starting clusterblaster in remote mode
+[12:14:17] INFO - Launching new search
+[12:14:19] INFO - Request Identifier (RID): WHS0UGYJ015
+[12:14:19] INFO - Request Time Of Execution (RTOE): 25s
+[12:14:44] INFO - Polling NCBI for completion status
+[12:14:44] INFO - Checking search status...
+[12:15:44] INFO - Checking search status...
+[12:16:44] INFO - Checking search status...
+[12:16:46] INFO - Search has completed successfully!
+[12:16:46] INFO - Retrieving results for search WHS0UGYJ015
+[12:16:51] INFO - Parsing results...
+[12:16:51] INFO - Found 3944 hits meeting score thresholds
+[12:16:51] INFO - Fetching genomic context of hits
+[12:17:14] INFO - Searching for clustered hits across 705 organisms
+[12:17:14] INFO - Writing summary to <stdout>
+
+Aspergillus mulundensis DSM 5745
+================================
+NW_020797889.1
+--------------
+Query       Subject         Identity  Coverage  E-value    Bitscore  Start    End      Strand
+QBE85641.1  XP_026607259.1  75.56     99.5918   0          742       1717881  1719409  -
+QBE85642.1  XP_026607260.1  89.916    100       0          667       1719650  1720797  +
+QBE85643.1  XP_026607261.1  89.532    83.1169   0          832       1721494  1722934  +
+QBE85644.1  XP_026607262.1  64.829    98.9218   6.51e-157  455       1723252  1724467  -
+QBE85645.1  XP_026607263.1  69.97     100       6.93e-157  449       1725113  1726277  -
+QBE85646.1  XP_026607264.1  82.759    96.8447   0          670       1726892  1728302  +
+QBE85647.1  XP_026607265.1  72.674    99.2048   0          764       1729735  1731338  +
+QBE85648.1  XP_026607266.1  56.098    98.324    4.24e-64   205       1731701  1732402  -
+QBE85649.1  XP_026607267.1  79.623    99.8746   0          6573      1732820  1745289  +
+
+<truncated>
 ```
 
-You can also pass in NCBI search queries using `-eq / --entrez_query` to pre-filter
-the target database, which can result in vastly reduced run-times and more
-targeted results. For example, to only search against *Aspergillus* sequences:
+A query sequence absence/presence matrix can be generated using the `--binary` argument:
 
 ```bash
-~$ cblaster -qf query.fasta --entrez_query "Aspergillus"[ORGN]
+$ cblaster search -qf bua.fasta --rid WHS0UGYJ015 --binary binary.txt hr he
 ```
 
-Look [here](https://www.ncbi.nlm.nih.gov/books/NBK49540/) for a full description of
-Entrez search terms.
+Note that providing the `hr` and `he` flags toggles on human-readable format (as opposed
+to comma-delimited) and showing headers, respectively.
+Also note that once an RID has been assigned, `cblaster` can directly retrieve results
+from that RID instead of having to start a new search, as is done here.
 
-### Searching a local database using DIAMOND
-Alternatively, a local DIAMOND database can be searched by specifying:
+Now, in `binary.txt`:
 
-```bash
-~$ cblaster -qf query.fasta --mode local --database db.dmnd
+```
+Organism                                   Scaffold        Start    End      QBE85641.1  QBE85642.1  QBE85643.1  QBE85644.1  QBE85645.1  QBE85646.1  QBE85647.1  QBE85648.1  QBE85649.1
+Aspergillus mulundensis DSM 5745           NW_020797889.1  1717881  1745289  1           1           1           1           1           1           1           1           1         
+Aspergillus versicolor CBS 583.65          KV878126.1      3162095  3187090  1           1           1           0           1           1           1           1           1         
+Pseudomassariella vexata CBS 129021        MCFJ01000004.1  1606356  1628483  1           1           1           0           0           1           0           1           1         
+Hypoxylon sp. CO27-5                       KZ112517.1      92119    112957   1           1           1           0           0           0           1           0           1         
+Hypoxylon sp. EC38                         KZ111255.1      514739   535366   1           1           1           0           0           0           1           0           1         
+Epicoccum nigrum ICMP 19927                KZ107839.1      2116719  2142558  1           1           0           0           0           1           1           0           1         
+Aureobasidium subglaciale EXF-2481         NW_013566983.1  700476   718693   1           1           0           0           0           1           1           0           0         
+Aureobasidium pullulans EXF-6514           QZBF01000009.1  18721    34295    1           1           0           0           0           1           1           0           0         
+Aureobasidium pullulans EXF-5628           QZBI01000512.1  329      13401    1           0           0           0           0           1           1           0           0         
 ```
 
-For this to work, the database must consist of sequences derived from NCBI, such that
-their identifiers can be used for retrieval of sequences/genomic context.
-The easiest way to set this up is via NCBI's batch assembly download option.
-For example, to build a database of *Aspergillus* protein sequences:
-
-1. Search the NCBI Assembly database for *Aspergillus* genomes
-
-![Search for Aspergillus assemblies](img/search.png)
-
-2. Click 'Download Assemblies', select 'Protein FASTA' and click 'Download'
-
-![Download 'Protein FASTA' files](img/download.png)
-
-3. Extract all FASTA files and concatenate them
-
-```bash
-~$ pigz -d *.gz
-~$ cat *.faa >> proteins.faa
-```
-
-4. Build the DIAMOND database
-
-```bash
-~$ diamond makedb --in proteins.faa --db proteins
-...
-~$ ls
-database.faa
-database.dmnd
-```
-
-5. Run `clusterblaster` against the newly created databse
-
-```bash
-~$ cblaster -m diamond -qf query.fa -db database.dmnd <options>
-```
-
-Alternatively, you could use
-[`ncbi-genome-download`](https://github.com/kblin/ncbi-genome-download)
-to retrieve the sequences from the command line.
-
+For further usage examples, as well as API documentation, please refer to the
+[documentation](https://clusterblaster.readthedocs.io/en/latest/).
 
 ## Citation
 If you found this tool useful, please cite:
 
 ```
-1. Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
-2. Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
+1. <pending>
+2. Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
+3. Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
 ```
