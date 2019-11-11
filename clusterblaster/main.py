@@ -20,7 +20,7 @@ LOG = logging.getLogger("clusterblaster")
 LOG.setLevel(logging.INFO)
 
 
-def summarise(organisms, output=None):
+def summarise(organisms, output=None, human=True, headers=True):
     """Generate summary of >1 Organisms, print to console or write to file.
 
     Parameters
@@ -29,7 +29,7 @@ def summarise(organisms, output=None):
     output: open file handle
     """
     summary = "\n\n\n".join(
-        organism.summary()
+        organism.summary(headers=headers, human=human)
         for organism in organisms
         if organism.count_hit_clusters() > 0
     )
@@ -167,6 +167,8 @@ def clusterblaster(
     max_evalue=0.01,
     entrez_query=None,
     output=None,
+    output_human=True,
+    output_headers=True,
     binary=None,
     binary_human=False,
     binary_headers=False,
@@ -216,11 +218,8 @@ def clusterblaster(
             output=binary,
         )
 
-    if output:
-        LOG.info("Writing summary to %s", output.name)
-        summarise(organisms, output=output)
-    else:
-        summarise(organisms)
+    LOG.info("Writing summary to %s", output.name)
+    summarise(organisms, output=output, human=output_human, headers=output_headers)
 
     return organisms
 
@@ -425,6 +424,8 @@ def main():
             max_evalue=args.max_evalue,
             entrez_query=args.entrez_query,
             output=args.output,
+            output_human=args.output_human,
+            output_headers=args.output_headers,
             binary=args.binary,
             binary_human=args.binary_human,
             binary_headers=args.binary_headers,
