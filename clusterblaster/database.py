@@ -250,7 +250,7 @@ def parse_genbank(handle):
 
     Another pattern is used inside each scaffold match to extract the start and end
     position of CDS features, as well as its protein ID and translation. Therefore, a
-    valid file should resemble something like:
+    minimal valid file should resemble something like:
 
     .. code-block::
 
@@ -307,12 +307,14 @@ def parse_genbank(handle):
             r"(\d+?)"  # end
             r"[<>)]*?"
             r"[\n\r]\s+?/"
-            r".*?"
-            r'(?:protein_id|locus_tag|gene|ID)="([\w.:-]+?)"'  # identifier
-            r".+?"
+            "(.*?)"
+            # r".*?"
+            # r'(protein_id|locus_tag|gene|ID)="([\w.:-]+?)"'  # identifier
+            # r".+?"
             r'/translation="([A-Z\n\r\s ]+?)"',  # translation
             re.DOTALL,
         ),
+        "identifier": re.compile(r'(protein_id|locus_tag|gene|ID)="([\w.:-]+?)"'),
     }
 
     raw = handle.read()
@@ -338,7 +340,12 @@ def parse_genbank(handle):
 
         proteins = [
             {
-                "id": gene[3],
+                # Coincidentally, reverse alphabetical order is also preferred choice
+                # of protein identifier (i.e. protein_id -> locus_tag -> ID -> gene)
+                # So, reverse sort and take value of first match tuple
+                "id": sorted(patterns["identifier"].findall(gene[3]), reverse=True)[0][
+                    1
+                ],
                 "index": index,
                 "start": int(gene[1]),
                 "end": int(gene[2]),
