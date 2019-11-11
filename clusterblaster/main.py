@@ -33,7 +33,8 @@ def summarise(organisms, output=None, human=True, headers=True):
         for organism in organisms
         if organism.count_hit_clusters() > 0
     )
-    output.write(summary)
+    output.write(summary + "\n")
+    output.flush()
 
 
 def count_queries(cluster, queries):
@@ -138,7 +139,8 @@ def generate_binary_table(organisms, queries, human=False, headers=True, output=
     else:
         table = "\n".join(",".join(row) for row in rows)
 
-    print(table, file=output, flush=True)
+    output.write(table)
+    output.flush()
 
 
 def makedb(genbanks, filename, indent=None):
