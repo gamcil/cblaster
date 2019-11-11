@@ -15,7 +15,7 @@ def generate_header_string(text, symbol="-"):
     return f"{text}\n{symbol * length}"
 
 
-def generate_cluster_table(hits, decimals=4, show_headers=True):
+def generate_cluster_table(hits, decimals=4, show_headers=True, human=True):
     """Generate human-readable summary of a hit cluster.
 
     Parameters
@@ -34,28 +34,29 @@ def generate_cluster_table(hits, decimals=4, show_headers=True):
     """
     rows = [h.values(decimals) for h in hits]
 
-    headers = [
-        "Query",
-        "Subject",
-        "Identity",
-        "Coverage",
-        "E-value",
-        "Bitscore",
-        "Start",
-        "End",
-        "Strand",
-    ]
-
     if show_headers:
+        headers = [
+            "Query",
+            "Subject",
+            "Identity",
+            "Coverage",
+            "E-value",
+            "Bitscore",
+            "Start",
+            "End",
+            "Strand",
+        ]
         rows.insert(0, headers)
 
-    # Get lengths of longest values in each column for spacing purposes
-    lengths = [max(len(hit[i]) for hit in rows) for i in range(9)]
+    if human:
+        # Get lengths of longest values in each column for spacing purposes
+        lengths = [max(len(hit[i]) for hit in rows) for i in range(9)]
 
-    # Right-fill each column value with whitespace to width for that column
-    return "\n".join(
-        "  ".join(f"{hit[i]:{lengths[i]}}" for i in range(9)) for hit in rows
-    )
+        # Right-fill each column value with whitespace to width for that column
+        return "\n".join(
+            "  ".join(f"{hit[i]:{lengths[i]}}" for i in range(9)) for hit in rows
+        )
+    return "\n".join(",".join(hit) for hit in rows)
 
 
 class Organism:
@@ -77,19 +78,19 @@ class Organism:
         """Calculate total amount of hit clusters in this Organism."""
         return sum(len(scaffold.clusters) for scaffold in self.scaffolds.values())
 
-    def summary(self, decimals=4, organism_header=True, scaffold_headers=True):
+    def summary(self, decimals=4, human=True, headers=True):
         """Generate a report of all hit clusters in this Organism."""
 
         if self.count_hit_clusters() == 0:
             raise ValueError("No hit clusters in this Organism")
 
         report = "\n\n".join(
-            scaffold.summary(decimals=decimals, show_header=scaffold_headers)
+            scaffold.summary(decimals=decimals, human=human, show_header=headers)
             for scaffold in self.scaffolds.values()
             if scaffold.clusters
         )
 
-        if organism_header:
+        if headers:
             header = generate_header_string(self.full_name, "=")
             return f"{header}\n{report}"
 
@@ -117,13 +118,15 @@ class Scaffold:
             self.accession, len(self.hits), len(self.clusters)
         )
 
-    def summary(self, show_header=True, decimals=4):
+    def summary(self, human=True, show_header=True, decimals=4):
         """Generate a summary of hit clusters on this Scaffold."""
         if not self.clusters:
             raise ValueError("No clusters on this Scaffold")
 
         report = "\n\n".join(
-            generate_cluster_table(cluster, decimals=decimals)
+            generate_cluster_table(
+                cluster, decimals=decimals, show_headers=show_header, human=human
+            )
             for cluster in self.clusters
         )
 
