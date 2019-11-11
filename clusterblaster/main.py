@@ -33,7 +33,10 @@ def summarise(organisms, output=None, human=True, headers=True):
         for organism in organisms
         if organism.count_hit_clusters() > 0
     )
-    output.write(summary + "\n")
+    if summary:
+        output.write(summary + "\n")
+    else:
+        output.write("No results found!")
     output.flush()
 
 
