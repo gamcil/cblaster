@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This module stores the classes (Organism, Scaffold, Hit) used in clusterblaster.
+This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 """
 
 import re

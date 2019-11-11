@@ -19,7 +19,7 @@ def get_version():
 
 
 setup(
-    name="clusterBLASTer",
+    name="clusterblaster",
     author="Cameron Gilchrist",
     version=get_version(),
     description="",
