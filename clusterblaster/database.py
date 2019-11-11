@@ -308,9 +308,6 @@ def parse_genbank(handle):
             r"[<>)]*?"
             r"[\n\r]\s+?/"
             "(.*?)"
-            # r".*?"
-            # r'(protein_id|locus_tag|gene|ID)="([\w.:-]+?)"'  # identifier
-            # r".+?"
             r'/translation="([A-Z\n\r\s ]+?)"',  # translation
             re.DOTALL,
         ),
