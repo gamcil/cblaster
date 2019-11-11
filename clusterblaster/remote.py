@@ -51,9 +51,8 @@ def start(
 ):
     """Launch a remote BLAST search using NCBI BLAST API.
 
-    Note that the HITLIST_SIZE, ALIGNMENTS and DESCRIPTIONS parameters are all set to
-    10000 to ensure that ALL hits are returned. By default, this is capped at 100 and
-    will result in different results for identical queries.
+    Note that the HITLIST_SIZE, ALIGNMENTS and DESCRIPTIONS parameters must all be set
+    together in order to mimic 'max_target_seqs' behaviour.
 
     Usage guidelines:
 
@@ -183,10 +182,9 @@ def check(rid):
             raise ValueError(f"Search {rid} failed (status={status})")
         if status == "WAITING":
             return False
-    else:
-        if search == ["READY", "yes"]:
-            return True
-        raise ValueError("Search completed, but found no hits")
+    if search == ["READY", "yes"]:
+        return True
+    raise ValueError("Search completed, but found no hits")
 
 
 def retrieve(rid, hitlist_size=500):
