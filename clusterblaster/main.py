@@ -33,7 +33,7 @@ def summarise(organisms, output=None, human=True, headers=True):
         for organism in organisms
         if organism.count_hit_clusters() > 0
     )
-    print(summary, file=output, flush=True)
+    output.write(summary)
 
 
 def count_queries(cluster, queries):
@@ -380,6 +380,10 @@ def get_arguments(args):
     )
 
     arguments = parser.parse_args(args)
+
+    if not arguments.subcommand:
+        parser.print_help()
+        sys.exit()
 
     if arguments.subcommand == "makedb":
         return arguments
