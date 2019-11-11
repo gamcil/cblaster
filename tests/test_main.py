@@ -42,7 +42,6 @@ def test_summarise(capsys, tmp_path):
 
 
 def test_clusterblaster(mocker, tmp_path):
-
     mocker.patch("clusterblaster.local.search")
     mocker.patch("clusterblaster.remote.search")
     mocker.patch("clusterblaster.context.search")
