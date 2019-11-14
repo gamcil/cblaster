@@ -38,7 +38,7 @@ def start(
     program="blastp",
     megablast=False,
     filtering="F",
-    evalue=0.01,
+    evalue=10,
     nucl_reward=None,
     nucl_penalty=None,
     gap_costs="11 1",
@@ -214,10 +214,11 @@ def retrieve(rid, hitlist_size=500):
 
     LOG.debug(response.url)
 
-    # Remove non-TSV junk; 15:-3 removes HTML, then parse out info lines (#)
+    # Remove non-TSV junk; 13:-3 removes HTML, then parse out info lines (#)
+    # return response
     return [
         line
-        for line in response.text.split("\n")[15:-3]
+        for line in response.text.split("\n")[13:-3]
         if line and not line.startswith("#")
     ]
 
