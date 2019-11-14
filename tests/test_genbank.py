@@ -21,7 +21,7 @@ def test_get_genbank_paths(tmp_path):
 
     paths = genbank.get_genbank_paths(d)
 
-    assert paths == [d / "test.genbank", d / "test.gb", d / "test.gbk"]
+    assert set(paths) == {d / "test.genbank", d / "test.gb", d / "test.gbk"}
 
 
 def test_parse():
