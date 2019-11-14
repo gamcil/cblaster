@@ -1,5 +1,6 @@
 # clusterblaster
 [![Build Status](https://travis-ci.org/gamcil/clusterblaster.svg?branch=master)](https://travis-ci.org/gamcil/clusterblaster)
+![Build Status](https://github.com/gamcil/clusterblaster/workflows/Python%20application/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/gamcil/clusterblaster/badge.svg?branch=master)](https://coveralls.io/github/gamcil/clusterblaster?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/clusterBLASTer.svg)](https://badge.fury.io/py/clusterBLASTer)
