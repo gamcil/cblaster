@@ -32,7 +32,5 @@ jobs:
         pip install pytest-mock
         pip install requests-mock
         pytest --cov=clusterblaster/
-    - name: Calculate coverage with coveralls
-      run: |
-        pip install coveralls
-        coveralls
+    - name: Coveralls GitHub Action
+      uses: coverallsapp/github-action@v1.0.1
