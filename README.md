@@ -3,7 +3,7 @@
 ![Build Status](https://github.com/gamcil/clusterblaster/workflows/Python%20application/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/gamcil/clusterblaster/badge.svg?branch=master)](https://coveralls.io/github/gamcil/clusterblaster?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://badge.fury.io/py/clusterBLASTer.svg)](https://badge.fury.io/py/clusterBLASTer)
+[![PyPI version](https://badge.fury.io/py/clusterblaster.svg)](https://badge.fury.io/py/clusterblaster)
 [![Documentation Status](https://readthedocs.org/projects/clusterblaster/badge/?version=latest)](https://clusterblaster.readthedocs.io/en/latest/?badge=latest)
 
 `clusterblaster` is a tool for finding clusters of co-located homologous sequences
