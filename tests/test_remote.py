@@ -59,7 +59,7 @@ def test_start(start_response):
             "&DATABASE=nr"
             "&PROGRAM=blastp"
             "&FILTER=F"
-            "&EXPECT=0.01"
+            "&EXPECT=10"
             "&GAPCOSTS=11+1"
             "&MATRIX=BLOSUM62"
             "&HITLIST_SIZE=500"
@@ -143,7 +143,7 @@ def test_retrieve(retrieve_response):
         result = remote.retrieve("RID")
 
         # Make sure we've removed non-TSV cruft
-        assert len(result) == 298
+        assert len(result) == 300
         assert not any(row.startswith(("#", "<", " ", "Qblast", "-")) for row in result)
         assert mock.request_history[0].url == (
             "https://blast.ncbi.nlm.nih.gov/Blast.cgi?"
