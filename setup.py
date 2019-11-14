@@ -37,7 +37,7 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     install_requires=["requests"],
-    tests_require=["pytest-cov", "pytest-mock", "requests-mock"],
+    tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["cblaster=clusterblaster.main:main"]},
 )
