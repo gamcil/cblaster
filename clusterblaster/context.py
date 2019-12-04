@@ -50,6 +50,16 @@ def efetch_IPGs(ids, output_handle=None):
 def parse_IPG_table(results_handle, hits):
     """Parse the results of an IPG query.
 
+    For every identical protein group, this function will choose the first that:
+        1) Has non-empty nuccore accession, start, end and strand fields
+        2) Is from either RefSeq/GenBank (INSDC)
+
+    As per NCBI documentation, the 'best' entry is chosen in preference of RefSeq ->
+    SwissProt -> PIR, PDB -> GenBank -> Patent. However, entries not from RefSeq/GenBank
+    are protein-only accessions and have no corresponding nucleotide accession.
+    I don't know the exact order this table is formulated, but it tends to reflect the
+    above.
+
     Parameters
     ----------
     results_handle : open file handle
@@ -74,11 +84,14 @@ def parse_IPG_table(results_handle, hits):
         if not line or line.startswith("Id\tSource") or line.isspace():
             continue
 
-        ipg, _, accession, start, end, strand, protein, _, organism, strain, assembly = line.split(
+        ipg, source, accession, start, end, strand, protein, _, organism, strain, _ = line.split(
             "\t"
         )
 
-        if not accession or not assembly:
+        if not all([accession, start, end, strand]) or source not in (
+            "RefSeq",
+            "INSDC",
+        ):
             # Avoid vectors, single Gene nucleotide entries, etc
             continue
 
