@@ -357,8 +357,14 @@ def get_arguments(args):
         "--conserve",
         type=int,
         default=3,
-        help="Minimum number of query sequences that must be conserved in a single"
-        " block for it to be reported (def. 3)",
+        help="Minimum number of unique query sequences that must be conserved"
+        " in a hit cluster for it to be reported (def. 3)",
+    )
+    clusters.add_argument(
+        "-r",
+        "--require",
+        nargs="+",
+        help="Names of query sequences that must be represented in a hit cluster",
     )
 
     filters = search.add_argument_group("Filtering")
@@ -428,6 +434,7 @@ def main():
             database=args.database,
             gap=args.gap,
             conserve=args.conserve,
+            require=args.require,
             min_identity=args.min_identity,
             min_coverage=args.min_coverage,
             max_evalue=args.max_evalue,

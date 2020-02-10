@@ -265,7 +265,7 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000):
         )
 
 
-def search(hits, conserve, gap, json=None):
+def search(hits, conserve, gap, require=None, json=None):
     """Get genomic context for a collection of BLAST hits."""
     if json:
         LOG.info("Loading JSON database: %s", json)
@@ -277,6 +277,6 @@ def search(hits, conserve, gap, json=None):
 
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))
     for organism in organisms:
-        find_clusters_in_organism(organism, conserve, gap)
+        find_clusters_in_organism(organism, conserve, gap, require=require)
 
     return organisms
