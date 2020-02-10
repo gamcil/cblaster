@@ -163,40 +163,20 @@ class Hit:
 
         self.subject = subject
         self.bitscore = float(bitscore)
-        self.identity = float(identity)
-        self.coverage = float(coverage)
+        self.identity = float(identity) / 100
+        self.coverage = float(coverage) / 100
         self.evalue = float(evalue)
 
         self.start = int(start) if start is not None else None
         self.end = int(end) if end is not None else None
         self.strand = strand
 
-    def __lt__(self, other):
-        return self.start < other.start
-
-    def __gt__(self, other):
-        return self.start > other.start
-
-    def __le__(self, other):
-        return self.start <= other.start
-
-    def __ge__(self, other):
-        return self.start >= other.start
-
-    def __eq__(self, other):
-        return (self.query, self.subject, self.start, self.end, self.strand) == (
-            other.query,
-            other.subject,
-            other.start,
-            other.end,
-            other.strand,
-        )
-
-    def __ne__(self, other):
-        return not (self == other)
-
     def __str__(self):
-        return f"HIT: {self.query} - {self.subject} [{self.identity}, {self.coverage}]"
+        return (
+            f"Hit: {self.query} - {self.subject}:"
+            f"{self.start}-{self.end}[{self.strand}] "
+            f" {self.identity:.2%}/{self.coverage:.2%}"
+        )
 
     def values(self, decimals=4):
         """Format all attributes of this hit for printing.
