@@ -1,4 +1,4 @@
 Context
 =======
-.. automodule:: clusterblaster.context
+.. automodule:: cblaster.context
    :members:

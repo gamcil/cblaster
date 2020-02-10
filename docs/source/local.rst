@@ -1,4 +1,4 @@
 Local
 =====
-.. automodule:: clusterblaster.local
+.. automodule:: cblaster.local
    :members:

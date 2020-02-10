@@ -1,5 +1,9 @@
 """
 This module handles creation of local JSON databases for non-NCBI lookups.
+
+TODO:
+    - Remove GenBank parser, switch to genome2json
+    - Convert DB to wrapper around g2j.Organism objects with querying capability
 """
 
 

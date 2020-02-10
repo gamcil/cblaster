@@ -14,7 +14,7 @@ import pytest_mock
 import requests
 import requests_mock
 
-from clusterblaster import helpers
+from cblaster import helpers
 
 
 TEST_DIR = Path(__file__).resolve().parent
@@ -56,13 +56,13 @@ def test_efetch_sequences():
 
 
 def test_get_sequences_query_file(mocker):
-    mocker.patch("clusterblaster.helpers.parse_fasta")
+    mocker.patch("cblaster.helpers.parse_fasta")
     helpers.get_sequences(query_file=TEST_DIR / "test.faa")
     helpers.parse_fasta.assert_called_once()
 
 
 def test_get_sequences_query_ids(mocker):
-    mocker.patch("clusterblaster.helpers.efetch_sequences")
+    mocker.patch("cblaster.helpers.efetch_sequences")
     helpers.get_sequences(query_ids=["seq1", "seq2"])
     helpers.efetch_sequences.assert_called_once_with(["seq1", "seq2"])
 

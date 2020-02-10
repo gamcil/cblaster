@@ -1,4 +1,4 @@
 GenBank
 =======
-.. automodule:: clusterblaster.genbank
+.. automodule:: cblaster.genbank
    :members:

@@ -1,12 +1,12 @@
-# clusterblaster
-[![Build Status](https://travis-ci.org/gamcil/clusterblaster.svg?branch=master)](https://travis-ci.org/gamcil/clusterblaster)
-![Build Status](https://github.com/gamcil/clusterblaster/workflows/Python%20application/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/gamcil/clusterblaster/badge.svg?branch=master)](https://coveralls.io/github/gamcil/clusterblaster?branch=master)
+# cblaster
+[![Build Status](https://travis-ci.org/gamcil/cblaster.svg?branch=master)](https://travis-ci.org/gamcil/cblaster)
+![Build Status](https://github.com/gamcil/cblaster/workflows/Python%20application/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/gamcil/cblaster/badge.svg?branch=master)](https://coveralls.io/github/gamcil/cblaster?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://badge.fury.io/py/clusterblaster.svg)](https://badge.fury.io/py/clusterblaster)
-[![Documentation Status](https://readthedocs.org/projects/clusterblaster/badge/?version=latest)](https://clusterblaster.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/cblaster.svg)](https://badge.fury.io/py/cblaster)
+[![Documentation Status](https://readthedocs.org/projects/cblaster/badge/?version=latest)](https://cblaster.readthedocs.io/en/latest/?badge=latest)
 
-`clusterblaster` is a tool for finding clusters of co-located homologous sequences
+`cblaster` is a tool for finding clusters of co-located homologous sequences
 in BLAST searches.
 
 ## Outline
@@ -19,31 +19,31 @@ in BLAST searches.
    minimum number of conserved sequences
 
 ## Installation
-`clusterblaster` can be installed via pip:
+`cblaster` can be installed via pip:
 
 ```bash
-$ pip3 install clusterblaster --user
+$ pip3 install cblaster --user
 ```
 
 or by cloning the repository and installing:
 
 ```bash
-$ git clone https://github.com/gamcil/clusterblaster.git
+$ git clone https://github.com/gamcil/cblaster.git
 ...
-$ cd clusterblaster/
+$ cd cblaster/
 $ pip3 install .
 ```
 
 ## Dependencies
-`clusterblaster` is tested on Python 3.6, and its only external Python dependency is
+`cblaster` is tested on Python 3.6, and its only external Python dependency is
 the `requests` module (used for interaction with NCBI APIs).
 If you want to perform local searches, you should have `diamond` installed and available
 on your system $PATH.
-`clusterblaster` will throw an error if a local search is started but it cannot find
+`cblaster` will throw an error if a local search is started but it cannot find
 `diamond` or `diamond-aligner` (alias when installed via apt) on the system.
 
 ## Usage
-`clusterblaster` accepts FASTA files and collections of valid NCBI sequence identifiers
+`cblaster` accepts FASTA files and collections of valid NCBI sequence identifiers
 (GIs, accession numbers) as input.
 A remote search can be performed as simply as:
 
@@ -57,7 +57,7 @@ For example, to remotely search the
 
 ```bash
 $ cblaster search -qf bua.fasta
-[12:14:17] INFO - Starting clusterblaster in remote mode
+[12:14:17] INFO - Starting cblaster in remote mode
 [12:14:17] INFO - Launching new search
 [12:14:19] INFO - Request Identifier (RID): WHS0UGYJ015
 [12:14:19] INFO - Request Time Of Execution (RTOE): 25s
@@ -118,7 +118,7 @@ Aureobasidium pullulans EXF-5628           QZBI01000512.1  329      13401    1  
 ```
 
 For further usage examples, as well as API documentation, please refer to the
-[documentation](https://clusterblaster.readthedocs.io/en/latest/).
+[documentation](https://cblaster.readthedocs.io/en/latest/).
 
 ## Citation
 If you found this tool useful, please cite:

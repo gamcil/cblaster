@@ -10,7 +10,7 @@ import pytest
 
 from pathlib import Path
 
-from clusterblaster import local, helpers
+from cblaster import local, helpers
 
 
 TEST_DIR = Path(__file__).resolve().parent
@@ -106,12 +106,12 @@ def test_search_no_input():
 
 
 def test_search_query_ids(mocker):
-    mocker.patch("clusterblaster.local._search_ids")
+    mocker.patch("cblaster.local._search_ids")
     local.search("database", query_ids=["test"])
     local._search_ids.assert_called_once_with(["test"], "database")
 
 
 def test_search_query_files(mocker):
-    mocker.patch("clusterblaster.local._search_file")
+    mocker.patch("cblaster.local._search_file")
     local.search("database", query_file="test")
     local._search_file.assert_called_once_with("test", "database")

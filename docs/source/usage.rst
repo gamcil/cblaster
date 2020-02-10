@@ -3,7 +3,7 @@ Usage
 
 There are two search modes, specified by the `--mode` argument.
 By default (i.e. `--mode` not specified), it will be set to `remote`, and a fully
-remote `clusterblaster` search will begin using NCBI's BLAST API.
+remote `cblaster` search will begin using NCBI's BLAST API.
 Alternatively, `local` mode performs a search against a local `diamond` database, which
 is much quicker (albeit requiring some initial setup).
 
@@ -83,7 +83,7 @@ For example, to build a database of *Aspergillus* protein sequences:
   database.dmnd
   ```
 
-5. Run `clusterblaster` against the newly created databse
+5. Run `cblaster` against the newly created databse
 
 ::
 
@@ -97,11 +97,11 @@ the command line.
 
 Performing a fully local search
 -------------------------------
-`clusterblaster` can also perform fully local searches, forgoing the need for any interaction
+`cblaster` can also perform fully local searches, forgoing the need for any interaction
 with NCBI whatsoever.
-To do this, `clusterblaster` builds a faux-database JSON file from a list of GenBank files,
+To do this, `cblaster` builds a faux-database JSON file from a list of GenBank files,
 and generates a `diamond` database of all protein sequences in this database.
-Then, `clusterblaster` searches can be run against the created `diamond` database, and genomic
+Then, `cblaster` searches can be run against the created `diamond` database, and genomic
 context obtained from the JSON file.
 For example:
 

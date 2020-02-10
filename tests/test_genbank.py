@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from clusterblaster import genbank
+from cblaster import genbank
 
 TEST_DIR = Path(__file__).resolve().parent
 

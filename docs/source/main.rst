@@ -1,4 +1,4 @@
 Main
 ====
-.. automodule:: clusterblaster.main
+.. automodule:: cblaster.main
    :members:

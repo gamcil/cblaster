@@ -7,7 +7,7 @@ Test suite for main.py
 import sys
 import pytest
 
-from clusterblaster import local, context, main, classes, remote
+from cblaster import local, context, main, classes, remote
 
 
 class MockOrganism(classes.Organism):
@@ -41,18 +41,18 @@ def test_summarise(capsys, tmp_path):
     assert captured.out == "mocked\n\n\nmocked\n"
 
 
-def test_clusterblaster(mocker, tmp_path):
-    mocker.patch("clusterblaster.local.search")
-    mocker.patch("clusterblaster.remote.search")
-    mocker.patch("clusterblaster.context.search")
-    mocker.patch("clusterblaster.main.summarise")
+def test_cblaster(mocker, tmp_path):
+    mocker.patch("cblaster.local.search")
+    mocker.patch("cblaster.remote.search")
+    mocker.patch("cblaster.context.search")
+    mocker.patch("cblaster.main.summarise")
 
     file = tmp_path / "test.txt"
 
     with file.open("w") as handle:
-        main.clusterblaster(query_ids=["seq1"], mode="local", output=handle)
+        main.cblaster(query_ids=["seq1"], mode="local", output=handle)
 
-    main.clusterblaster(query_ids=["seq1"], mode="remote", output=sys.stdout)
+    main.cblaster(query_ids=["seq1"], mode="remote", output=sys.stdout)
 
     local.search.assert_called_once()
     remote.search.assert_called_once()

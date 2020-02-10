@@ -11,7 +11,7 @@ from pathlib import Path
 import requests
 import requests_mock
 
-from clusterblaster import classes, context
+from cblaster import classes, context
 
 
 TEST_DIR = Path(__file__).resolve().parent

@@ -1,4 +1,4 @@
 Classes
 =======
-.. automodule:: clusterblaster.classes
+.. automodule:: cblaster.classes
    :members:

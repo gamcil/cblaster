@@ -8,13 +8,13 @@ from pathlib import Path
 
 import pytest
 
-from clusterblaster import database
+from cblaster import database
 
 TEST_DIR = Path(__file__).resolve().parent
 
 
 def test_diamond_makedb(mocker):
-    mocker.patch("clusterblaster.helpers.get_program_path", return_value="test_path")
+    mocker.patch("cblaster.helpers.get_program_path", return_value="test_path")
     mocker.patch("subprocess.run")
 
     database.diamond_makedb("fasta", "name")

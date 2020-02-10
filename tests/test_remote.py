@@ -10,7 +10,7 @@ from pathlib import Path
 
 import requests_mock
 
-from clusterblaster import remote
+from cblaster import remote
 
 
 TEST_DIR = Path(__file__).resolve().parent

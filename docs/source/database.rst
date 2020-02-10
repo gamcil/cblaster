@@ -1,4 +1,4 @@
 Database
 ========
-.. automodule:: clusterblaster.database
+.. automodule:: cblaster.database
    :members:

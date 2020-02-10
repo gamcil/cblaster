@@ -34,5 +34,5 @@ jobs:
         pip install pytest-mock
         pip install requests-mock
         pip install coveralls
-        pytest --cov=clusterblaster/
+        pytest --cov=cblaster/
         coveralls

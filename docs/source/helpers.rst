@@ -1,4 +1,4 @@
 Helpers
 =======
-.. automodule:: clusterblaster.helpers
+.. automodule:: cblaster.helpers
    :members:

@@ -9,7 +9,7 @@ with open("README.md") as readme:
 
 def get_version():
     """Get version number from __init__.py"""
-    version_file = Path(__file__).resolve().parent / "clusterblaster" / "__init__.py"
+    version_file = Path(__file__).resolve().parent / "cblaster" / "__init__.py"
     version_match = re.search(
         r"^__version__ = ['\"]([^'\"]*)['\"]", version_file.read_text(), re.M
     )
@@ -19,14 +19,14 @@ def get_version():
 
 
 setup(
-    name="clusterblaster",
+    name="cblaster",
     author="Cameron Gilchrist",
     version=get_version(),
     description="",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
-    url="https://github.com/gamcil/clusterblaster",
+    url="https://github.com/gamcil/cblaster",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -39,5 +39,5 @@ setup(
     install_requires=["requests"],
     tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],
     python_requires=">=3.6",
-    entry_points={"console_scripts": ["cblaster=clusterblaster.main:main"]},
+    entry_points={"console_scripts": ["cblaster=cblaster.main:main"]},
 )

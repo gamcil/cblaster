@@ -6,7 +6,7 @@ Test suite for classes.
 
 import pytest
 
-from clusterblaster import classes
+from cblaster import classes
 
 
 @pytest.fixture

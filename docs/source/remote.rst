@@ -1,4 +1,4 @@
 Remote
 ======
-.. automodule:: clusterblaster.remote
+.. automodule:: cblaster.remote
    :members:
