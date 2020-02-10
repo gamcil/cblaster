@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/cblaster.svg)](https://badge.fury.io/py/cblaster)
 [![Documentation Status](https://readthedocs.org/projects/cblaster/badge/?version=latest)](https://cblaster.readthedocs.io/en/latest/?badge=latest)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3660769.svg)](https://doi.org/10.5281/zenodo.3660769)
+
 
 `cblaster` is a tool for finding clusters of co-located homologous sequences
 in BLAST searches.
