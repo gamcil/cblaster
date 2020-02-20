@@ -53,6 +53,12 @@ def parse_fasta(handle):
     return sequences
 
 
+def parse_fasta_file(path):
+    with open(path) as fp:
+        sequences = parse_fasta(fp)
+    return sequences
+
+
 def efetch_sequences_request(headers):
     response = requests.post(
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
