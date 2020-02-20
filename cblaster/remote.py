@@ -182,8 +182,10 @@ def check(rid):
             raise ValueError(f"Search {rid} failed (status={status})")
         if status == "WAITING":
             return False
+
     if search == ["READY", "yes"]:
         return True
+
     raise ValueError("Search completed, but found no hits")
 
 
@@ -197,6 +199,7 @@ def retrieve(rid, hitlist_size=500):
         removed. Each element in the returned list corresponds to one row in the BLAST
         table (still need to be split by tab).
     """
+
     parameters = {
         "CMD": "Get",
         "RID": rid,
@@ -214,11 +217,13 @@ def retrieve(rid, hitlist_size=500):
 
     LOG.debug(response.url)
 
-    # Remove non-TSV junk; 13:-3 removes HTML, then parse out info lines (#)
-    # return response
+    # Remove HTML junk and info lines
+    # BLAST results are stored inside <PRE></PRE> tags
     return [
         line
-        for line in response.text.split("\n")[13:-3]
+        for line in re.search("<PRE>(.+?)</PRE>", response.text, re.DOTALL)
+        .group(1)
+        .split("\n")
         if line and not line.startswith("#")
     ]
 
@@ -394,4 +399,4 @@ def search(
         min_coverage=min_coverage,
     )
 
-    return results
+    return rid, results
