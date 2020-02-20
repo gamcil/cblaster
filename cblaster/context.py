@@ -6,11 +6,10 @@ This module handles the querying of NCBI for the genomic context of sequences.
 
 import logging
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from operator import attrgetter
 
 import requests
-import operator
 
 from cblaster import database
 from cblaster.classes import Organism, Scaffold
@@ -78,64 +77,82 @@ def parse_IPG_table(results_handle, hits):
 
     hits_dict = {hit.subject: hit for hit in hits}
 
-    organisms = defaultdict(dict)
-    _ipg = None
+    fields = [
+        "source",
+        "scaffold",
+        "start",
+        "end",
+        "strand",
+        "protein_id",
+        "protein_name",
+        "organism",
+        "strain",
+        "assembly",
+    ]
+    Entry = namedtuple("Entry", fields)
 
+    groups = defaultdict(list)
+
+    # Parse table, form groups of identical proteins
     for line in results_handle:
         if not line or line.startswith("Id\tSource") or line.isspace():
             continue
 
-        (
-            ipg,
-            source,
-            accession,
-            start,
-            end,
-            strand,
-            protein,
-            _,
-            organism,
-            strain,
-            _,
-        ) = line.split("\t")
+        ipg, *fields = line.split("\t")
+        entry = Entry(*fields)
 
-        if not all([accession, start, end, strand]) or source not in (
-            "RefSeq",
-            "INSDC",
-        ):
+        if not all(
+            [entry.scaffold, entry.start, entry.end, entry.strand]
+        ) or entry.source not in ("RefSeq", "INSDC",):
             # Avoid vectors, single Gene nucleotide entries, etc
             continue
 
-        if ipg == _ipg:
-            continue
-        _ipg = ipg
+        groups[ipg].append(entry)
 
-        # Some org. names contain strain, try to remove
-        if strain in organism:
-            organism = organism.replace(strain, "").strip()
+    organisms = defaultdict(dict)
 
-        # Only make new Organism instance if not already one of this name/strain
-        if strain not in organisms[organism]:
-            LOG.debug("New organism: %s %s", organism, strain)
-            organisms[organism][strain] = Organism(name=organism, strain=strain)
+    for ipg in list(groups):
+        group = groups.pop(ipg)  # Remove groups as we go
+        hit = None
 
-        # Add new scaffold
-        if accession not in organisms[organism][strain].scaffolds:
-            LOG.debug("New scaffold: %s", accession)
-            organisms[organism][strain].scaffolds[accession] = Scaffold(accession)
+        # Find a representative Hit object per IPG
+        for entry in group:
+            try:
+                hit = hits_dict[entry.protein_id]
+            except KeyError:
+                continue
+            break
 
-        try:
-            hit = hits_dict.pop(protein)
-        except KeyError:
+        if not hit:
+            LOG.warning("Could not find Hit object for IPG %s", ipg)
             continue
 
-        # Update hit with genomic position
-        hit.end = int(end)
-        hit.start = int(start)
-        hit.strand = strand
+        # Now populate the organisms dictionary with copies
+        for entry in group:
+            org, st, acc = entry.organism, entry.strain, entry.scaffold
 
-        # Add to corresponding scaffold
-        organisms[organism][strain].scaffolds[accession].hits.append(hit)
+            # Some organism names contain the strain, so try to remove
+            if st in org:
+                org = org.replace(st, "").strip()
+
+            # If we haven't seen this strain before, create new Organism
+            if st not in organisms[org]:
+                organisms[org][st] = Organism(name=org, strain=st)
+
+            # Likewise with Scaffold
+            if acc not in organisms[org][st].scaffolds:
+                organisms[org][st].scaffolds[acc] = Scaffold(acc)
+
+            # Copy the representative hit, but change the subject and add location
+            h = hit.copy(
+                subject=entry.protein_id,
+                end=int(entry.end),
+                start=int(entry.start),
+                strand=entry.strand,
+            )
+
+            # Save it
+            organisms[org][st].scaffolds[acc].hits.append(h)
 
     return [organism for strains in organisms.values() for organism in strains.values()]
 
@@ -253,10 +270,12 @@ def find_clusters(hits, require=None, conserve=3, gap=20000):
         yield group
 
 
-def find_clusters_in_organism(organism, conserve=3, gap=20000):
+def find_clusters_in_organism(organism, conserve=3, gap=20000, require=None):
     """Run find_clusters() on all Hits on Scaffolds in an Organism instance."""
     for scaffold in organism.scaffolds.values():
-        scaffold.clusters = find_clusters(scaffold.hits, conserve, gap)
+        scaffold.clusters = list(
+            find_clusters(scaffold.hits, conserve=conserve, gap=gap, require=require)
+        )
         LOG.debug(
             "Organism: %s, Scaffold: %s, Clusters: %i",
             organism.full_name,
@@ -265,11 +284,11 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000):
         )
 
 
-def search(hits, conserve, gap, require=None, json=None):
+def search(hits, conserve, gap, require=None, json_db=None):
     """Get genomic context for a collection of BLAST hits."""
-    if json:
-        LOG.info("Loading JSON database: %s", json)
-        db = database.DB.from_json(json)
+    if json_db:
+        LOG.info("Loading JSON database: %s", json_db)
+        db = database.DB.from_json(json_db)
         organisms = query_local_DB(hits, db)
     else:
         groups = efetch_IPGs([hit.subject for hit in hits])
