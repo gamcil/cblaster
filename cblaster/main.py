@@ -10,7 +10,10 @@ import argparse
 import logging
 import sys
 
-from cblaster import __version__, local, remote, context, helpers, database
+from pathlib import Path
+
+from cblaster import __version__, local, remote, context, helpers, database, plot
+from cblaster.classes import Session
 
 logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(message)s", datefmt="%H:%M:%S"
@@ -18,36 +21,6 @@ logging.basicConfig(
 
 LOG = logging.getLogger("cblaster")
 LOG.setLevel(logging.INFO)
-
-
-def summarise(organisms, output=None, human=True, headers=True):
-    """Generate summary of >1 Organisms, print to console or write to file.
-
-    Parameters
-    ----------
-    organisms: list
-    output: open file handle
-    """
-    summary = "\n\n\n".join(
-        organism.summary(headers=headers, human=human)
-        for organism in organisms
-        if organism.count_hit_clusters() > 0
-    )
-    if summary:
-        output.write(summary + "\n")
-    else:
-        output.write("No results found!")
-    output.flush()
-
-
-def count_queries(cluster, queries):
-    """Count number of hits for each query in a cluster of hits."""
-    counts = [0] * len(queries)
-    for index, query in enumerate(queries):
-        for hit in cluster:
-            if query == hit.query:
-                counts[index] += 1
-    return counts
 
 
 def value_in_args(value, args):
@@ -106,46 +79,6 @@ def validate_output_args(arguments):
         setattr(arguments, arg, open(args[0], "w"))
 
 
-def generate_binary_table(organisms, queries, human=False, headers=True, output=None):
-    """Generate a binary summary table.
-
-    For example:
-
-    Organism  Scaffold  Start  End    Query1  Query2  Query3  Query4
-    Org 1     Scaf_1    1      20000  2       1       1       1
-    Org 1     Scaf_3    3123   40302  0       1       0       1
-    """
-    columns = len(queries) + 4
-
-    rows = [
-        [
-            organism.full_name,
-            accession,
-            str(cluster[0].start),
-            str(cluster[-1].end),
-            *(str(count) for count in count_queries(cluster, queries)),
-        ]
-        for organism in organisms
-        for accession, scaffold in organism.scaffolds.items()
-        for cluster in scaffold.clusters
-    ]
-
-    if headers:
-        rows.insert(0, ["Organism", "Scaffold", "Start", "End", *queries])
-
-    if human:
-        # Calculate lengths of each column for spacing
-        lengths = [max(len(row[i]) for row in rows) for i in range(columns)]
-        table = "\n".join(
-            "  ".join(f"{row[i]:{lengths[i]}}" for i in range(columns)) for row in rows
-        )
-    else:
-        table = "\n".join(",".join(row) for row in rows)
-
-    output.write(table)
-    output.flush()
-
-
 def makedb(genbanks, filename, indent=None):
     """Generate JSON and diamond databases."""
     db = database.DB.from_files(genbanks)
@@ -159,11 +92,35 @@ def makedb(genbanks, filename, indent=None):
         db.to_json(handle, indent=indent)
 
 
+def filter_session(
+    session, min_identity, min_coverage, max_evalue, gap, conserve, require
+):
+    """Filter a previous session with new thresholds."""
+
+    def hit_meets_thresholds(hit):
+        return (
+            hit.identity > min_identity
+            and hit.coverage > min_coverage
+            and hit.evalue < max_evalue
+        )
+
+    for organism in session.organisms:
+        for scaffold in organism.scaffolds.values():
+            scaffold.hits = [hit for hit in scaffold.hits if hit_meets_thresholds(hit)]
+            scaffold.clusters = list(
+                context.find_clusters(
+                    scaffold.hits, conserve=conserve, gap=gap, require=require
+                )
+            )
+
+    return session
+
+
 def cblaster(
     query_file=None,
     query_ids=None,
     mode=None,
-    json=None,
+    json_db=None,
     database=None,
     gap=20000,
     conserve=3,
@@ -178,55 +135,106 @@ def cblaster(
     binary_human=False,
     binary_headers=False,
     rid=None,
+    require=None,
+    session_file=None,
+    indent=None,
+    figure=False,
+    figure_dpi=300,
+    recompute=False,
 ):
     """Run cblaster."""
 
-    if mode == "local":
-        LOG.info("Starting cblaster in local mode")
-        results = local.search(
-            database,
-            query_file=query_file,
-            query_ids=query_ids,
-            min_identity=min_identity,
-            min_coverage=min_coverage,
-            max_evalue=max_evalue,
+    if session_file and Path(session_file).exists():
+        with open(session_file) as fp:
+            session = Session.from_json(fp)
+
+        if recompute:
+            LOG.info("Writing recomputed session to %s", recompute)
+            session = filter_session(
+                session, min_identity, min_coverage, max_evalue, gap, conserve, require
+            )
+
+            if recompute is not True:
+                with open(recompute, "w") as fp:
+                    session.to_json(fp, indent=indent)
+    else:
+        session = Session(
+            query_ids if query_ids else [],
+            params={
+                "mode": mode,
+                "database": database,
+                "min_identity": min_identity,
+                "min_coverage": min_coverage,
+                "max_evalue": max_evalue,
+            },
         )
 
-    elif mode == "remote":
-        LOG.info("Starting cblaster in remote mode")
-        results = remote.search(
-            query_file=query_file,
-            query_ids=query_ids,
-            rid=rid,
-            database=database,
-            min_identity=min_identity,
-            min_coverage=min_coverage,
-            max_evalue=max_evalue,
-            entrez_query=entrez_query,
+        if query_file:
+            with open(query_file) as fp:
+                sequences = helpers.parse_fasta(fp)
+            session.queries = list(sequences)
+            session.params["query_file"] = query_file
+
+        if json_db:
+            session.params["json_db"] = json_db
+
+        if mode == "local":
+            LOG.info("Starting cblaster in local mode")
+            results = local.search(
+                database,
+                query_file=query_file,
+                query_ids=query_ids,
+                min_identity=min_identity,
+                min_coverage=min_coverage,
+                max_evalue=max_evalue,
+            )
+
+        elif mode == "remote":
+            LOG.info("Starting cblaster in remote mode")
+
+            if entrez_query:
+                session.params["entrez_query"] = entrez_query
+
+            rid, results = remote.search(
+                query_file=query_file,
+                query_ids=query_ids,
+                rid=rid,
+                database=database,
+                min_identity=min_identity,
+                min_coverage=min_coverage,
+                max_evalue=max_evalue,
+                entrez_query=entrez_query,
+            )
+
+            session.params["rid"] = rid
+
+        LOG.info("Found %i hits meeting score thresholds", len(results))
+        LOG.info("Fetching genomic context of hits")
+        session.organisms = context.search(
+            results, conserve, gap, require=require, json_db=json_db
         )
 
-    LOG.info("Found %i hits meeting score thresholds", len(results))
-    LOG.info("Fetching genomic context of hits")
-    organisms = context.search(results, conserve, gap, json=json)
+        if session_file:
+            LOG.info("Writing current search session to %s", session_file)
+            with open(session_file, "w") as fp:
+                session.to_json(fp, indent=indent)
 
     if binary:
         LOG.info("Writing binary summary table to %s", binary.name)
-        if query_file:
-            with open(query_file) as handle:
-                query_ids = list(helpers.parse_fasta(handle))
-
-        generate_binary_table(
-            organisms,
-            query_ids,
-            headers=binary_headers,
-            human=binary_human,
-            output=binary,
-        )
+        session.format("binary", binary, human=binary_human, headers=binary_headers)
 
     LOG.info("Writing summary to %s", output.name)
-    summarise(organisms, output=output, human=output_human, headers=output_headers)
+    session.format("summary", output, human=output_human, headers=output_headers)
 
-    return organisms
+    if figure:
+        if figure is True:
+            LOG.info("Generating cblaster plot...")
+            plot.plot(session)
+        else:
+            LOG.info("Writing SVG to %s", figure)
+            plot.plot(synthases, figure=figure, dpi=figure_dpi)
+
+    return session
 
 
 def get_arguments(args):
@@ -245,6 +253,13 @@ def get_arguments(args):
     parser.add_argument(
         "-d", "--debug", help="Print debugging information", action="store_true"
     )
+    parser.add_argument(
+        "-i",
+        "--indent",
+        help="Total spaces to use as indent in JSON file (def. None)",
+        type=int,
+        default=None,
+    )
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -260,14 +275,6 @@ def get_arguments(args):
         "filename",
         help="Name to use when building JSON/diamond databases (with extensions"
         " .json and .dmnd, respectively)",
-    )
-    makedb.add_argument(
-        "-i",
-        "--indent",
-        help="Number of spaces to use as indent in JSON database file. By default,"
-        " it will be printed on a single line (indent=None) to reduce size.",
-        type=int,
-        default=None,
     )
 
     search = subparsers.add_parser(
@@ -305,6 +312,22 @@ def get_arguments(args):
         " 'hr' to this argument. Headers can be toggled by supplying 'he'."
         " e.g. cblaster --binary filename hr he ...",
     )
+    output.add_argument(
+        "-f",
+        "--figure",
+        nargs="?",
+        const=True,
+        default=False,
+        help="Save a cblaster plot to file. File type is determined from the file"
+        " extension (e.g. --figure x.svg will save as SVG). If no file is specified,"
+        " the interactive matplotlib viewer will be opened.",
+    )
+    output.add_argument(
+        "-dpi",
+        "--figure_dpi",
+        help="DPI to use when saving figure (def. 300)",
+        default=300,
+    )
 
     searching = search.add_argument_group("Searching")
     searching.add_argument(
@@ -315,8 +338,8 @@ def get_arguments(args):
         default="remote",
     )
     searching.add_argument(
-        "-j",
-        "--json",
+        "-jdb",
+        "--json_db",
         help="Path to local JSON database, created using cblaster makedb. If this"
         " argument is provided, genomic context will be fetched from this database"
         " instead of through NCBI IPG.",
@@ -341,6 +364,23 @@ def get_arguments(args):
         " if 'remote' is passed to --mode. Useful if you have previously run a web BLAST"
         " search and want to directly retrieve those results instead of running a new"
         " search.",
+    )
+    searching.add_argument(
+        "-s",
+        "--session_file",
+        help="Load session from JSON. If the specified file does not exist, "
+        "the results of the new search will be saved to this file.",
+    )
+    searching.add_argument(
+        "-rcp",
+        "--recompute",
+        nargs="?",
+        const=True,
+        default=False,
+        help="Recompute previous search session using new thresholds. The filtered"
+        " session will be written to the file specified by this argument. If this"
+        " argument is specified with no value, the session will be filtered but"
+        " not saved (e.g. for plotting purposes).",
     )
 
     clusters = search.add_argument_group("Clustering")
@@ -408,11 +448,14 @@ def get_arguments(args):
 
         valid_dbs = ("nr", "refseq_protein", "swissprot", "pdbaa")
         if arguments.database not in valid_dbs:
-            raise ValueError(f"Valid databases are: {', '.join(valid_dbs)}")
+            parser.error(f"Valid databases are: {', '.join(valid_dbs)}")
     else:
         for arg in ["entrez_query", "rid"]:
             if getattr(arguments, arg):
-                raise ValueError(f"--{arg} can only be used when --mode is 'remote'")
+                parser.error(f"--{arg} can only be used when --mode is 'remote'")
+
+    if arguments.recompute and not arguments.session_file:
+        parser.error("-rcp/--recompute requires -s/--session_file")
 
     return arguments
 
@@ -430,7 +473,7 @@ def main():
             query_file=args.query_file,
             query_ids=args.query_ids,
             mode=args.mode,
-            json=args.json,
+            json_db=args.json_db,
             database=args.database,
             gap=args.gap,
             conserve=args.conserve,
@@ -446,6 +489,11 @@ def main():
             binary_human=args.binary_human,
             binary_headers=args.binary_headers,
             rid=args.rid,
+            session_file=args.session_file,
+            indent=args.indent,
+            recompute=args.recompute,
+            figure_dpi=args.figure_dpi,
+            figure=args.figure,
         )
 
 
