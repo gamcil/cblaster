@@ -91,6 +91,7 @@ def parse_IPG_table(results_handle, hits):
     ]
     Entry = namedtuple("Entry", fields)
 
+    seen = set()
     groups = defaultdict(list)
 
     # Parse table, form groups of identical proteins
@@ -129,6 +130,11 @@ def parse_IPG_table(results_handle, hits):
 
         # Now populate the organisms dictionary with copies
         for entry in group:
+            if entry.protein_id in seen:
+                continue
+            else:
+                seen.add(entry.protein_id)
+
             org, st, acc = entry.organism, entry.strain, entry.scaffold
 
             # Some organism names contain the strain, so try to remove
