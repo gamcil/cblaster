@@ -5,6 +5,7 @@ This module handles the querying of NCBI for the genomic context of sequences.
 """
 
 import logging
+import re
 
 from collections import defaultdict, namedtuple
 from operator import attrgetter
@@ -26,25 +27,34 @@ def efetch_IPGs(ids, output_handle=None):
     format = ipg
     """
 
-    response = requests.post(
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-        params={"db": "protein", "rettype": "ipg", "retmode": "text"},
-        data={"id": ",".join(ids)},
-    )
+    # Split into chunks since retmax=10000
+    chunks = [ids[i : i + 10000] for i in range(0, len(ids), 10000)]
 
-    LOG.debug("IPG search URL: %s", response.url)
-    LOG.debug("IPG search IDs: %s", ids)
-
-    if response.status_code != 200:
-        raise requests.HTTPError(
-            "Error fetching sequences from NCBI [code {response.status_code}]."
+    table = ""
+    for ix, chunk in enumerate(chunks, 1):
+        response = requests.post(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
+            params={
+                "db": "protein",
+                "rettype": "ipg",
+                "retmode": "text",
+                "retmax": 10000,
+            },
+            data={"id": ",".join(chunk)},
         )
+
+        if response.status_code != 200:
+            raise requests.HTTPError(
+                "Error fetching sequences from NCBI [code {response.status_code}]."
+            )
+
+        table += response.text
 
     if output_handle:
         LOG.info("Writing IPG output to %s", output_handle.name)
-        output_handle.write(response.text)
+        output_handle.write(table)
 
-    return response
+    return table.split("\n")
 
 
 def parse_IPG_table(results_handle, hits):
@@ -132,8 +142,8 @@ def parse_IPG_table(results_handle, hits):
         for entry in group:
             if entry.protein_id in seen:
                 continue
-            else:
-                seen.add(entry.protein_id)
+
+            seen.add(entry.protein_id)
 
             org, st, acc = entry.organism, entry.strain, entry.scaffold
 
@@ -216,7 +226,7 @@ def hits_contain_required_queries(hits, queries):
 
 def hits_contain_unique_queries(hits, conserve=3):
     """Check that a group of Hit objects belong to some threshold of unique queries."""
-    return len(set(hit.query for hit in hits)) >= conserve
+    return len(hits) >= conserve
 
 
 def find_clusters(hits, require=None, conserve=3, gap=20000):
@@ -253,15 +263,15 @@ def find_clusters(hits, require=None, conserve=3, gap=20000):
             return [hits]
         return []
 
-    sorted_hits = sorted(hits, key=attrgetter("start"))
-    first = sorted_hits.pop(0)
-    group, border = [first], first.end
-
     def conditions_met(group):
         """Check require/conserve params are satisfied."""
         req = hits_contain_required_queries(group, require) if require else True
         con = hits_contain_unique_queries(group, conserve)
         return req and con
+
+    sorted_hits = sorted(hits, key=attrgetter("start"))
+    first = sorted_hits.pop(0)
+    group, border = [first], first.end
 
     for hit in sorted_hits:
         if hit.start <= border + gap:
@@ -297,8 +307,8 @@ def search(hits, conserve, gap, require=None, json_db=None):
         db = database.DB.from_json(json_db)
         organisms = query_local_DB(hits, db)
     else:
-        groups = efetch_IPGs([hit.subject for hit in hits])
-        organisms = parse_IPG_table(groups.text.split("\n"), hits)
+        rows = efetch_IPGs([hit.subject for hit in hits])
+        organisms = parse_IPG_table(rows, hits)
 
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))
     for organism in organisms:
