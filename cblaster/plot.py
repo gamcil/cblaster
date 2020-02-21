@@ -2,6 +2,7 @@
 
 
 from matplotlib import pyplot as plt, rcParams
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import numpy as np
 
@@ -16,7 +17,12 @@ def plot(session, figure=None, dpi=300, show_counts=False):
 
     names, scafs, counts, identities = session.form_matrices()
 
-    fig, (dendro, matrix) = plt.subplots(1, 2, figsize=(10, 5))
+    fig, (dendro, matrix) = plt.subplots(
+        1,
+        2,
+        figsize=(4 + 0.5 * len(session.queries), len(names) * 0.2),
+        gridspec_kw={"width_ratios": [1, 0.3 * len(session.queries)]},
+    )
 
     counts = np.array(counts)
     identities = np.array(identities)
@@ -35,8 +41,11 @@ def plot(session, figure=None, dpi=300, show_counts=False):
     index = Z["leaves"]
     counts = counts[index, :]
     identities = identities[index, :]
+    identities[identities == 0.0] = np.nan
     scafs = [scafs[i] for i in index]
-    im = matrix.matshow(identities, cmap="Blues", aspect="auto", origin="lower")
+    im = matrix.matshow(
+        identities, cmap="Blues", aspect="auto", origin="lower", clim=(0, 100)
+    )
 
     # Annotate with counts
     if show_counts:
@@ -48,10 +57,6 @@ def plot(session, figure=None, dpi=300, show_counts=False):
                 # False -> 0, True -> 1, then use as index
                 textkw["color"] = colours[int(im.norm(identities[i, j]) > 0.8)]
                 im.axes.text(j, i, counts[i, j], **textkw)
-
-    # Create colourbar
-    cbar = fig.colorbar(im, ax=matrix, shrink=0.5)
-    cbar.ax.set_ylabel("Identity (%)", rotation=-90, va="bottom")
 
     # Hide actual tick marks
     matrix.tick_params(axis="x", which="both", bottom=False)
@@ -71,7 +76,17 @@ def plot(session, figure=None, dpi=300, show_counts=False):
     matrix.set_yticks(np.arange(identities.shape[0] + 1) - 0.5, minor=True)
     matrix.grid(which="minor", color="w", linestyle="-", linewidth=2)
 
-    # Run resize() every time the viewer is resized
+    # Set dividers on both axes so colorbar can be used without changing figure size
+    div1 = make_axes_locatable(dendro)
+    div2 = make_axes_locatable(matrix)
+    cax1 = div1.append_axes("bottom", size=0.1, pad=0.1)
+    cax2 = div2.append_axes("bottom", size=0.1, pad=0.1)
+    cax1.axis("off")
+
+    # Create colourbar
+    cbar = plt.colorbar(im, cax=cax2, orientation="horizontal")
+    cbar.ax.set_xlabel("Identity (%)", va="bottom", labelpad=12)
+
     plt.tight_layout()
 
     if not figure:
