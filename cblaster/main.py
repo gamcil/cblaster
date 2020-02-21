@@ -113,8 +113,6 @@ def filter_session(
                 )
             )
 
-    return session
-
 
 def cblaster(
     query_file=None,
@@ -145,16 +143,18 @@ def cblaster(
     """Run cblaster."""
 
     if session_file and Path(session_file).exists():
+        LOG.info("Loading %s", session_file)
         with open(session_file) as fp:
             session = Session.from_json(fp)
 
         if recompute:
-            LOG.info("Writing recomputed session to %s", recompute)
-            session = filter_session(
+            LOG.info("Filtering session with new thresholds")
+            filter_session(
                 session, min_identity, min_coverage, max_evalue, gap, conserve, require
             )
 
             if recompute is not True:
+                LOG.info("Writing recomputed session to %s", recompute)
                 with open(recompute, "w") as fp:
                     session.to_json(fp, indent=indent)
     else:
@@ -232,7 +232,7 @@ def cblaster(
             plot.plot(session)
         else:
             LOG.info("Writing SVG to %s", figure)
-            plot.plot(synthases, figure=figure, dpi=figure_dpi)
+            plot.plot(session, figure=figure, dpi=figure_dpi)
 
     return session
 
@@ -245,7 +245,7 @@ def get_arguments(args):
         description="cblaster is a tool for finding clusters of homologous"
         " proteins. Type -h/--help after either subcommand for full description of"
         " available arguments.",
-        epilog="Cameron Gilchrist, 2019",
+        epilog="Cameron Gilchrist, 2020",
     )
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + __version__
