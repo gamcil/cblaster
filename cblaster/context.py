@@ -6,7 +6,6 @@ This module handles the querying of NCBI for the genomic context of sequences.
 
 import logging
 import re
-
 from collections import defaultdict, namedtuple
 from operator import attrgetter
 
@@ -15,16 +14,27 @@ import requests
 from cblaster import database
 from cblaster.classes import Organism, Scaffold
 
-
 LOG = logging.getLogger(__name__)
 
 
 def efetch_IPGs(ids, output_handle=None):
-    """Query NCBI for Identical Protein Groups (IPG) of query sequences.
+    """Query Identical Protein Groups (IPG) with query sequence IDs.
 
-    db = protein
-    id = ',' joined list
-    format = ipg
+    The NCBI caps Efetch requests at 10000 maximum returned records (i.e. retmax=10000).
+    Thus, this function splits `ids` into chunks of 10000 and queries NCBI individually
+    for each chunk.
+
+    Parameters
+    ----------
+    ids: list, tuple
+        NCBI sequence identifiers
+    output_handle: open file handle
+        File handle to write IPG table to
+
+    Returns
+    -------
+    table: list
+        Results from IPG search split by newline
     """
 
     # Split into chunks since retmax=10000
@@ -58,31 +68,26 @@ def efetch_IPGs(ids, output_handle=None):
 
 
 def parse_IPG_table(results_handle, hits):
-    """Parse the results of an IPG query.
+    """Parse IPG results table from `efetch_IPGs`.
 
-    For every identical protein group, this function will choose the first that:
-        1) Has non-empty nuccore accession, start, end and strand fields
-        2) Is from either RefSeq/GenBank (INSDC)
-
-    As per NCBI documentation, the 'best' entry is chosen in preference of RefSeq ->
-    SwissProt -> PIR, PDB -> GenBank -> Patent. However, entries not from RefSeq/GenBank
-    are protein-only accessions and have no corresponding nucleotide accession.
-    I don't know the exact order this table is formulated, but it tends to reflect the
-    above.
+    This function first parses individual entries in the IPG table and groups them by
+    IPG uid. For each IPG, a representative Hit object is found in `hits` and a copy
+    is made for each protein in the IPG. Each copy is updated with the genomic origin
+    listed in the IPG table, and then added to the corresponding Organism object (or a
+    new Organism if one isn't found). `cblaster` should therefore capture every possible
+    cluster on NCBI.
 
     Parameters
     ----------
-    results_handle : open file handle
-        Results from identical protein groups search.
-    hits : list
-        Hits that were used to query NCBI.
-    conserve: int
-    gap: int
+    results_handle: open file handle
+        Results from identical protein groups search
+    hits: list
+        Hit objects that were used to query NCBI
 
     Returns
     -------
-    organisms : list
-        Organism objects containing hit information.
+    organisms: list
+        Organism objects
     """
 
     hits_dict = {hit.subject: hit for hit in hits}
@@ -99,6 +104,7 @@ def parse_IPG_table(results_handle, hits):
         "strain",
         "assembly",
     ]
+
     Entry = namedtuple("Entry", fields)
 
     seen = set()
@@ -147,19 +153,15 @@ def parse_IPG_table(results_handle, hits):
 
             org, st, acc = entry.organism, entry.strain, entry.scaffold
 
-            # Some organism names contain the strain, so try to remove
             if st in org:
                 org = org.replace(st, "").strip()
 
-            # If we haven't seen this strain before, create new Organism
             if st not in organisms[org]:
                 organisms[org][st] = Organism(name=org, strain=st)
 
-            # Likewise with Scaffold
             if acc not in organisms[org][st].scaffolds:
                 organisms[org][st].scaffolds[acc] = Scaffold(acc)
 
-            # Copy the representative hit, but change the subject and add location
             h = hit.copy(
                 subject=entry.protein_id,
                 end=int(entry.end),
@@ -167,7 +169,6 @@ def parse_IPG_table(results_handle, hits):
                 strand=entry.strand,
             )
 
-            # Save it
             organisms[org][st].scaffolds[acc].hits.append(h)
 
     return [organism for strains in organisms.values() for organism in strains.values()]
@@ -182,6 +183,18 @@ def query_local_DB(hits, database):
 
     Internally uses defaultdict to build up hierarchy of unique organisms, then returns
     list of just each organism dictionary.
+
+    Parameters
+    ----------
+    hits: list
+        Hit objects created during cblaster search
+    database: database.DB
+        cblaster database object
+
+    Returns
+    -------
+    list
+        Organism objects
     """
 
     organisms = defaultdict(dict)
@@ -224,27 +237,26 @@ def hits_contain_required_queries(hits, queries):
     return all(bools)
 
 
-def hits_contain_unique_queries(hits, conserve=3):
+def hits_contain_unique_queries(hits, threshold=3):
     """Check that a group of Hit objects belong to some threshold of unique queries."""
-    return len(hits) >= conserve
+    return len(set(hit.query_id for hit in hits)) >= threshold
 
 
-def find_clusters(hits, require=None, conserve=3, gap=20000):
+def find_clusters(hits, require=None, unique=3, minimum_hits=3, gap=20000):
     """Find clustered Hit objects.
 
     Parameters
     ----------
     hits: list
-        Hit objects with positional information.
+        Hit objects
     require: iterable
-        Names of query sequences that must be represented in a Hit cluster.
-    conserve: int
-        Minimum number of unique queries hit in a Hit cluster.
+        Names of query sequences that must be represented in a hit cluster
+    unique: int
+        Minimum number of unique queries represented in a hit cluster
+    minimum_hits: int
+        Minimum number of hits in a cluster
     gap: int
-        Maximum intergenic distance (bp) between any two hits. This is calculated
-        from the end of one gene to the start of the next. If this distance exceeds the
-        specified value, the group is considered finished and checked against the
-        conserve value.
+        Maximum intergenic distance (bp) between any two hits in a cluster
 
     Returns
     -------
@@ -256,18 +268,19 @@ def find_clusters(hits, require=None, conserve=3, gap=20000):
 
     total_hits = len(hits)
 
-    if total_hits < conserve:
+    if total_hits < unique:
         return []
+
     if total_hits == 1:
         if conserve == 1:
             return [hits]
         return []
 
     def conditions_met(group):
-        """Check require/conserve params are satisfied."""
         req = hits_contain_required_queries(group, require) if require else True
-        con = hits_contain_unique_queries(group, conserve)
-        return req and con
+        con = hits_contain_unique_queries(group, unique)
+        siz = len(group) >= minimum_hits
+        return req and con and siz
 
     sorted_hits = sorted(hits, key=attrgetter("start"))
     first = sorted_hits.pop(0)
@@ -286,11 +299,19 @@ def find_clusters(hits, require=None, conserve=3, gap=20000):
         yield group
 
 
-def find_clusters_in_organism(organism, conserve=3, gap=20000, require=None):
+def find_clusters_in_organism(
+    organism, unique=3, minimum_hits=3, gap=20000, require=None
+):
     """Run find_clusters() on all Hits on Scaffolds in an Organism instance."""
     for scaffold in organism.scaffolds.values():
         scaffold.clusters = list(
-            find_clusters(scaffold.hits, conserve=conserve, gap=gap, require=require)
+            find_clusters(
+                scaffold.hits,
+                unique=unique,
+                minimum_hits=minimum_hits,
+                gap=gap,
+                require=require,
+            )
         )
         LOG.debug(
             "Organism: %s, Scaffold: %s, Clusters: %i",
@@ -300,7 +321,7 @@ def find_clusters_in_organism(organism, conserve=3, gap=20000, require=None):
         )
 
 
-def search(hits, conserve, gap, require=None, json_db=None):
+def search(hits, unique=3, minimum_hits=3, gap=20000, require=None, json_db=None):
     """Get genomic context for a collection of BLAST hits."""
     if json_db:
         LOG.info("Loading JSON database: %s", json_db)
@@ -312,6 +333,8 @@ def search(hits, conserve, gap, require=None, json_db=None):
 
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))
     for organism in organisms:
-        find_clusters_in_organism(organism, conserve, gap, require=require)
+        find_clusters_in_organism(
+            organism, unique=unique, minimum_hits=minimum_hits, gap=gap, require=require
+        )
 
     return organisms

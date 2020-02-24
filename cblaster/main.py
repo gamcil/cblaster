@@ -9,10 +9,9 @@ for running cblaster.
 import argparse
 import logging
 import sys
-
 from pathlib import Path
 
-from cblaster import __version__, local, remote, context, helpers, database, plot
+from cblaster import __version__, context, database, helpers, local, plot, remote
 from cblaster.classes import Session
 
 logging.basicConfig(
@@ -93,7 +92,7 @@ def makedb(genbanks, filename, indent=None):
 
 
 def filter_session(
-    session, min_identity, min_coverage, max_evalue, gap, conserve, require
+    session, min_identity, min_coverage, max_evalue, gap, unique, minimum_hits, require
 ):
     """Filter a previous session with new thresholds."""
 
@@ -109,7 +108,11 @@ def filter_session(
             scaffold.hits = [hit for hit in scaffold.hits if hit_meets_thresholds(hit)]
             scaffold.clusters = list(
                 context.find_clusters(
-                    scaffold.hits, conserve=conserve, gap=gap, require=require
+                    scaffold.hits,
+                    unique=unique,
+                    minimum_hits=minimum_hits,
+                    gap=gap,
+                    require=require,
                 )
             )
 
@@ -121,7 +124,8 @@ def cblaster(
     json_db=None,
     database=None,
     gap=20000,
-    conserve=3,
+    unique=3,
+    minimum_hits=3,
     min_identity=30,
     min_coverage=50,
     max_evalue=0.01,
@@ -150,7 +154,14 @@ def cblaster(
         if recompute:
             LOG.info("Filtering session with new thresholds")
             filter_session(
-                session, min_identity, min_coverage, max_evalue, gap, conserve, require
+                session,
+                min_identity,
+                min_coverage,
+                max_evalue,
+                gap,
+                unique,
+                minimum_hits,
+                require,
             )
 
             if recompute is not True:
@@ -211,7 +222,12 @@ def cblaster(
         LOG.info("Found %i hits meeting score thresholds", len(results))
         LOG.info("Fetching genomic context of hits")
         session.organisms = context.search(
-            results, conserve, gap, require=require, json_db=json_db
+            results,
+            unique=unique,
+            minimum_hits=minimum_hits,
+            gap=gap,
+            require=require,
+            json_db=json_db,
         )
 
         if session_file:
@@ -231,7 +247,7 @@ def cblaster(
             LOG.info("Generating cblaster plot...")
             plot.plot(session)
         else:
-            LOG.info("Writing SVG to %s", figure)
+            LOG.info("Writing figure to %s", figure)
             plot.plot(session, figure=figure, dpi=figure_dpi)
 
     return session
@@ -393,12 +409,19 @@ def get_arguments(args):
         " be considered in the same block (def. 20000)",
     )
     clusters.add_argument(
-        "-c",
-        "--conserve",
+        "-u",
+        "--unique",
         type=int,
         default=3,
         help="Minimum number of unique query sequences that must be conserved"
-        " in a hit cluster for it to be reported (def. 3)",
+        " in a hit cluster (def. 3)",
+    )
+    clusters.add_argument(
+        "-mh",
+        "--minimum_hits",
+        type=int,
+        default=3,
+        help="Minimum number of hits in a cluster (def. 3)",
     )
     clusters.add_argument(
         "-r",
