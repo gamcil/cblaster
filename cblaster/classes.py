@@ -10,6 +10,7 @@ import json
 
 def generate_header_string(text, symbol="-"):
     """Generate an underlined header string.
+
     The underline is the specified symbol repeated for the length of the text.
     """
     length = len(text)
@@ -17,16 +18,18 @@ def generate_header_string(text, symbol="-"):
 
 
 def generate_cluster_table(hits, decimals=4, show_headers=True, human=True):
-    """Generate human-readable summary of a hit cluster.
+    """Generate a summary table for a hit cluster.
 
     Parameters
     ----------
     hits: list
-        Collection of Hit instances.
+        Collection of Hit instances
     decimals: int
-        How many decimal points to show.
+        How many decimal points to show
     show_headers: bool
-        Show column headers in output.
+        Show column headers in output
+    human: bool
+        Generate human readable, not delimited, table
 
     Returns
     -------
@@ -61,7 +64,11 @@ def generate_cluster_table(hits, decimals=4, show_headers=True, human=True):
 
 
 class Serializer:
-    """JSON serialiser"""
+    """JSON serialisation mixin class.
+
+    Classes that inherit from this class should implement `to_dict` and `from_dict`
+    methods.
+    """
 
     def to_dict(self):
         raise NotImplementedError
@@ -87,7 +94,25 @@ class Serializer:
 
 
 class Session(Serializer):
-    """A search session."""
+    """A search session.
+
+    This class is used to manage state during a cblaster search. It stores IDs of query
+    proteins, parameters used, RID if --remote and all Organism objects created during
+    the genomic context stage. Methods for generating summary tables and matrices for
+    plotting are also stored in this class.
+
+    Session objects can be dumped to/loaded from JSON to facilitate re-filtering/plotting.
+
+    ::
+        s = Session()
+        with open("session.json", "w") as fp:
+            s.to_json(fp)
+
+        with open("session.json") as fp:
+            s2 = Session.from_json(fp)
+
+        s == s2
+    """
 
     def __init__(self, queries, params, organisms=None):
         self.queries = queries
@@ -214,7 +239,12 @@ class Session(Serializer):
 
 
 class Organism(Serializer):
-    """The Organism class stores hits on scaffolds"""
+    """An organism.
+
+    This class is used to represent a unique organism found during a cblaster search.
+    Every strain (or lack thereof) is counted as being unique, and will be reported
+    separately in cblaster results.
+    """
 
     def __init__(self, name, strain, scaffolds=None):
         self.name = name
@@ -276,7 +306,11 @@ class Organism(Serializer):
 
 
 class Scaffold(Serializer):
-    """A genomic scaffold containing BLAST hits."""
+    """A genomic scaffold.
+
+    This class represents a genomic scaffold belonging to an Organism object found
+    during a cblaster search.
+    """
 
     def __init__(self, accession, clusters=None, hits=None):
         self.accession = accession
@@ -325,10 +359,9 @@ class Scaffold(Serializer):
 class Hit(Serializer):
     """A BLAST hit.
 
-    Stores hit scores and genomic context.
-
-    First instantiated when parsing BLAST results, then updated with
-    genomic information after NCBI is queried for IPG.
+    Stores hit scores and genomic context. It is first instantiated when parsing BLAST
+    results, and is then updated with genomic coordinates after either querying the
+    NCBI's IPG resource or a local JSON database.
     """
 
     def __init__(

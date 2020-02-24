@@ -1,13 +1,12 @@
 """Plot cblaster results."""
 
 
-from matplotlib import pyplot as plt, rcParams
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 import numpy as np
-
 import scipy
-from scipy.cluster.hierarchy import linkage, dendrogram
+from matplotlib import pyplot as plt
+from matplotlib import rcParams
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.cluster.hierarchy import dendrogram, linkage
 
 
 def plot(session, figure=None, dpi=300, show_counts=False):
@@ -48,9 +47,11 @@ def plot(session, figure=None, dpi=300, show_counts=False):
     )
 
     # Annotate with counts
+
     if show_counts:
         colours = ["black", "white"]
         textkw = dict(fontsize=6, va="center", ha="right")
+
         for i in range(counts.shape[0]):
             for j in range(counts.shape[1]):
                 # Choose black or white, depending if identity is greater than 80%
