@@ -103,18 +103,22 @@ def filter_session(
             and hit.evalue < max_evalue
         )
 
+    def filter_scaffold(scaffold):
+        scaffold.hits = [hit for hit in scaffold.hits if hit_meets_thresholds(hit)]
+        scaffold.clusters = list(
+            context.find_clusters(
+                scaffold.hits,
+                unique=unique,
+                minimum_hits=minimum_hits,
+                gap=gap,
+                require=require,
+            )
+        )
+
     for organism in session.organisms:
         for scaffold in organism.scaffolds.values():
-            scaffold.hits = [hit for hit in scaffold.hits if hit_meets_thresholds(hit)]
-            scaffold.clusters = list(
-                context.find_clusters(
-                    scaffold.hits,
-                    unique=unique,
-                    minimum_hits=minimum_hits,
-                    gap=gap,
-                    require=require,
-                )
-            )
+            filter_scaffold(scaffold)
+
 
 
 def cblaster(
