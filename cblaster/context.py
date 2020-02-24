@@ -242,7 +242,7 @@ def hits_contain_unique_queries(hits, threshold=3):
     return len(set(hit.query_id for hit in hits)) >= threshold
 
 
-def find_clusters(hits, require=None, unique=3, minimum_hits=3, gap=20000):
+def find_clusters(hits, require=None, unique=3, min_hits=3, gap=20000):
     """Find clustered Hit objects.
 
     Parameters
@@ -253,7 +253,7 @@ def find_clusters(hits, require=None, unique=3, minimum_hits=3, gap=20000):
         Names of query sequences that must be represented in a hit cluster
     unique: int
         Minimum number of unique queries represented in a hit cluster
-    minimum_hits: int
+    min_hits: int
         Minimum number of hits in a cluster
     gap: int
         Maximum intergenic distance (bp) between any two hits in a cluster
@@ -279,7 +279,7 @@ def find_clusters(hits, require=None, unique=3, minimum_hits=3, gap=20000):
     def conditions_met(group):
         req = hits_contain_required_queries(group, require) if require else True
         con = hits_contain_unique_queries(group, unique)
-        siz = len(group) >= minimum_hits
+        siz = len(group) >= min_hits
         return req and con and siz
 
     sorted_hits = sorted(hits, key=attrgetter("start"))
@@ -300,7 +300,7 @@ def find_clusters(hits, require=None, unique=3, minimum_hits=3, gap=20000):
 
 
 def find_clusters_in_organism(
-    organism, unique=3, minimum_hits=3, gap=20000, require=None
+    organism, unique=3, min_hits=3, gap=20000, require=None
 ):
     """Run find_clusters() on all Hits on Scaffolds in an Organism instance."""
     for scaffold in organism.scaffolds.values():
@@ -308,7 +308,7 @@ def find_clusters_in_organism(
             find_clusters(
                 scaffold.hits,
                 unique=unique,
-                minimum_hits=minimum_hits,
+                min_hits=min_hits,
                 gap=gap,
                 require=require,
             )
@@ -321,7 +321,7 @@ def find_clusters_in_organism(
         )
 
 
-def search(hits, unique=3, minimum_hits=3, gap=20000, require=None, json_db=None):
+def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
     """Get genomic context for a collection of BLAST hits."""
     if json_db:
         LOG.info("Loading JSON database: %s", json_db)
@@ -334,7 +334,7 @@ def search(hits, unique=3, minimum_hits=3, gap=20000, require=None, json_db=None
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))
     for organism in organisms:
         find_clusters_in_organism(
-            organism, unique=unique, minimum_hits=minimum_hits, gap=gap, require=require
+            organism, unique=unique, min_hits=min_hits, gap=gap, require=require
         )
 
     return organisms

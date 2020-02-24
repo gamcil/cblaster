@@ -92,7 +92,7 @@ def makedb(genbanks, filename, indent=None):
 
 
 def filter_session(
-    session, min_identity, min_coverage, max_evalue, gap, unique, minimum_hits, require
+    session, min_identity, min_coverage, max_evalue, gap, unique, min_hits, require
 ):
     """Filter a previous session with new thresholds."""
 
@@ -109,7 +109,7 @@ def filter_session(
             context.find_clusters(
                 scaffold.hits,
                 unique=unique,
-                minimum_hits=minimum_hits,
+                min_hits=min_hits,
                 gap=gap,
                 require=require,
             )
@@ -120,7 +120,6 @@ def filter_session(
             filter_scaffold(scaffold)
 
 
-
 def cblaster(
     query_file=None,
     query_ids=None,
@@ -129,7 +128,7 @@ def cblaster(
     database=None,
     gap=20000,
     unique=3,
-    minimum_hits=3,
+    min_hits=3,
     min_identity=30,
     min_coverage=50,
     max_evalue=0.01,
@@ -164,7 +163,7 @@ def cblaster(
                 max_evalue,
                 gap,
                 unique,
-                minimum_hits,
+                min_hits,
                 require,
             )
 
@@ -228,7 +227,7 @@ def cblaster(
         session.organisms = context.search(
             results,
             unique=unique,
-            minimum_hits=minimum_hits,
+            min_hits=min_hits,
             gap=gap,
             require=require,
             json_db=json_db,
@@ -422,7 +421,7 @@ def get_arguments(args):
     )
     clusters.add_argument(
         "-mh",
-        "--minimum_hits",
+        "--min_hits",
         type=int,
         default=3,
         help="Minimum number of hits in a cluster (def. 3)",
