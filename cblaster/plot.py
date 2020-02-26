@@ -16,15 +16,21 @@ def plot(session, figure=None, dpi=300, show_counts=False):
 
     names, scafs, counts, identities = session.form_matrices()
 
+    counts = np.array(counts)
+    identities = np.array(identities)
+
+    # Rough initial figure size calculations
+    # qname = longest query name
+    qname = max(len(q) for q in session.queries) * 0.06
+    width = 6 + 0.45 * len(session.queries) + qname
+    height = max(2, 0.2 * len(names) + qname)
+
     fig, (dendro, matrix) = plt.subplots(
         1,
         2,
-        figsize=(4 + 0.5 * len(session.queries), len(names) * 0.2),
+        figsize=(width, height),
         gridspec_kw={"width_ratios": [1, 0.3 * len(session.queries)]},
     )
-
-    counts = np.array(counts)
-    identities = np.array(identities)
 
     # Plot dendrogram
     Y = linkage(identities, method="ward")
@@ -47,7 +53,6 @@ def plot(session, figure=None, dpi=300, show_counts=False):
     )
 
     # Annotate with counts
-
     if show_counts:
         colours = ["black", "white"]
         textkw = dict(fontsize=6, va="center", ha="right")
