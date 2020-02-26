@@ -239,7 +239,7 @@ def hits_contain_required_queries(hits, queries):
 
 def hits_contain_unique_queries(hits, threshold=3):
     """Check that a group of Hit objects belong to some threshold of unique queries."""
-    return len(set(hit.query_id for hit in hits)) >= threshold
+    return len(set(hit.query for hit in hits)) >= threshold
 
 
 def find_clusters(hits, require=None, unique=3, min_hits=3, gap=20000):
@@ -263,7 +263,7 @@ def find_clusters(hits, require=None, unique=3, min_hits=3, gap=20000):
     groups: list
         Groups of Hit objects.
     """
-    if conserve < 0 or gap < 0:
+    if unique < 0 or min_hits < 0 or gap < 0:
         raise ValueError("Expected positive integer")
 
     total_hits = len(hits)
@@ -272,7 +272,7 @@ def find_clusters(hits, require=None, unique=3, min_hits=3, gap=20000):
         return []
 
     if total_hits == 1:
-        if conserve == 1:
+        if unique == 1 or min_hits == 1:
             return [hits]
         return []
 
