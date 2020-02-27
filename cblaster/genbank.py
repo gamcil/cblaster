@@ -55,7 +55,9 @@ from pathlib import Path
 
 
 PATTERNS = {
-    "scaffold": re.compile(r"LOCUS\s+?(?P<accession>\b[\w.-]+?)\s.+?//", re.DOTALL),
+    "scaffold": re.compile(
+        r"LOCUS\s+?(?P<accession>\b[\w.-]+?)\s.+?^//$", re.DOTALL|re.M
+    ),
     "organism": re.compile(r"ORGANISM\s+?(?P<organism>\w[\w .-]+?)[\n\r]"),
     "strain": re.compile(r'/strain="(?P<strain>([\w .-]+?))"'),
     "protein": re.compile(
