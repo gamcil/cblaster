@@ -36,7 +36,7 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: MIT License",
     ],
-    install_requires=["requests"],
+    install_requires=["requests", "matplotlib", "plotly"],
     tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["cblaster=cblaster.main:main"]},
