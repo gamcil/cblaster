@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Database &#8212; cblaster 1.0.5 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="GenBank" href="genbank.html" />
+    <link rel="prev" title="Context" href="context.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cblaster.database">
+<span id="database"></span><h1>Database<a class="headerlink" href="#module-cblaster.database" title="Permalink to this headline">¶</a></h1>
+<p>This module handles creation of local JSON databases for non-NCBI lookups.</p>
+<dl class="py class">
+<dt id="cblaster.database.DB">
+<em class="property">class </em><code class="sig-prename descclassname">cblaster.database.</code><code class="sig-name descname">DB</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">db</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB" title="Permalink to this definition">¶</a></dt>
+<dd><p>The DB class handles reading/writing of the local JSON database.</p>
+<dl>
+<dt>organisms: dict</dt><dd><p>Complete hierarchy of objects in the DB instance.
+Organism -&gt; Strain -&gt; Scaffold -&gt; Proteins</p>
+</dd>
+<dt>proteins: dict</dt><dd><p>Dictionary of proteins keyed on protein IDs.</p>
+<p>To facilitate quicker lookups by protein rather than through organism.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="cblaster.database.DB.Organism">
+<em class="property">class </em><code class="sig-name descname">Organism</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">strain</span></em>, <em class="sig-param"><span class="n">file</span></em>, <em class="sig-param"><span class="n">scaffolds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.Organism" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py attribute">
+<dt id="cblaster.database.DB.Organism.file">
+<code class="sig-name descname">file</code><a class="headerlink" href="#cblaster.database.DB.Organism.file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="cblaster.database.DB.Organism.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#cblaster.database.DB.Organism.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="cblaster.database.DB.Organism.scaffolds">
+<code class="sig-name descname">scaffolds</code><a class="headerlink" href="#cblaster.database.DB.Organism.scaffolds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="cblaster.database.DB.Organism.strain">
+<code class="sig-name descname">strain</code><a class="headerlink" href="#cblaster.database.DB.Organism.strain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cblaster.database.DB.Scaffold">
+<em class="property">class </em><code class="sig-name descname">Scaffold</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">accession</span></em>, <em class="sig-param"><span class="n">proteins</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.Scaffold" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py attribute">
+<dt id="cblaster.database.DB.Scaffold.accession">
+<code class="sig-name descname">accession</code><a class="headerlink" href="#cblaster.database.DB.Scaffold.accession" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="cblaster.database.DB.Scaffold.proteins">
+<code class="sig-name descname">proteins</code><a class="headerlink" href="#cblaster.database.DB.Scaffold.proteins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.add_organism">
+<code class="sig-name descname">add_organism</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">organism</span></em>, <em class="sig-param"><span class="n">allow_duplicate_strains</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.add_organism" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an organism dictionary, as generated by parse_genbank().</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.fasta_iter">
+<code class="sig-name descname">fasta_iter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.fasta_iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate FASTA format sequence for proteins in this DB instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.from_files">
+<em class="property">classmethod </em><code class="sig-name descname">from_files</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">files</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.from_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a DB instance from a collection of GenBank files.</p>
+<p>For example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">db</span> <span class="o">=</span> <span class="n">database</span><span class="o">.</span><span class="n">DB</span><span class="o">.</span><span class="n">from_files</span><span class="p">([</span><span class="s1">&#39;path/to/file.gbk&#39;</span><span class="p">,</span> <span class="s1">&#39;path/to/file.gbk&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.from_json">
+<em class="property">classmethod </em><code class="sig-name descname">from_json</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">json_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a DB distance from JSON.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.makedb">
+<code class="sig-name descname">makedb</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.makedb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to write FASTA and generate diamond DB</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.to_json">
+<code class="sig-name descname">to_json</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">handle</span></em>, <em class="sig-param"><span class="n">indent</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialise to JSON and write to an open file handle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.to_list">
+<code class="sig-name descname">to_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.to_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize the DB to list.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.validate_strain">
+<code class="sig-name descname">validate_strain</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">species</span></em>, <em class="sig-param"><span class="n">strain</span></em>, <em class="sig-param"><span class="n">allow_duplicates</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.validate_strain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check a given strain is already in this DB instance.</p>
+<p>If yes, this function will return an altered strain name, appended with the
+current count of duplicate strains already in this DB. Otherwise, the strain
+will be returned unchanged.</p>
+<p>If allow_duplicates=False, a ValueError will be raised.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.DB.write_fasta">
+<code class="sig-name descname">write_fasta</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">handle</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.DB.write_fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write sequences in this DB instance to file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cblaster.database.Protein">
+<em class="property">class </em><code class="sig-prename descclassname">cblaster.database.</code><code class="sig-name descname">Protein</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">id</span></em>, <em class="sig-param"><span class="n">index</span></em>, <em class="sig-param"><span class="n">sequence</span></em>, <em class="sig-param"><span class="n">scaffold</span></em>, <em class="sig-param"><span class="n">start</span></em>, <em class="sig-param"><span class="n">end</span></em>, <em class="sig-param"><span class="n">strand</span></em>, <em class="sig-param"><span class="n">organism</span></em>, <em class="sig-param"><span class="n">strain</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.Protein" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Protein class is a simple container for Proteins inside a DB instance.</p>
+<p>It provides the following functionality:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Store the entire genomic context of the protein, including position on a
+scaffold and its parent organism/strain</p></li>
+<li><p>Method for generating unique header containing the proteins lineage, used
+when building the diamond database such that search hits can be traced back
+to the correct Protein instances, even if different organisms have identical
+protein naming schemes</p></li>
+<li><p>Property for building FASTA str of the protein including its unique header</p></li>
+<li><p>Method for serialising the instance to dict</p></li>
+</ol>
+</div></blockquote>
+<dl class="py method">
+<dt id="cblaster.database.Protein.fasta">
+<em class="property">property </em><code class="sig-name descname">fasta</code><a class="headerlink" href="#cblaster.database.Protein.fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate FASTA format string.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.Protein.header">
+<em class="property">property </em><code class="sig-name descname">header</code><a class="headerlink" href="#cblaster.database.Protein.header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate header for this Protein containing its full lineage.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cblaster.database.Protein.to_dict">
+<code class="sig-name descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.Protein.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialise this Protein instance to dict.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.database.diamond_makedb">
+<code class="sig-prename descclassname">cblaster.database.</code><code class="sig-name descname">diamond_makedb</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fasta</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.database.diamond_makedb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build DIAMOND database from JSON.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fasta</strong> (<em>str</em>) – Path to FASTA file containing protein sequences</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of generated DIAMOND database</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">cblaster</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Context</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genbank.html">GenBank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="helpers.html">Helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local.html">Local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Main</a></li>
+<li class="toctree-l1"><a class="reference internal" href="remote.html">Remote</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="context.html" title="previous chapter">Context</a></li>
+      <li>Next: <a href="genbank.html" title="next chapter">GenBank</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Cameron Gilchrist.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/database.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

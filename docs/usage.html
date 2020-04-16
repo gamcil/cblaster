@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Usage &#8212; cblaster 1.0.5 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Classes" href="classes.html" />
+    <link rel="prev" title="Welcome to cblaster’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>There are two search modes, specified by the <cite>–mode</cite> argument.
+By default (i.e. <cite>–mode</cite> not specified), it will be set to <cite>remote</cite>, and a fully
+remote <cite>cblaster</cite> search will begin using NCBI’s BLAST API.
+Alternatively, <cite>local</cite> mode performs a search against a local <cite>diamond</cite> database, which
+is much quicker (albeit requiring some initial setup).</p>
+<div class="section" id="performing-a-remote-search-via-the-ncbi-blast-api">
+<h2>Performing a remote search via the NCBI BLAST API<a class="headerlink" href="#performing-a-remote-search-via-the-ncbi-blast-api" title="Permalink to this headline">¶</a></h2>
+<p>At a minimum, a search could look like one of the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cblaster search -qf query.fasta
+$ cblaster search -qi QBE85649.1 QBE85648.1 QBE85647.1 QBE85646.1 ...
+</pre></div>
+</div>
+<p>This will launch a remote search against the non-redundant (nr) protein database,
+retrieve and parse the results, then report any blocks of hits to the terminal.
+By default, hits are only reported if they are above 30% percent identity and 50% query
+coverage, and have an e-value below 0.01.
+If we wanted to be stricter, we could change those values with the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cblaster search -qf query.fasta --min_identity 70 --min_coverage 90 --evalue 0.001
+</pre></div>
+</div>
+<p>You can also pass in NCBI search queries using <cite>-eq / –entrez_query</cite> to pre-filter
+the target database, which can result in vastly reduced run-times and more
+targeted results. For example, to only search against <em>Aspergillus</em> sequences:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cblaster search -qf query.fasta --entrez_query &quot;Aspergillus&quot;[ORGN]
+</pre></div>
+</div>
+<p>Look <a class="reference external" href="https://www.ncbi.nlm.nih.gov/books/NBK49540/">here</a> for a full description of Entrez search terms.</p>
+</div>
+<div class="section" id="searching-a-local-database-using-diamond">
+<h2>Searching a local database using DIAMOND<a class="headerlink" href="#searching-a-local-database-using-diamond" title="Permalink to this headline">¶</a></h2>
+<p>Alternatively, a local DIAMOND database can be searched by specifying:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cblaster search -qf query.fasta --mode local --database db.dmnd
+</pre></div>
+</div>
+<p>For this to work, the database must consist of sequences derived from NCBI, such that
+their identifiers can be used for retrieval of sequences/genomic context.
+The easiest way to set this up is via NCBI’s batch assembly download option.
+For example, to build a database of <em>Aspergillus</em> protein sequences:</p>
+<ol class="arabic simple">
+<li><p>Search the NCBI Assembly database for <em>Aspergillus</em> genomes</p></li>
+</ol>
+<a class="reference internal image-reference" href="_images/search.png"><img alt="Search for Aspergillus assemblies" src="_images/search.png" style="width: 500px;" /></a>
+<ol class="arabic simple" start="2">
+<li><p>Click ‘Download Assemblies’, select ‘Protein FASTA’ and click ‘Download’</p></li>
+</ol>
+<a class="reference internal image-reference" href="_images/download.png"><img alt="Download 'Protein FASTA' files" src="_images/download.png" style="width: 500px;" /></a>
+<ol class="arabic simple" start="3">
+<li><p>Extract all FASTA files and concatenate them</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pigz -d *.gz
+$ cat *.faa &gt;&gt; proteins.faa
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Build the DIAMOND database</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ diamond makedb --in proteins.faa --db proteins
+...
+$ ls
+database.faa
+database.dmnd
+```
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>Run <cite>cblaster</cite> against the newly created databse</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cblaster search -m local -qf query.fa -db database.dmnd &lt;options&gt;
+</pre></div>
+</div>
+<p>Alternatively, you could use <a class="reference external" href="https://github.com/kblin/ncbi-genome-download">ncbi-genome-download</a> to retrieve the sequences from
+the command line.</p>
+</div>
+<div class="section" id="performing-a-fully-local-search">
+<h2>Performing a fully local search<a class="headerlink" href="#performing-a-fully-local-search" title="Permalink to this headline">¶</a></h2>
+<p><cite>cblaster</cite> can also perform fully local searches, forgoing the need for any interaction
+with NCBI whatsoever.
+To do this, <cite>cblaster</cite> builds a faux-database JSON file from a list of GenBank files,
+and generates a <cite>diamond</cite> database of all protein sequences in this database.
+Then, <cite>cblaster</cite> searches can be run against the created <cite>diamond</cite> database, and genomic
+context obtained from the JSON file.
+For example:</p>
+<ol class="arabic simple">
+<li><p>Build <cite>diamond</cite> and JSON databases</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cblaster makedb path/to/folder/*.gbk mydatabase
+[12:06:32] INFO - Parsing 3 files...
+[12:06:32] INFO - 1. /path/to/folder/one.gbk
+[12:06:33] INFO - 2. /path/to/folder/two.gbk
+[12:06:34] INFO - 3. /path/to/folder/three.gbk
+[12:07:21] INFO - Writing FASTA file with database sequences: mydatabase.faa
+[12:07:21] INFO - Building DIAMOND database: mydatabase.dmnd
+[12:07:36] INFO - Building JSON database: mydatabase.json
+</pre></div>
+</div>
+<p>Now, everything should be in the folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ls
+mydatabase.faa
+mydatabase.dmnd
+mydatabase.json
+</pre></div>
+</div>
+<p>Note that although this produces a FASTA file with all protein sequences in the
+database, the file is NOT actually required for searches. It is merely created for
+the purpose of building the <cite>diamond</cite> database, and can easily be recreated by loading
+the JSON database in code as a <cite>database.DB</cite> instance and running <cite>write_fasta()</cite> on an
+open file handle.</p>
+<ol class="arabic simple" start="2">
+<li><p>Run a <cite>cblaster</cite> search against the built databases</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cblaster search -qf query.fasta --json mydatabase.json -db mydatabase.db &lt;options&gt;
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">cblaster</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#performing-a-remote-search-via-the-ncbi-blast-api">Performing a remote search via the NCBI BLAST API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#searching-a-local-database-using-diamond">Searching a local database using DIAMOND</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performing-a-fully-local-search">Performing a fully local search</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Context</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html">Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genbank.html">GenBank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="helpers.html">Helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local.html">Local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Main</a></li>
+<li class="toctree-l1"><a class="reference internal" href="remote.html">Remote</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to cblaster’s documentation!</a></li>
+      <li>Next: <a href="classes.html" title="next chapter">Classes</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Cameron Gilchrist.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/usage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

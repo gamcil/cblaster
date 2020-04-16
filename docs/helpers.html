@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Helpers &#8212; cblaster 1.0.5 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Local" href="local.html" />
+    <link rel="prev" title="GenBank" href="genbank.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cblaster.helpers">
+<span id="helpers"></span><h1>Helpers<a class="headerlink" href="#module-cblaster.helpers" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="cblaster.helpers.efetch_sequences">
+<code class="sig-prename descclassname">cblaster.helpers.</code><code class="sig-name descname">efetch_sequences</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">headers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.helpers.efetch_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve protein sequences from NCBI for supplied accessions.</p>
+<p>This function uses EFetch from the NCBI E-utilities to retrieve the sequences for
+all synthases specified in <cite>headers</cite>. It then calls <cite>fasta.parse</cite> to parse the
+returned response; note that extra processing has to occur because the returned
+FASTA will contain a full sequence description in the header line after the
+accession.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>headers</strong> (<em>list</em><em>, </em><em>tuple</em>) – A list of valid NCBI sequence identifiers (accession, GI, etc). Should
+correspond to an entry in the Protein database.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.helpers.efetch_sequences_request">
+<code class="sig-prename descclassname">cblaster.helpers.</code><code class="sig-name descname">efetch_sequences_request</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">headers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.helpers.efetch_sequences_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launch E-Fetch request for a list of sequence accessions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>headers</strong> (<em>list</em>) – NCBI sequence accessions</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>requests.HTTPError</strong> – Received bad status code from NCBI</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Response object returned by <cite>requests</cite> library</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>requests.models.Response</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.helpers.form_command">
+<code class="sig-prename descclassname">cblaster.helpers.</code><code class="sig-name descname">form_command</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parameters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.helpers.form_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flatten a dictionary to create a command list for use in subprocess.run()</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.helpers.get_program_path">
+<code class="sig-prename descclassname">cblaster.helpers.</code><code class="sig-name descname">get_program_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aliases</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.helpers.get_program_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get programs path given a list of program names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>aliases</strong> (<em>list</em>) – Alternative names for a program, e.g. [“diamond”, “diamond-aligner”]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Could not find any of the given aliases on system $PATH</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Path to program executable</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.helpers.get_sequences">
+<code class="sig-prename descclassname">cblaster.helpers.</code><code class="sig-name descname">get_sequences</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">query_ids</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.helpers.get_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to get dictionary of query sequences from file or IDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query_file</strong> (<em>str</em>) – Path to FASTA file containing query protein sequences</p></li>
+<li><p><strong>query_ids</strong> (<em>list</em>) – NCBI sequence accessions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – Did not receive values for <cite>query_file</cite> or <cite>query_ids</cite></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>sequences</strong> – Dictionary of query sequences keyed on accession</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.helpers.parse_fasta">
+<code class="sig-prename descclassname">cblaster.helpers.</code><code class="sig-name descname">parse_fasta</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">handle</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.helpers.parse_fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse sequences in a FASTA file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Sequences in FASTA file keyed on their headers (i.e. &gt; line)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">cblaster</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Context</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html">Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genbank.html">GenBank</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local.html">Local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Main</a></li>
+<li class="toctree-l1"><a class="reference internal" href="remote.html">Remote</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="genbank.html" title="previous chapter">GenBank</a></li>
+      <li>Next: <a href="local.html" title="next chapter">Local</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Cameron Gilchrist.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/helpers.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

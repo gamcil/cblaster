@@ -1,0 +1,291 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Context &#8212; cblaster 1.0.5 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Database" href="database.html" />
+    <link rel="prev" title="Classes" href="classes.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cblaster.context">
+<span id="context"></span><h1>Context<a class="headerlink" href="#module-cblaster.context" title="Permalink to this headline">¶</a></h1>
+<p>The <cite>context</cite> module provides methods for interacting with the NCBI’s Identical
+Protein Group (IPG) resource, grouping of <cite>Hit</cite> objects by genomic scaffold and
+organism, and identifying hit clusters.</p>
+<p>The main functionality of this module is wrapped up in the <cite>search()</cite> function.</p>
+<p>For example, given a list of <cite>Hit</cite> objects, we can query NCBI for genomic coordinates of
+each hit, and automatically group them into <cite>Scaffold</cite> and <cite>Organism</cite> objects as follows:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">organisms</span> <span class="o">=</span> <span class="n">search</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">hits</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">unique</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># number of query sequences that MUST be hit in a cluster</span>
+<span class="gp">... </span>    <span class="n">min_hits</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># minimum number of hits in a cluster</span>
+<span class="gp">... </span>    <span class="n">gap</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span>  <span class="c1"># maximum intergenic gap</span>
+<span class="gp">... </span>    <span class="n">require</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;q1&quot;</span><span class="p">,</span> <span class="s2">&quot;q2&quot;</span><span class="p">],</span>  <span class="c1"># specific query sequences that MUST be in a cluster</span>
+<span class="gp">... </span>    <span class="n">json_db</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># query a JSON database created using cblaster makedb</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt id="cblaster.context.efetch_IPGs">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">efetch_IPGs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ids</span></em>, <em class="sig-param"><span class="n">output_handle</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.efetch_IPGs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query Identical Protein Groups (IPG) with query sequence IDs.</p>
+<p>The NCBI caps Efetch requests at 10000 maximum returned records (i.e. retmax=10000)
+so this function splits <cite>ids</cite> into chunks of 10000 and queries NCBI individually
+for each chunk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ids</strong> (<em>list</em><em>, </em><em>tuple</em>) – NCBI sequence identifiers</p></li>
+<li><p><strong>output_handle</strong> (<em>open file handle</em>) – File handle to write IPG table to</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>table</strong> – Results from IPG search split by newline</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.context.find_clusters">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">find_clusters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hits</span></em>, <em class="sig-param"><span class="n">require</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">unique</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">min_hits</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">gap</span><span class="o">=</span><span class="default_value">20000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.find_clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find clustered Hit objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hits</strong> (<em>list</em>) – Hit objects</p></li>
+<li><p><strong>require</strong> (<em>iterable</em>) – Names of query sequences that must be represented in a hit cluster</p></li>
+<li><p><strong>unique</strong> (<em>int</em>) – Minimum number of unique queries represented in a hit cluster</p></li>
+<li><p><strong>min_hits</strong> (<em>int</em>) – Minimum number of hits in a cluster</p></li>
+<li><p><strong>gap</strong> (<em>int</em>) – Maximum intergenic distance (bp) between any two hits in a cluster</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>groups</strong> – Groups of Hit objects.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.context.find_clusters_in_organism">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">find_clusters_in_organism</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">organism</span></em>, <em class="sig-param"><span class="n">unique</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">min_hits</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">gap</span><span class="o">=</span><span class="default_value">20000</span></em>, <em class="sig-param"><span class="n">require</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.find_clusters_in_organism" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run find_clusters() on all Hits on Scaffolds in an Organism instance.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.context.hits_contain_required_queries">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">hits_contain_required_queries</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hits</span></em>, <em class="sig-param"><span class="n">queries</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.hits_contain_required_queries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that a group of Hit objects contains a Hit for each required query.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hits</strong> (<em>list</em>) – <cite>Hit</cite> objects to be checked</p></li>
+<li><p><strong>queries</strong> (<em>list</em>) – Names of query sequences to check for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>True or False</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.context.hits_contain_unique_queries">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">hits_contain_unique_queries</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hits</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="o">=</span><span class="default_value">3</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.hits_contain_unique_queries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that a group of Hit objects belong to some threshold of unique queries.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.context.parse_IPG_table">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">parse_IPG_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">results_handle</span></em>, <em class="sig-param"><span class="n">hits</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.parse_IPG_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse IPG results table from <cite>efetch_IPGs</cite>.</p>
+<dl class="simple">
+<dt>Process:</dt><dd><ol class="arabic simple">
+<li><p>Parse individual entries in IPG table, grouping by UID</p></li>
+<li><p>Find representative <cite>Hit</cite> object and make a copy for each IPG entry</p></li>
+<li><p>Update each <cite>Hit</cite> copy with genomic location from IPG</p></li>
+<li><p>Save <cite>Hit</cite> copies to corresponding <cite>Organism</cite> objects</p></li>
+</ol>
+</dd>
+</dl>
+<p>Though this will capture a lot of redundant information (e.g. gene cluster that has
+been deposited separately to its parent genome) it should not miss any hits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results_handle</strong> (<em>open file handle</em>) – Results from identical protein groups search</p></li>
+<li><p><strong>hits</strong> (<em>list</em>) – Hit objects that were used to query NCBI</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>organisms</strong> – Organism objects</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.context.query_local_DB">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">query_local_DB</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hits</span></em>, <em class="sig-param"><span class="n">database</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.query_local_DB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build Organisms/Scaffolds using database.DB instance.</p>
+<p>Retrieves corresponding Protein object from the DB by passing it the Hit subject
+attribute, which should be a 4 field ‘|’ delimited header string containing the full
+lineage of the protein (e.g. organism|strain|scaffold|protein).</p>
+<p>Internally uses defaultdict to build up hierarchy of unique organisms, then returns
+list of just each organism dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hits</strong> (<em>list</em>) – Hit objects created during cblaster search</p></li>
+<li><p><strong>database</strong> (<a class="reference internal" href="database.html#cblaster.database.DB" title="cblaster.database.DB"><em>database.DB</em></a>) – cblaster database object</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Organism objects</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cblaster.context.search">
+<code class="sig-prename descclassname">cblaster.context.</code><code class="sig-name descname">search</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hits</span></em>, <em class="sig-param"><span class="n">unique</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">min_hits</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">gap</span><span class="o">=</span><span class="default_value">20000</span></em>, <em class="sig-param"><span class="n">require</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">json_db</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cblaster.context.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get genomic context for a collection of BLAST hits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hits</strong> (<em>list</em>) – Collection of <cite>Hit</cite> objects</p></li>
+<li><p><strong>unique</strong> (<em>int</em>) – Minimum number of query sequences that MUST have a corresponding hit in
+any given cluster</p></li>
+<li><p><strong>min_hits</strong> (<em>int</em>) – Minimum number of hits in any given cluster</p></li>
+<li><p><strong>gap</strong> (<em>int</em>) – Maximum intergenic gap (bp) between any two hits in a cluster</p></li>
+<li><p><strong>require</strong> (<em>list</em>) – Names of query sequences that must be in a cluster</p></li>
+<li><p><strong>json_db</strong> (<em>str</em>) – Path to a JSON database created using <cite>cblaster makedb</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>organisms</strong> – Dictionary of <cite>Organism</cite> objects keyed on species name</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">cblaster</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Context</a></li>
+<li class="toctree-l1"><a class="reference internal" href="database.html">Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genbank.html">GenBank</a></li>
+<li class="toctree-l1"><a class="reference internal" href="helpers.html">Helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local.html">Local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Main</a></li>
+<li class="toctree-l1"><a class="reference internal" href="remote.html">Remote</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="classes.html" title="previous chapter">Classes</a></li>
+      <li>Next: <a href="database.html" title="next chapter">Database</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Cameron Gilchrist.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/context.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
