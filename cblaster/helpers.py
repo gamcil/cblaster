@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
 
-"""
-This module stores small helper functions.
-"""
 
 import shutil
 import requests
 import logging
 
+
 LOG = logging.getLogger(__name__)
 
 
 def get_program_path(aliases):
-    """Get programs path given a list of program names."""
+    """Get programs path given a list of program names.
+
+    Parameters
+    ----------
+    aliases: list
+        Alternative names for a program, e.g. ["diamond", "diamond-aligner"]
+
+    Raises
+    ------
+    ValueError
+        Could not find any of the given aliases on system $PATH
+
+    Returns
+    -------
+    str
+        Path to program executable
+    """
     for alias in aliases:
         which = shutil.which(alias)
         if which:
@@ -60,6 +74,24 @@ def parse_fasta_file(path):
 
 
 def efetch_sequences_request(headers):
+    """Launch E-Fetch request for a list of sequence accessions.
+
+    Parameters
+    ----------
+    headers: list
+        NCBI sequence accessions
+
+    Raises
+    ------
+    requests.HTTPError
+        Received bad status code from NCBI
+
+    Returns
+    -------
+    requests.models.Response
+        Response object returned by `requests` library
+    """
+
     response = requests.post(
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
         params={"db": "protein", "rettype": "fasta"},
@@ -106,7 +138,25 @@ def efetch_sequences(headers):
 
 
 def get_sequences(query_file=None, query_ids=None):
-    """Convenience function to get dictionary of query sequences from file or IDs."""
+    """Convenience function to get dictionary of query sequences from file or IDs.
+
+    Parameters
+    ----------
+    query_file: str
+        Path to FASTA file containing query protein sequences
+    query_ids: list
+        NCBI sequence accessions
+
+    Raises
+    ------
+    ValueError
+        Did not receive values for `query_file` or `query_ids`
+
+    Returns
+    -------
+    sequences: dict
+        Dictionary of query sequences keyed on accession
+    """
     if query_file and not query_ids:
         with open(query_file) as query:
             sequences = parse_fasta(query)

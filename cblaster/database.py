@@ -243,7 +243,15 @@ class DB:
 
 
 def diamond_makedb(fasta, name):
-    """Build DIAMOND database from JSON."""
+    """Build DIAMOND database from JSON.
+
+    Parameters
+    ----------
+    fasta: str
+        Path to FASTA file containing protein sequences
+    name: str
+        Name of generated DIAMOND database
+    """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
     subprocess.run(
         [diamond, "makedb", "--in", fasta, "--db", name],

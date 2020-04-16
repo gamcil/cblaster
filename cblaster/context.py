@@ -1,8 +1,25 @@
 #!/usr/bin/env python3
 
 """
-This module handles the querying of NCBI for the genomic context of sequences.
+The `context` module provides methods for interacting with the NCBI's Identical
+Protein Group (IPG) resource, grouping of `Hit` objects by genomic scaffold and
+organism, and identifying hit clusters.
+
+The main functionality of this module is wrapped up in the `search()` function.
+
+For example, given a list of `Hit` objects, we can query NCBI for genomic coordinates of
+each hit, and automatically group them into `Scaffold` and `Organism` objects as follows:
+
+>>> organisms = search(
+...     hits,
+...     unique=3,  # number of query sequences that MUST be hit in a cluster
+...     min_hits=3,  # minimum number of hits in a cluster
+...     gap=20000,  # maximum intergenic gap
+...     require=["q1", "q2"],  # specific query sequences that MUST be in a cluster
+...     json_db=None,  # query a JSON database created using cblaster makedb
+... )
 """
+
 
 import logging
 import re
@@ -14,14 +31,15 @@ import requests
 from cblaster import database
 from cblaster.classes import Organism, Scaffold
 
+
 LOG = logging.getLogger(__name__)
 
 
 def efetch_IPGs(ids, output_handle=None):
     """Query Identical Protein Groups (IPG) with query sequence IDs.
 
-    The NCBI caps Efetch requests at 10000 maximum returned records (i.e. retmax=10000).
-    Thus, this function splits `ids` into chunks of 10000 and queries NCBI individually
+    The NCBI caps Efetch requests at 10000 maximum returned records (i.e. retmax=10000)
+    so this function splits `ids` into chunks of 10000 and queries NCBI individually
     for each chunk.
 
     Parameters
@@ -70,12 +88,14 @@ def efetch_IPGs(ids, output_handle=None):
 def parse_IPG_table(results_handle, hits):
     """Parse IPG results table from `efetch_IPGs`.
 
-    This function first parses individual entries in the IPG table and groups them by
-    IPG uid. For each IPG, a representative Hit object is found in `hits` and a copy
-    is made for each protein in the IPG. Each copy is updated with the genomic origin
-    listed in the IPG table, and then added to the corresponding Organism object (or a
-    new Organism if one isn't found). `cblaster` should therefore capture every possible
-    cluster on NCBI.
+    Process:
+        1. Parse individual entries in IPG table, grouping by UID
+        2. Find representative `Hit` object and make a copy for each IPG entry
+        3. Update each `Hit` copy with genomic location from IPG
+        4. Save `Hit` copies to corresponding `Organism` objects
+
+    Though this will capture a lot of redundant information (e.g. gene cluster that has
+    been deposited separately to its parent genome) it should not miss any hits.
 
     Parameters
     ----------
@@ -227,7 +247,19 @@ def query_local_DB(hits, database):
 
 
 def hits_contain_required_queries(hits, queries):
-    """Check that a group of Hit objects contains a Hit for each required query."""
+    """Check that a group of Hit objects contains a Hit for each required query.
+
+    Parameters
+    ----------
+    hits: list
+        `Hit` objects to be checked
+    queries: list
+        Names of query sequences to check for
+
+    Returns
+    -------
+    True or False
+    """
     bools = [False] * len(queries)
     for index, query in enumerate(queries):
         for hit in hits:
@@ -322,7 +354,29 @@ def find_clusters_in_organism(
 
 
 def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
-    """Get genomic context for a collection of BLAST hits."""
+    """Get genomic context for a collection of BLAST hits.
+
+    Parameters
+    ----------
+    hits: list
+        Collection of `Hit` objects
+    unique: int
+        Minimum number of query sequences that MUST have a corresponding hit in
+        any given cluster
+    min_hits: int
+        Minimum number of hits in any given cluster
+    gap: int
+        Maximum intergenic gap (bp) between any two hits in a cluster
+    require: list
+        Names of query sequences that must be in a cluster
+    json_db: str
+        Path to a JSON database created using `cblaster makedb`
+
+    Returns
+    -------
+    organisms: dict
+        Dictionary of `Organism` objects keyed on species name
+    """
     if json_db:
         LOG.info("Loading JSON database: %s", json_db)
         db = database.DB.from_json(json_db)
@@ -334,7 +388,11 @@ def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))
     for organism in organisms:
         find_clusters_in_organism(
-            organism, unique=unique, min_hits=min_hits, gap=gap, require=require
+            organism,
+            unique=unique,
+            min_hits=min_hits,
+            gap=gap,
+            require=require
         )
 
     return organisms

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-This module provides the command line interface as well as the main procedure
-for running cblaster.
-"""
-
 
 import argparse
 import logging
@@ -13,6 +8,7 @@ from pathlib import Path
 
 from cblaster import __version__, context, database, helpers, local, plot, remote
 from cblaster.classes import Session
+
 
 logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(message)s", datefmt="%H:%M:%S"
@@ -94,7 +90,7 @@ def makedb(genbanks, filename, indent=None):
 def filter_session(
     session, min_identity, min_coverage, max_evalue, gap, unique, min_hits, require
 ):
-    """Filter a previous session with new thresholds."""
+    """Filter a `Session` object with new thresholds."""
 
     def hit_meets_thresholds(hit):
         return (
@@ -145,6 +141,7 @@ def cblaster(
     indent=None,
     figure=False,
     figure_dpi=300,
+    use_plotly=False,
     recompute=False,
 ):
     """Run cblaster."""
@@ -248,7 +245,10 @@ def cblaster(
     if figure:
         if figure is True:
             LOG.info("Generating cblaster plot...")
-            plot.plot(session)
+            if use_plotly:
+                plot.ply(session)
+            else:
+                plot.plot(session)
         else:
             LOG.info("Writing figure to %s", figure)
             plot.plot(session, figure=figure, dpi=figure_dpi)
@@ -266,12 +266,8 @@ def get_arguments(args):
         " available arguments.",
         epilog="Cameron Gilchrist, 2020",
     )
-    parser.add_argument(
-        "--version", action="version", version="%(prog)s " + __version__
-    )
-    parser.add_argument(
-        "-d", "--debug", help="Print debugging information", action="store_true"
-    )
+    parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
+    parser.add_argument("-d", "--debug", help="Print debugging information", action="store_true")
     parser.add_argument(
         "-i",
         "--indent",
@@ -282,9 +278,7 @@ def get_arguments(args):
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
-    makedb = subparsers.add_parser(
-        "makedb", help="Generate JSON/diamond databases from GenBank files"
-    )
+    makedb = subparsers.add_parser("makedb", help="Generate JSON/diamond databases from GenBank files")
     makedb.add_argument(
         "genbank",
         help="Path/s to GenBank files to use when building JSON/diamond databases",
@@ -296,9 +290,7 @@ def get_arguments(args):
         " .json and .dmnd, respectively)",
     )
 
-    search = subparsers.add_parser(
-        "search", help="Start a local/remote cblaster search"
-    )
+    search = subparsers.add_parser("search", help="Start a local/remote cblaster search")
 
     _inputs = search.add_argument_group("Input")
     inputs = _inputs.add_mutually_exclusive_group()
@@ -346,6 +338,11 @@ def get_arguments(args):
         "--figure_dpi",
         help="DPI to use when saving figure (def. 300)",
         default=300,
+    )
+    output.add_argument(
+        "--use_plotly",
+        help="Draw cblaster results using Plotly (use when data is large).",
+        action="store_true"
     )
 
     searching = search.add_argument_group("Searching")
@@ -494,6 +491,7 @@ def main():
 
     if args.subcommand == "makedb":
         makedb(args.genbank, args.filename, args.indent)
+
     elif args.subcommand == "search":
         cblaster(
             query_file=args.query_file,
@@ -521,6 +519,7 @@ def main():
             recompute=args.recompute,
             figure_dpi=args.figure_dpi,
             figure=args.figure,
+            use_plotly=args.use_plotly
         )
 
 

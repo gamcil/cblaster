@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-This module handles BLAST search using local tools (DIAMOND and BLASTp).
-"""
 
 import logging
 import subprocess
@@ -25,8 +22,11 @@ def parse(results, min_identity=30, min_coverage=50, max_evalue=0.01):
         Result of `diamond()` or `blastp()`, the stdout from diamond/blastp
         subprocess call.
     min_identity: float
+        Minimum percent identity cutoff
     min_coverage: float
+        Minimum percent coverage cutoff
     max_evalue: float
+        Maximum e-value threshold
 
     Return
     ------
@@ -127,7 +127,27 @@ def _search_ids(ids, database, **kwargs):
 
 
 def search(database, query_file=None, query_ids=None, **kwargs):
-    """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote)."""
+    """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote).
+
+    Parameters
+    ----------
+    database: str
+        Path to DIAMOND database
+    query_file: str, optional
+        Path to FASTA file containing query sequences
+    query_ids: list, optional
+        NCBI sequence accessions
+
+    Raises
+    ------
+    ValueError
+        No value given for `query_file` or `query_ids`
+
+    Returns
+    -------
+    results: list
+        Parsed rows with hits from DIAMOND results table
+    """
     if query_file and not query_ids:
         return _search_file(query_file, database, **kwargs)
     if query_ids:

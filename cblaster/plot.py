@@ -1,16 +1,126 @@
-"""Plot cblaster results."""
-
-
 import numpy as np
 import scipy
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.cluster.hierarchy import dendrogram, linkage, to_tree
+
+
+def ply(session):
+    """Plot a session using Plotly.
+
+    Use this when data is large since matplotlib will choke.
+    """
+
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+    import plotly.figure_factory as ff
+
+    names, scafs, counts, identities = session.form_matrices(html=True)
+
+    counts = np.array(counts)
+    identities = np.array(identities)
+
+    fig = make_subplots(rows=1, cols=2)
+
+    dendro = ff.create_dendrogram(identities, orientation="right")
+    leaves = dendro["layout"]["yaxis"]["ticktext"]
+    leaves = list(map(int, leaves))
+
+    for item in dendro["data"]:
+        item.pop("xaxis", None)
+        item.pop("yaxis", None)
+        fig.append_trace(item, 1, 1)
+
+    identities = identities[leaves, :]
+    names = [names[i] for i in leaves]
+    scafs = [scafs[i] for i in leaves]
+
+    heatmap = go.Heatmap(
+        y=[int(v) for v in dendro["layout"]["yaxis"]["tickvals"]],
+        z=identities,
+        xaxis="x2",
+        colorscale="Blues",
+        colorbar={"title": "Identity (%)", "len": 0.2},
+        ygap=1,
+        xgap=1
+    )
+
+    fig.add_trace(heatmap, row=1, col=2)
+
+    yvals = [int(v) for v in dendro["layout"]["yaxis"]["tickvals"]]
+
+    fig.update_layout(
+        height=15*len(yvals),
+        showlegend=False,
+        title_text="cblaster",
+        autosize=True,
+        margin=dict(l=50, r=50, b=100, t=100, pad=4),
+        template="simple_white"
+    )
+    fig.update_yaxes(matches="y", range=[yvals[0] - 10, yvals[-1] + 10], automargin=True)
+    fig.update_yaxes(
+        tickvals=yvals,
+        ticktext=names,
+        row=1,
+        col=1,
+        showline=False,
+        ticks="",
+        side="right",
+        automargin=True,
+    )
+    fig.update_xaxes(
+        domain=[0, 0.2],
+        row=1,
+        col=1,
+        ticks="",
+        showline=False,
+        showticklabels=False,
+        automargin=True,
+    )
+    fig.update_xaxes(
+        domain=[0.6, 1],
+        tickvals=list(range(len(session.queries))),
+        ticktext=session.queries,
+        side="top",
+        row=1,
+        col=2,
+        ticks="",
+        showline=False,
+        automargin=True,
+    )
+    fig.update_yaxes(
+        tickvals=yvals,
+        ticktext=scafs,
+        showline=False,
+        row=1,
+        col=2,
+        ticks="",
+        automargin=True,
+    )
+
+    fig.show(config={"toImageButtonOptions": {"width": None, "height": None}})
 
 
 def plot(session, figure=None, dpi=300, show_counts=False):
-    """Plot a cblaster Session."""
+    """Plot a cblaster Session using `matplotlib`.
+
+    `matplotlib` will produce nicer figures than `plot.ly`, but will choke when the
+    session becomes large. When the `Session` object contains a large number of organisms,
+    the `ply()` function should be used.
+
+    Parameters
+    ----------
+    session: cblaster.models.Session
+        A `Session` object containing `cblaster` results
+    figure: str
+        Path to write generated figure to. This should include a file extension, which
+        matplotlib will use to automatically determine the file type to save in.
+    dpi: int
+        Resolution of generated figure in dots per inch (DPI)
+    show_counts: bool
+        Draw hit counts over the hit heatmap
+    """
 
     rcParams["savefig.dpi"] = dpi
 
