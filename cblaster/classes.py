@@ -9,49 +9,26 @@ import json
 
 
 def generate_header_string(text, symbol="-"):
-    """Generate an underlined header string.
-
-    The underline is the specified symbol repeated for the length of the text.
+    """Generates a 2-line header string with underlined text.
 
     >>> header = generate_header_string("header string", symbol="*")
     >>> print(header)
     header string
     *************
-
-    Parameters
-    ----------
-    text: str
-        Text to use in header
-    symbol: str
-        Character to use for divider
-
-    Returns
-    -------
-    str
-        Header string
     """
-    length = len(text)
-    return f"{text}\n{symbol * length}"
+    return f"{text}\n{symbol * len(text)}"
 
 
 def generate_cluster_table(hits, decimals=4, show_headers=True, human=True):
-    """Generate a summary table for a hit cluster.
+    """Generates a summary table for a hit cluster.
 
-    Parameters
-    ----------
-    hits: list
-        Collection of Hit instances
-    decimals: int
-        How many decimal points to show
-    show_headers: bool
-        Show column headers in output
-    human: bool
-        Generate human readable, not delimited, table
-
-    Returns
-    -------
-    str
-        Summary table
+    Args:
+        hits (list): collection of Hit objects
+        decimals (int): number of decimal points to show
+        show_headers (bool): show column headers in output
+        human (bool): use human-readable format
+    Returns:
+        summary table
     """
     rows = [h.values(decimals) for h in hits]
 
@@ -88,14 +65,16 @@ class Serializer:
     """
 
     def to_dict(self):
+        """Serialises class to dict."""
         raise NotImplementedError
 
     @classmethod
     def from_dict(self, d):
+        """Loads class from dict."""
         raise NotImplementedError
 
     def to_json(self, fp=None, **kwargs):
-        """Serialise class to JSON."""
+        """Serialises class to JSON."""
         d = self.to_dict()
         if fp:
             json.dump(d, fp, **kwargs)
@@ -104,7 +83,7 @@ class Serializer:
 
     @classmethod
     def from_json(cls, js):
-        """Instantiate class from JSON handle."""
+        """Instantiates class from JSON handle."""
         if isinstance(js, str):
             d = json.loads(js)
         else:
@@ -113,14 +92,11 @@ class Serializer:
 
 
 class Session(Serializer):
-    """A search session.
+    """Stores the state of a cblaster search.
 
-    This class is used to manage state during a cblaster search. It stores IDs of query
-    proteins, parameters used, RID if `--remote` and all Organism objects created during
-    the genomic context stage. Methods for generating summary tables and matrices for
-    plotting are also stored in this class.
-
-    Session objects can be dumped to/loaded from JSON to facilitate re-filtering/plotting.
+    This class stores query proteins, search parameters, Organism objects created
+    during searches, as well as methods for generating summary tables. It can also be
+    dumped to/loaded from JSON for re-filtering, plotting, etc.
 
     >>> s = Session()
     >>> with open("session.json", "w") as fp:
@@ -130,14 +106,10 @@ class Session(Serializer):
     >>> s == s2
     True
 
-    Attributes
-    ----------
-    queries: list
-        Names of query sequences
-    params: dict
-        Dictionary of search parameters
-    organisms: list
-        `Organism` objects found during a `cblaster` search
+    Attributes:
+        queries (list): Names of query sequences.
+        params (dict): Search parameters.
+        organisms (list): Organism objects created in a search.
     """
 
     def __init__(self, queries, params, organisms=None):
@@ -160,8 +132,9 @@ class Session(Serializer):
             organisms=[Organism.from_dict(o) for o in d["organisms"]],
         )
 
+    # TODO: this doesn't need to be in the class
     def count_query_hits(self, hits):
-        """Count total hits per query in a colllection of `Hit` objects.
+        """Counts total hits per query in a colllection of `Hit` objects.
 
         >>> s = Session()
         >>> s.queries = ["query1", "query2", "query3"]
@@ -172,12 +145,18 @@ class Session(Serializer):
         ... ]
         >>> s.count_query_hits(hits)
         [1, 1, 0]
+
+        Args:
+            hits (list): Hit objects
+        Returns:
+            List of per-query counts corresponding to input.
         """
         return [
             sum(query == hit.query for hit in hits)
             for query in self.queries
         ]
 
+    # TODO: this doesn't need tob e in the class
     def get_max_hit_identities(self, hits):
         """Get the maximum hit identity per query in a collection of `Hit` objects.
 
@@ -235,15 +214,16 @@ class Session(Serializer):
     def _summary(self, human=True, headers=True):
         """Generate summary of >1 Organisms, print to console or write to file.
 
-        Parameters
-        ----------
-        organisms: list
-        output: open file handle
+        Args:
+            human (bool): Use human-readable format.
+            headers (bool): Show table headers.
+        Returns:
+            The summary table.
         """
         return "\n\n\n".join(
             organism.summary(headers=headers, human=human)
             for organism in self.organisms
-            if organism.count_hit_clusters() > 0
+            if organism.total_hit_clusters > 0
         )
 
     def _binary(self, human=False, headers=True, identity=False):
@@ -287,28 +267,17 @@ class Session(Serializer):
         return table
 
     def format(self, form, fp, human=True, headers=True, **kwargs):
-        """Generate summary tables.
+        """Generates a summary table.
 
-        Parameters
-        ----------
-        form: str
-            Type of table to generate ('summary' or 'binary')
-        fp: file handle
-            Handle table will be written to
-        human: bool
-            Generate table in human-readable format
-        headers: bool
-            Show table headers
-
-        Raises
-        ------
-        ValueError
-            `form` not 'summary' or 'binary'
-
-        Returns
-        -------
-        str
-            Generated table
+        Args:
+            form (str): Type of table to generate ('summary' or 'binary').
+            fp (file handle): File handle to write to.
+            human (bool): Use human-readable format.
+            headers (bool): Show table headers.
+        Raises:
+            ValueError: `form` not 'binary' or 'summary'
+        Returns:
+            Summary table.
         """
         if form == "summary":
             table = self._summary(human=human, headers=headers, **kwargs)
@@ -320,25 +289,15 @@ class Session(Serializer):
 
 
 class Organism(Serializer):
-    """An organism.
+    """A unique organism containing hits found in a cblaster search.
 
-    This class is used to represent a unique organism found during a cblaster search.
-    Every strain (or lack thereof) is counted as being unique, and will be reported
-    separately in `cblaster` results.
+    Every strain (or lack thereof) is a unique Organism, and will be reported
+    separately in cblaster results.
 
-    Attributes
-    ----------
-    name: str
-        Name of this organism, generally the genus and species epithet. Sometimes, NCBI
-        stores the strain name inside the name field, in which case some basic filtering
-        is performed to remove it (i.e. if `cblaster` detects an exact match, it will be
-        removed).
-    strain: str
-        Strain name of this organism. A unique `Organism` object is created for every
-        unique strain name encountered during the genomic context stage.
-    scaffolds: dict
-        Dictionary of `Scaffold` objects containing `Hit` objects belonging to this
-        organism.
+    Attributes:
+        name (str): Organism name, typically the genus and species epithet.
+        strain (str): Strain name of this organism, e.g. CBS 536.65.
+        scaffolds (dict): Scaffold objects belonging to this organism.
     """
 
     def __init__(self, name, strain, scaffolds=None):
@@ -353,28 +312,23 @@ class Organism(Serializer):
             self.name, self.strain, total_hits, total_scaffolds
         )
 
-    def count_hit_clusters(self):
-        """Count total amount of hit clusters in this Organism."""
+    @property
+    def total_hit_clusters(self):
+        """Counts total amount of hit clusters in this Organism."""
         return sum(len(scaffold.clusters) for scaffold in self.scaffolds.values())
 
     def summary(self, decimals=4, human=True, headers=True):
-        """Generate a report of all hit clusters in this Organism.
+        """Generates a summary table of the organism.
 
-        Parameters
-        ----------
-        decimals: int
-            How many decimal places to report score values
-        human: bool
-            Generate in human-readable format
-        headers: bool
-            Show column headers
-
-        Returns
-        -------
-        report: str
+        Args:
+            decimals (int): Total decimal places to show in score values.
+            human (bool): Use human-readable format.
+            headers (bool): Show table headers.
+        Returns:
+            The summary table.
         """
 
-        if self.count_hit_clusters() == 0:
+        if self.total_hit_clusters == 0:
             raise ValueError("No hit clusters in this Organism")
 
         report = "\n\n".join(
@@ -391,6 +345,9 @@ class Organism(Serializer):
 
     @property
     def full_name(self):
+        """The full name (including strain) of the organism.
+        Note: if strain found in name, returns just name.
+        """
         if not self.strain or self.strain in self.name:
             return f"{self.name}"
         return f"{self.name} {self.strain}"
@@ -415,20 +372,12 @@ class Organism(Serializer):
 
 
 class Scaffold(Serializer):
-    """A genomic scaffold.
+    """A genomic scaffold containing hits found in a cblaster search.
 
-    This class represents a genomic scaffold belonging to an `Organism` object found
-    during a `cblaster` search.
-
-    Attributes
-    ----------
-    accession: str
-        NCBI accession of this scaffold; otherwise, whatever a scaffold is named in
-        files used to generate a local database using `cblaster makedb`
-    hits: list
-        `Hit` objects located on this scaffold
-    clusters: list
-        Computed clusters of `Hit` objects on this scaffold
+    Attributes:
+        accession (str): Name of this scaffold, typically NCBI accession.
+        hits (list): Hit objects located on this scaffold.
+        clusters (list): Clusters of hits identified on this scaffold.
     """
 
     def __init__(self, accession, clusters=None, hits=None):
@@ -442,7 +391,15 @@ class Scaffold(Serializer):
         )
 
     def summary(self, human=True, show_header=True, decimals=4):
-        """Generate a summary of hit clusters on this Scaffold."""
+        """Generates a summary of hit clusters on this Scaffold.
+
+        Args:
+            human (bool): Use human-readable format.
+            show_header (bool): Show table headers.
+            decimals (int): Total decimal places to show in score values.
+        Returns:
+            The summary table.
+        """
         if not self.clusters:
             raise ValueError("No clusters on this Scaffold")
 
@@ -479,32 +436,22 @@ class Scaffold(Serializer):
 
 
 class Hit(Serializer):
-    """A BLAST hit.
+    """A BLAST hit identified during a cblaster search.
 
-    Stores hit scores and genomic context. It is first instantiated when parsing BLAST
-    results, and is then updated with genomic coordinates after either querying the
-    NCBI's IPG resource or a local JSON database.
+    This class is first instantiated when parsing BLAST results, and is then updated
+    with genomic coordinates after querying either the Identical Protein Groups (IPG)
+    resource on NCBI, or a local JSON database.
 
-    Attributes
-    ----------
-    query: str
-        Name of query sequence
-    subject: str
-        Name of subject sequence
-    identity: float
-        Hit identity (%)
-    coverage: float
-        Hit query coverage (%)
-    evalue: float
-        Hit e-value
-    bitscore: float
-        Hit bitscore
-    start: int
-        Start of the subject sequence on its corresponding scaffold
-    end: int
-        End of the subject sequence on its corresponding scaffold
-    strand: "+" or "-"
-        Orientation of the subject sequence
+    Attributes:
+        query (str): Name of query sequence.
+        subject (str): Name of subject sequence.
+        identity (float): Percentage identity (%) of hit.
+        coverage (float): Query coverage (%) of hit.
+        evalue (float): E-value of hit.
+        bitscore (float): Bitscore of hit.
+        start (int): Start of subject sequence on corresponding scaffold.
+        end (int): End of subject sequence on corresponding scaffold
+        strand (str): Orientation of subject sequence ('+' or '-').
     """
 
     def __init__(
@@ -542,27 +489,19 @@ class Hit(Serializer):
         )
 
     def copy(self, **kwargs):
-        """Return a copy of this Hit object with any additional args."""
+        """Creates a copy of this Hit with any additional args."""
         copy = Hit(**self.__dict__)
         for key, val in kwargs.items():
             setattr(copy, key, val)
         return copy
 
     def values(self, decimals=4):
-        """Format all attributes of this hit for printing.
+        """Formats hit attributes for printing.
 
-        Parameters
-        ----------
-        decimals: int
-            Maximum number of decimal points to report. Note that this applies to
-            rounding, not necessarily display; i.e. if the attribute is 50 and
-            decimals=4, this function will return '50', not '50.0000'. The e-value is
-            also capped using this parameter, but using exponent formatting.
-
-        Returns
-        -------
-        list
-            All attributes of this Hit, formatted as str.
+        Args:
+            decimals (int): Total decimal places to show in score values.
+        Returns:
+            List of formatted attribute strings.
         """
         return [
             self.query,

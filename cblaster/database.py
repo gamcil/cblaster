@@ -21,16 +21,15 @@ LOG = logging.getLogger(__name__)
 class Protein:
     """The Protein class is a simple container for Proteins inside a DB instance.
 
-    It provides the following functionality:
-
-        1. Store the entire genomic context of the protein, including position on a
-           scaffold and its parent organism/strain
-        2. Method for generating unique header containing the proteins lineage, used
-           when building the diamond database such that search hits can be traced back
-           to the correct Protein instances, even if different organisms have identical
-           protein naming schemes
-        3. Property for building FASTA str of the protein including its unique header
-        4. Method for serialising the instance to dict
+    Attributes:
+        index (int): A unique index assigned to this protein.
+        id (str): Name of this protein.
+        start (int): Start of this protein on parent scaffold.
+        end (int): End of this protein on parent scaffold.
+        strand (str): Strand of this protein ('+' or '-').
+        sequence
+        scaffold
+        organism
     """
 
     __slots__ = (

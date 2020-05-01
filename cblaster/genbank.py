@@ -77,7 +77,7 @@ PATTERNS = {
 }
 
 
-def scaffold_iter(text):
+def iter_scaffolds(text):
     """Thin wrapper around scaffold pattern."""
     yield from PATTERNS["scaffold"].finditer(text)
 
@@ -161,7 +161,7 @@ def parse(handle):
 
     organism, strain, scaffolds = None, None, []
 
-    for scaffold in scaffold_iter(handle.read()):
+    for scaffold in iter_scaffolds(handle.read()):
 
         text = scaffold.group(0)
         accession = scaffold.group("accession")
