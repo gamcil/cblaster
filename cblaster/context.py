@@ -194,30 +194,45 @@ def query_local_DB(hits, database):
     organisms = defaultdict(dict)
 
     for hit in hits:
-        protein = database.proteins[hit.subject]
+        # Hit headers should follow form "i_j_k", where i, j and k refer to the
+        # database indexes of organisms, scaffolds and proteins, respectively.
+        # e.g. >2_56_123 => 123rd protein of 56th scaffold of the 2nd organism
+        try:
+            i, j, k = [int(index) for index in hit.subject.split("_")]
+        except ValueError:
+            LOG.exception("Hit has malformed header")
 
-        # Mostly for readability..
-        org, strain, scaf = protein.organism, protein.strain, protein.scaffold
+        organism = database.organisms[i]
+        scaffold = organism.scaffolds[j]
+        protein = scaffold.features[k]
 
-        if strain not in organisms[org]:
-            organisms[org][strain] = Organism(org, strain)
+        # For brevity...
+        org = organism.name
+        st = organism.strain
+        sc = scaffold.accession
 
-        if scaf not in organisms[org][strain].scaffolds:
-            organisms[org][strain].scaffolds[scaf] = Scaffold(scaf)
+        # Instantiate new Organism/Scaffold objects on first encounter
+        if st not in organisms[org]:
+            organisms[org][st] = Organism(org, st)
+        if sc not in organisms[org][st].scaffolds:
+            organisms[org][st].scaffolds[sc] = Scaffold(sc)
 
         # Want to report just protein ID, not lineage
-        hit.subject = protein.id
+        # TODO: probably should check for multiple identifier types
+        hit.subject = protein.qualifiers["protein_id"]
 
         # Save genomic location on the Hit instance
-        hit.start = protein.start
-        hit.end = protein.end
-        hit.strand = protein.strand
+        hit.start = protein.location.min()
+        hit.end = protein.location.max()
+        hit.strand = protein.location.strand
 
-        organisms[protein.organism][protein.strain].scaffolds[
-            protein.scaffold
-        ].hits.append(hit)
+        organisms[org][st].scaffolds[sc].hits.append(hit)
 
-    return [organism for strains in organisms.values() for organism in strains.values()]
+    return [
+        organism
+        for strains in organisms.values()
+        for organism in strains.values()
+    ]
 
 
 def hits_contain_required_queries(hits, queries):
@@ -338,7 +353,7 @@ def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
     """
     if json_db:
         LOG.info("Loading JSON database: %s", json_db)
-        db = database.DB.from_json(json_db)
+        db = database.Database.from_json(json_db)
         organisms = query_local_DB(hits, db)
     else:
         rows = efetch_IPGs([hit.subject for hit in hits])

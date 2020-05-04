@@ -1,255 +1,98 @@
 """
 This module handles creation of local JSON databases for non-NCBI lookups.
-
-TODO:
-    - Remove GenBank parser, switch to genome2json
-    - Convert DB to wrapper around g2j.Organism objects with querying capability
 """
-
 
 import json
 import logging
 import subprocess
 
-from collections import defaultdict, namedtuple
+from pathlib import Path
 
-from cblaster import helpers, genbank
+import g2j
+from g2j import classes, genbank
 
-LOG = logging.getLogger(__name__)
+from cblaster import helpers
+
+LOG = logging.getLogger("cblaster")
 
 
-class Protein:
-    """The Protein class is a simple container for Proteins inside a DB instance.
+class Database:
+    """A cblaster database.
 
-    Attributes:
-        index (int): A unique index assigned to this protein.
-        id (str): Name of this protein.
-        start (int): Start of this protein on parent scaffold.
-        end (int): End of this protein on parent scaffold.
-        strand (str): Strand of this protein ('+' or '-').
-        sequence
-        scaffold
-        organism
+    This class handles reading/writing of the local JSON database.
     """
 
-    __slots__ = (
-        "id",
-        "index",
-        "sequence",
-        "scaffold",
-        "start",
-        "end",
-        "strand",
-        "organism",
-        "strain",
-    )
+    def __init__(self, organisms=None):
+        self.organisms = organisms if organisms else []
 
-    def __init__(
-        self, id, index, sequence, scaffold, start, end, strand, organism, strain
-    ):
-        self.id = id
-        self.index = index
-        self.end = end
-        self.start = start
-        self.strand = strand
-        self.strain = strain
-        self.sequence = sequence
-        self.scaffold = scaffold
-        self.organism = organism
-
-    @property
-    def header(self):
-        """Generate header for this Protein containing its full lineage."""
-        return "{}|{}|{}|{}".format(
-            str(self.organism).replace(" ", "_"),
-            str(self.strain).replace(" ", "_"),
-            self.scaffold,
-            self.id,
-        )
-
-    @property
-    def fasta(self):
-        """Generate FASTA format string."""
-        return f">{self.header}\n{self.sequence}"
-
-    def to_dict(self):
-        """Serialise this Protein instance to dict."""
-        return {
-            "id": self.id,
-            "end": self.end,
-            "index": self.index,
-            "start": self.start,
-            "strand": self.strand,
-            "sequence": self.sequence,
-        }
-
-
-class DB:
-    """The DB class handles reading/writing of the local JSON database.
-
-    organisms: dict
-        Complete hierarchy of objects in the DB instance.
-        Organism -> Strain -> Scaffold -> Proteins
-
-    proteins: dict
-        Dictionary of proteins keyed on protein IDs.
-
-        To facilitate quicker lookups by protein rather than through organism.
-    """
-
-    Organism = namedtuple("Organism", "name strain file scaffolds")
-    Scaffold = namedtuple("Scaffold", "accession proteins")
-
-    def __init__(self, db=None):
-        self.proteins = {}
-        self.organisms = defaultdict(dict)
-
-        if db:
-            self._from_db(db)
-
-    def _from_db(self, database):
-        """Format parsed JSON GenBank database as DB instance."""
-        for organism in database:
-            self.add_organism(organism)
-
-    def fasta_iter(self):
-        """Generate FASTA format sequence for proteins in this DB instance."""
-        for protein in self.proteins.values():
-            yield protein.fasta
+    def __iter__(self):
+        return iter(self.organisms)
 
     def write_fasta(self, handle):
-        """Write sequences in this DB instance to file."""
-        for fasta in self.fasta_iter():
-            print(fasta, file=handle)
-
-    def makedb(self, name):
-        """Convenience function to write FASTA and generate diamond DB"""
-        with open(f"{name}.faa", "w") as handle:
-            self.write_fasta(handle)
-        diamond_makedb(f"{name}.faa", name)
-
-    def validate_strain(self, species, strain, allow_duplicates=True):
-        """Check a given strain is already in this DB instance.
-
-        If yes, this function will return an altered strain name, appended with the
-        current count of duplicate strains already in this DB. Otherwise, the strain
-        will be returned unchanged.
-
-        If allow_duplicates=False, a ValueError will be raised.
+        """Formats organisms in the database to indexed FASTA format.
+        Builds FASTA of each organism, then writes to given handle.
         """
-        if strain in self.organisms[species]:
-            if allow_duplicates:
-                count = sum(
-                    1 if str(strain) in str(prev_strain) else 0
-                    for prev_strain in self.organisms[species]
-                )
-                return f"{strain}_{count}"
-            raise ValueError("Found duplicate strain but allow_duplicate_strains=False")
-        return strain
-
-    def add_organism(self, organism, allow_duplicate_strains=True):
-        """Add an organism dictionary, as generated by parse_genbank()."""
-
-        file = organism["file"]
-        species = organism["name"]
-        strain = self.validate_strain(
-            species, organism["strain"], allow_duplicates=allow_duplicate_strains
-        )
-
-        self.organisms[species][strain] = self.Organism(species, strain, file, {})
-
-        for scaffold in organism["scaffolds"]:
-
-            accession = scaffold["accession"]
-
-            # Build ordered list of Protein objects
-            _proteins = [
-                Protein(
-                    protein["id"],
-                    protein["index"],
-                    protein["sequence"],
-                    accession,
-                    protein["start"],
-                    protein["end"],
-                    protein["strand"],
-                    species,
-                    strain,
-                )
-                for protein in scaffold["proteins"]
-            ]
-
-            # Save them ordered here so we don't have to sort later
-            self.organisms[species][strain].scaffolds[accession] = self.Scaffold(
-                accession, _proteins
-            )
-
-            # Save as dict for quick lookups; should be fine memory-wise since p will
-            # just refer to same instances held in self.organisms
-            self.proteins.update({p.header: p for p in _proteins})
+        for i, organism in enumerate(self.organisms):
+            fasta = ""
+            for j, scaffold in enumerate(organism.scaffolds):
+                for k, feature in enumerate(scaffold.features):
+                    sequence = feature.qualifiers["translation"]
+                    fasta += f">{i}_{j}_{k}\n{sequence}\n"
+            handle.write(fasta)
 
     @classmethod
     def from_files(cls, files):
-        """Build a DB instance from a collection of GenBank files.
+        """Builds a new Database from a collection of GenBank files.
 
         For example:
 
-        >>> db = database.DB.from_files(['path/to/file.gbk', 'path/to/file.gbk'])
-        """
-        database = cls()
+        >>> db = Database.from_files(['path/to/file.gbk', 'path/to/file.gbk'])
 
+        Only CDS features are parsed.
+        """
+        organisms = []
         LOG.info("Parsing %i files...", len(files))
         for index, file in enumerate(files, 1):
             with open(file) as handle:
                 LOG.info("%i. %s", index, file)
-                database.add_organism(genbank.parse(handle))
+                organism = g2j.genbank.parse(
+                    handle,
+                    feature_types=["CDS"],
+                    save_scaffold_sequence=False
+                )
+                organisms.append(organism)
+        return cls(organisms)
 
-        return database
+    def to_list(self):
+        """Serialises all organisms in this database to dict."""
+        return [organism.to_dict() for organism in self]
+
+    def to_json(self, handle, indent=None):
+        """Writes database to file in JSON format."""
+        json.dump(self.to_list(), handle, indent=indent)
 
     @classmethod
     def from_json(cls, json_file):
-        """Load a DB distance from JSON."""
+        """Load a Database from JSON."""
         with open(json_file) as handle:
             js = json.load(handle)
-        return cls(js)
+        organisms = [g2j.classes.Organism.from_dict(d) for d in js]
+        return cls(organisms)
 
-    @staticmethod
-    def _org_as_dict(organism):
-        """Serialise an Organism namedtuple to dict."""
-        return {
-            "name": organism.name,
-            "strain": organism.strain,
-            "file": organism.file,
-            "scaffolds": [
-                {
-                    "accession": scaffold.accession,
-                    "proteins": [protein.to_dict() for protein in scaffold.proteins],
-                }
-                for scaffold in organism.scaffolds.values()
-            ],
-        }
-
-    def to_list(self):
-        """Serialize the DB to list."""
-        return [
-            self._org_as_dict(organism)
-            for name, strains in self.organisms.items()
-            for organism in [self.organisms[name][strain] for strain in strains]
-        ]
-
-    def to_json(self, handle, indent=None):
-        """Serialise to JSON and write to an open file handle."""
-        json.dump(self.to_list(), handle, indent=indent)
+    def makedb(self, name):
+        """Convenience function to write FASTA and generate diamond DB"""
+        fasta = f"{name}.faa"
+        with open(fasta, "w") as handle:
+            self.write_fasta(handle)
+        diamond_makedb(fasta, name)
 
 
 def diamond_makedb(fasta, name):
-    """Build DIAMOND database from JSON.
+    """Builds a DIAMOND database from JSON.
 
-    Parameters
-    ----------
-    fasta: str
-        Path to FASTA file containing protein sequences
-    name: str
-        Name of generated DIAMOND database
+    Args:
+        fasta (str): Path to FASTA file containing protein sequences.
+        name (str): Name for DIAMOND database.
     """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
     subprocess.run(
@@ -257,3 +100,15 @@ def diamond_makedb(fasta, name):
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+
+def get_genbank_paths(folder):
+    """Generates a collection of paths to GenBank files in a specified folder."""
+    if not Path(folder).is_dir():
+        raise ValueError("Expected valid folder")
+    valid_extensions = (".gb", ".gbk", ".genbank")
+    return [
+        file
+        for file
+        in Path(folder).iterdir() if str(file).endswith(valid_extensions)
+    ]

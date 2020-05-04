@@ -11,7 +11,8 @@ from cblaster.classes import Session
 
 
 logging.basicConfig(
-    format="[%(asctime)s] %(levelname)s - %(message)s", datefmt="%H:%M:%S"
+    format="[%(asctime)s] %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S"
 )
 
 LOG = logging.getLogger("cblaster")
@@ -76,7 +77,7 @@ def validate_output_args(arguments):
 
 def makedb(genbanks, filename, indent=None):
     """Generate JSON and diamond databases."""
-    db = database.DB.from_files(genbanks)
+    db = database.Database.from_files(genbanks)
 
     LOG.info("Writing FASTA file with database sequences: %s", filename + ".faa")
     LOG.info("Building DIAMOND database: %s", filename + ".dmnd")
