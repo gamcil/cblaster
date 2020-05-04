@@ -1,12 +1,5 @@
 """
 This module handles creation of local JSON databases for non-NCBI lookups.
-
-
-TODO: move to g2j for parsing, have DB be a thin veneer
-1. parse with g2j, only getting CDS features
-2. instantiate DB from organisms
-3. assign indexes to each protein based on org, scaf and prot number
-    e.g. 1_45_3 = 3rd protein on 45th scaffold of organism 1
 """
 
 import json
