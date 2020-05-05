@@ -174,6 +174,26 @@ def parse_IPG_table(results, hits):
     return [organism for strains in organisms.values() for organism in strains.values()]
 
 
+def find_identifier(qualifiers):
+    """Finds an identifier from a dictionary of feature qualifiers.
+
+    This function selects for the following fields in decreasing order:
+    protein_id, locus_tag, ID and Gene. This should cover most cases where CDS
+    features do not have protein ID's.
+
+    Args:
+        qualifiers (dict): Feature qualifiers parsed with genome2json.
+    Returns:
+        Identifier, if found, otherwise None.
+    """
+    for field in ("protein_id", "locus_tag", "ID", "Gene"):
+        try:
+            return qualifiers[field]
+        except KeyError:
+            pass
+    return None
+
+
 def query_local_DB(hits, database):
     """Build Organisms/Scaffolds using database.DB instance.
 
@@ -218,8 +238,11 @@ def query_local_DB(hits, database):
             organisms[org][st].scaffolds[sc] = Scaffold(sc)
 
         # Want to report just protein ID, not lineage
-        # TODO: probably should check for multiple identifier types
-        hit.subject = protein.qualifiers["protein_id"]
+        identifier = find_identifier(protein.qualifiers)
+        if not identifier:
+            LOG.warning("Could not find identifier for hit %, skipping", hit.subject)
+            continue
+        hit.subject = identifier
 
         # Save genomic location on the Hit instance
         hit.start = protein.location.min()
