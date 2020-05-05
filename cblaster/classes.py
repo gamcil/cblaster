@@ -177,14 +177,7 @@ class Session(Serializer):
         """
 
         def form_row(organism, accession, cluster):
-            try:
-                genus, species = organism.name.split(" ", 1)
-                if html:
-                    name = f"{genus} {species} {organism.strain}"
-                else:  # matplotlib with LaTeX formatting
-                    name = f"$\it{{{genus[0]}. {species}}}$ {organism.strain}"
-            except ValueError:
-                name = organism.name
+            name = organism.name
             scaf = f"{accession}:{cluster[0].start}-{cluster[-1].end}"
             cnts = self.count_query_hits(cluster)
             idts = self.get_max_hit_identities(cluster)
