@@ -57,6 +57,44 @@ def generate_cluster_table(hits, decimals=4, show_headers=True, human=True):
     return "\n".join(",".join(hit) for hit in rows)
 
 
+def count_query_hits(queries, hits):
+    """Counts total hits per query in a colllection of `Hit` objects.
+
+    >>> queries = ["query1", "query2", "query3"]
+    >>> hits = [
+    ...     Hit(query="query1"),
+    ...     Hit(query="query2"),
+    ...     Hit(query="some_other_query"),
+    ... ]
+    >>> count_query_hits(queries, hits)
+    [1, 1, 0]
+
+    Args:
+        hits (list): Hit objects
+    Returns:
+        List of per-query counts corresponding to input.
+    """
+    return [sum(query == hit.query for hit in hits) for query in queries]
+
+
+def get_max_hit_identities(queries, hits):
+    """Get the maximum hit identity per query in a collection of `Hit` objects.
+
+    >>> queries = ["query1", "query2", "query3"]
+    >>> hits = [
+    ...     Hit(query="query1", identity=0.9),
+    ...     Hit(query="query2", identity=0.4),
+    ...     Hit(query="query2", identity=0.7),
+    ... ]
+    >>> get_max_hit_identities(queries, hits)
+    [0.9, 0.7, 0]
+    """
+    return [
+        max([hit.identity if query == hit.query else 0 for hit in hits])
+        for query in queries
+    ]
+
+
 class Serializer:
     """JSON serialisation mixin class.
 
@@ -132,49 +170,6 @@ class Session(Serializer):
             organisms=[Organism.from_dict(o) for o in d["organisms"]],
         )
 
-    # TODO: this doesn't need to be in the class
-    def count_query_hits(self, hits):
-        """Counts total hits per query in a colllection of `Hit` objects.
-
-        >>> s = Session()
-        >>> s.queries = ["query1", "query2", "query3"]
-        >>> hits = [
-        ...     Hit(query="query1"),
-        ...     Hit(query="query2"),
-        ...     Hit(query="some_other_query"),
-        ... ]
-        >>> s.count_query_hits(hits)
-        [1, 1, 0]
-
-        Args:
-            hits (list): Hit objects
-        Returns:
-            List of per-query counts corresponding to input.
-        """
-        return [
-            sum(query == hit.query for hit in hits)
-            for query in self.queries
-        ]
-
-    # TODO: this doesn't need tob e in the class
-    def get_max_hit_identities(self, hits):
-        """Get the maximum hit identity per query in a collection of `Hit` objects.
-
-        >>> s = Session()
-        >>> s.queries = ["query1", "query2", "query3"]
-        >>> hits = [
-        ...     Hit(query="query1", identity=0.9),
-        ...     Hit(query="query2", identity=0.4),
-        ...     Hit(query="query2", identity=0.7),
-        ... ]
-        >>> s.get_max_hit_identities(hits)
-        [0.9, 0.7, 0]
-        """
-        return [
-            max([hit.identity if query == hit.query else 0 for hit in hits])
-            for query in self.queries
-        ]
-
     def form_matrices(self, html=False):
         """Form 2D count matrices required for plotting.
 
@@ -182,14 +177,7 @@ class Session(Serializer):
         """
 
         def form_row(organism, accession, cluster):
-            try:
-                genus, species = organism.name.split(" ", 1)
-                if html:
-                    name = f"{genus} {species} {organism.strain}"
-                else:  # matplotlib with LaTeX formatting
-                    name = f"$\it{{{genus[0]}. {species}}}$ {organism.strain}"
-            except ValueError:
-                name = organism.name
+            name = organism.name
             scaf = f"{accession}:{cluster[0].start}-{cluster[-1].end}"
             cnts = self.count_query_hits(cluster)
             idts = self.get_max_hit_identities(cluster)
@@ -244,7 +232,14 @@ class Session(Serializer):
                 accession,
                 str(cluster[0].start),
                 str(cluster[-1].end),
-                [str(x) for x in self.count_queries(cluster, identity=identity)],
+                *[
+                    str(x)
+                    for x in (
+                        get_max_hit_identities(self.queries, cluster)
+                        if identity
+                        else count_query_hits(self.queries, cluster)
+                    )
+                ],
             ]
             for organism in self.organisms
             for accession, scaffold in organism.scaffolds.items()
@@ -405,10 +400,7 @@ class Scaffold(Serializer):
 
         report = "\n\n".join(
             generate_cluster_table(
-                cluster,
-                decimals=decimals,
-                show_headers=show_header,
-                human=human
+                cluster, decimals=decimals, show_headers=show_header, human=human
             )
             for cluster in self.clusters
         )
