@@ -179,8 +179,8 @@ class Session(Serializer):
         def form_row(organism, accession, cluster):
             name = organism.name
             scaf = f"{accession}:{cluster[0].start}-{cluster[-1].end}"
-            cnts = self.count_query_hits(cluster)
-            idts = self.get_max_hit_identities(cluster)
+            cnts = count_query_hits(self.queries, cluster)
+            idts = get_max_hit_identities(self.queries, cluster)
             return name, scaf, cnts, idts
 
         names = []  # Species names for dendrogram yticklabels
