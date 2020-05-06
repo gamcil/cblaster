@@ -133,7 +133,7 @@ def plot(session, figure=None, dpi=300, show_counts=False):
     # qname = longest query name
     qname = max(len(q) for q in session.queries) * 0.06
     width = 6 + 0.45 * len(session.queries) + qname
-    height = max(2, 0.2 * len(names) + qname)
+    height = max(2, 0.3 * len(names) + qname)
 
     fig, (dendro, matrix) = plt.subplots(
         1,
@@ -142,25 +142,47 @@ def plot(session, figure=None, dpi=300, show_counts=False):
         gridspec_kw={"width_ratios": [1, 0.3 * len(session.queries)]},
     )
 
-    # Plot dendrogram
-    Y = linkage(identities, method="ward")
-    Z = dendrogram(Y, orientation="left", ax=dendro, labels=names, leaf_font_size=9)
+    if len(names) > 1:
+        # Plot dendrogram
+        Y = linkage(identities, method="ward")
+        Z = dendrogram(Y, orientation="left", ax=dendro, labels=names, leaf_font_size=9)
 
-    # Hide borders
-    for spine in dendro.spines.values():
-        spine.set_visible(False)
+        # Hide borders
+        for spine in dendro.spines.values():
+            spine.set_visible(False)
 
-    dendro.set_xticks([])
+        dendro.set_xticks([])
 
-    # Plot matrix
-    index = Z["leaves"]
-    counts = counts[index, :]
-    identities = identities[index, :]
-    identities[identities == 0.0] = np.nan
-    scafs = [scafs[i] for i in index]
-    im = matrix.matshow(
-        identities, cmap="Blues", aspect="auto", origin="lower", clim=(0, 100)
-    )
+        # Plot matrix
+        index = Z["leaves"]
+        counts = counts[index, :]
+        identities = identities[index, :]
+        identities[identities == 0.0] = np.nan
+        scafs = [scafs[i] for i in index]
+        im = matrix.matshow(
+            identities,
+            cmap="Blues",
+            aspect="auto",
+            origin="lower",
+            clim=(0, 100)
+        )
+
+        # Set yticklabels to scaffold locations
+        matrix.set_yticks(range(len(scafs)))
+        matrix.set_yticklabels(scafs, fontsize=9)
+    else:
+        # Only have one result
+        name = f"{names[0]} {scafs[0]}"
+        im = matrix.matshow(
+            identities,
+            cmap="Blues",
+            aspect="auto",
+            origin="lower",
+            clim=(0, 100)
+        )
+        dendro.set_visible(False)
+        matrix.set_yticks([0, 1])
+        matrix.set_yticklabels([name], fontsize=9)
 
     # Annotate with counts
     if show_counts:
@@ -178,10 +200,6 @@ def plot(session, figure=None, dpi=300, show_counts=False):
     matrix.tick_params(axis="x", which="both", bottom=False)
     matrix.tick_params(axis="x", which="minor", top=False)
     matrix.tick_params(axis="y", which="both", left=False)
-
-    # Set yticklabels to scaffold locations
-    matrix.set_yticks(range(len(scafs)))
-    matrix.set_yticklabels(scafs, fontsize=9)
 
     # Set xticklabels to query protein IDs
     matrix.set_xticks(range(identities.shape[1]))
