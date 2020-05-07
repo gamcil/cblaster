@@ -16,7 +16,7 @@ def Column(layout, scrollable=False):
     return sg.Column(
         layout,
         scrollable=scrollable,
-        size=(540, 620),
+        size=(540, 520),
         vertical_scroll_only=True
     )
 
@@ -118,7 +118,7 @@ def cblaster_gui():
     window = sg.Window(
         "cblaster",
         layout,
-        size=(600, 800),
+        size=(600, 700),
         element_padding=(5, 5),
         element_justification="center",
         finalize=True
