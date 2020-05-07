@@ -119,7 +119,7 @@ def cblaster_gui():
         "cblaster",
         layout,
         size=(600, 660),
-        # element_padding=(5, 5),
+        element_padding=(5, 5),
         element_justification="center",
         finalize=True
     )
