@@ -11,12 +11,12 @@ from cblaster.classes import Session
 
 
 logging.basicConfig(
+    level=logging.INFO,
     format="[%(asctime)s] %(levelname)s - %(message)s",
     datefmt="%H:%M:%S"
 )
+LOG = logging.getLogger(__name__)
 
-LOG = logging.getLogger("cblaster")
-LOG.setLevel(logging.INFO)
 
 
 def value_in_args(value, args):
@@ -72,11 +72,13 @@ def validate_output_args(arguments):
             # this should be sufficient validation
             raise ValueError(f"Invalid arguments provided to --{arg}")
 
-        setattr(arguments, arg, open(args[0], "w"))
+        # Open the given file name
+        setattr(arguments, arg, args[0])
 
 
 def makedb(genbanks, filename, indent=None):
     """Generate JSON and diamond databases."""
+    LOG.info("Starting cblaster makedb")
     db = database.Database.from_files(genbanks)
 
     LOG.info("Writing FASTA file with database sequences: %s", filename + ".faa")
@@ -86,6 +88,8 @@ def makedb(genbanks, filename, indent=None):
     LOG.info("Building JSON database: %s", filename + ".json")
     with open(f"{filename}.json", "w") as handle:
         db.to_json(handle, indent=indent)
+
+    LOG.info("Done.")
 
 
 def filter_session(
@@ -237,11 +241,17 @@ def cblaster(
                 session.to_json(fp, indent=indent)
 
     if binary:
-        LOG.info("Writing binary summary table to %s", binary.name)
-        session.format("binary", binary, human=binary_human, headers=binary_headers)
+        LOG.info("Writing binary summary table to %s", binary)
+        with open(binary, "w") as fp:
+            session.format("binary", fp, human=binary_human, headers=binary_headers)
 
-    LOG.info("Writing summary to %s", output.name)
-    session.format("summary", output, human=output_human, headers=output_headers)
+    LOG.info("Writing summary to %s", "stdout" if output == sys.stdout else output)
+    session.format(
+        "summary",
+        output if output == sys.stdout else open(output, "w"),
+        human=output_human,
+        headers=output_headers
+    )
 
     if figure:
         if figure is True:
@@ -253,6 +263,8 @@ def cblaster(
         else:
             LOG.info("Writing figure to %s", figure)
             plot.plot(session, figure=figure, dpi=figure_dpi)
+
+    LOG.info("Done.")
 
     return session
 
@@ -278,6 +290,7 @@ def get_arguments(args):
     )
 
     subparsers = parser.add_subparsers(dest="subcommand")
+    subparsers.add_parser("gui", help="Launch cblaster GUI")
 
     makedb = subparsers.add_parser("makedb", help="Generate JSON/diamond databases from GenBank files")
     makedb.add_argument(
@@ -460,7 +473,7 @@ def get_arguments(args):
         parser.print_help()
         sys.exit()
 
-    if arguments.subcommand == "makedb":
+    if arguments.subcommand in ("gui", "makedb"):
         return arguments
 
     validate_output_args(arguments)
@@ -522,6 +535,10 @@ def main():
             figure=args.figure,
             use_plotly=args.use_plotly
         )
+
+    elif args.subcommand == "gui":
+        from cblaster.gui.main import cblaster_gui
+        cblaster_gui()
 
 
 if __name__ == "__main__":
