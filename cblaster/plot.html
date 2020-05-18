@@ -7,9 +7,20 @@
 	</head>
 	<body>
 		<header>
-			<h1 style="display: fixed;">cblaster</h1>
+			<h2 style="padding: 0; margin: 0;">cblaster</h2>
 		</header>
 		<main>
+			<div style="padding: 10px; margin-bottom: 40px;">
+				<p id="p-result-summary"></p>
+				<p>If you found cblaster useful, please cite:</p>
+				<pre>Gilchrist, C.L.M, 2020. cblaster: a Python toolkit for detecting co-located BLAST hits.</pre>
+				<p>
+					Click clusters to hide rows, or queries to hide columns.
+					The original view can be restored using the reset filters button.
+				</p>
+				<button id="btn-save-svg">Save SVG</button>
+				<button id="btn-reset-filters">Reset filters</button>
+			</div>
 			<div id="plot"></div>
 			<script src="plot.js"></script>
 		</main>
