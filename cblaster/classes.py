@@ -7,92 +7,14 @@ This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 import re
 import json
 
-
-def generate_header_string(text, symbol="-"):
-    """Generates a 2-line header string with underlined text.
-
-    >>> header = generate_header_string("header string", symbol="*")
-    >>> print(header)
-    header string
-    *************
-    """
-    return f"{text}\n{symbol * len(text)}"
-
-
-def generate_cluster_table(hits, decimals=4, show_headers=True, human=True):
-    """Generates a summary table for a hit cluster.
-
-    Args:
-        hits (list): collection of Hit objects
-        decimals (int): number of decimal points to show
-        show_headers (bool): show column headers in output
-        human (bool): use human-readable format
-    Returns:
-        summary table
-    """
-    rows = [h.values(decimals) for h in hits]
-
-    if show_headers:
-        headers = [
-            "Query",
-            "Subject",
-            "Identity",
-            "Coverage",
-            "E-value",
-            "Bitscore",
-            "Start",
-            "End",
-            "Strand",
-        ]
-        rows.insert(0, headers)
-
-    if human:
-        # Get lengths of longest values in each column for spacing purposes
-        lengths = [max(len(hit[i]) for hit in rows) for i in range(9)]
-
-        # Right-fill each column value with whitespace to width for that column
-        return "\n".join(
-            "  ".join(f"{hit[i]:{lengths[i]}}" for i in range(9)) for hit in rows
-        )
-    return "\n".join(",".join(hit) for hit in rows)
-
-
-def count_query_hits(queries, hits):
-    """Counts total hits per query in a colllection of `Hit` objects.
-
-    >>> queries = ["query1", "query2", "query3"]
-    >>> hits = [
-    ...     Hit(query="query1"),
-    ...     Hit(query="query2"),
-    ...     Hit(query="some_other_query"),
-    ... ]
-    >>> count_query_hits(queries, hits)
-    [1, 1, 0]
-
-    Args:
-        hits (list): Hit objects
-    Returns:
-        List of per-query counts corresponding to input.
-    """
-    return [sum(query == hit.query for hit in hits) for query in queries]
-
-
-def get_max_hit_identities(queries, hits):
-    """Get the maximum hit identity per query in a collection of `Hit` objects.
-
-    >>> queries = ["query1", "query2", "query3"]
-    >>> hits = [
-    ...     Hit(query="query1", identity=0.9),
-    ...     Hit(query="query2", identity=0.4),
-    ...     Hit(query="query2", identity=0.7),
-    ... ]
-    >>> get_max_hit_identities(queries, hits)
-    [0.9, 0.7, 0]
-    """
-    return [
-        max([hit.identity if query == hit.query else 0 for hit in hits])
-        for query in queries
-    ]
+from cblaster.formatters import (
+    binary,
+    summary,
+    summarise_scaffold,
+    summarise_organism,
+    count_query_hits,
+    get_max_hit_identities
+)
 
 
 class Serializer:
@@ -170,6 +92,18 @@ class Session(Serializer):
             organisms=[Organism.from_dict(o) for o in d["organisms"]],
         )
 
+    def to_plot_json(self):
+        """Generate JSON file to use in plots.
+
+        Generate hierarchy
+        1. get 2d array of identities/counts
+        2. scipy linkage
+            returns n-1 by 4 matrix.
+            [i, 0] + [i, 1] are clustered
+            [i, 2] gives distance between clusters [i, 0] and [i, 1]
+            [i, 3] num of observations in new cluster
+        """
+
     def form_matrices(self, html=False):
         """Form 2D count matrices required for plotting.
 
@@ -199,69 +133,7 @@ class Session(Serializer):
 
         return names, scafs, counts, idents
 
-    def _summary(self, human=True, headers=True):
-        """Generate summary of >1 Organisms, print to console or write to file.
-
-        Args:
-            human (bool): Use human-readable format.
-            headers (bool): Show table headers.
-        Returns:
-            The summary table.
-        """
-        return "\n\n\n".join(
-            organism.summary(headers=headers, human=human)
-            for organism in self.organisms
-            if organism.total_hit_clusters > 0
-        )
-
-    def _binary(self, human=False, headers=True, identity=False):
-        """Generate a binary summary table.
-
-        For example:
-
-        Organism  Scaffold  Start  End    Query1  Query2  Query3  Query4
-        Org 1     Scaf_1    1      20000  2       1       1       1
-        Org 1     Scaf_3    3123   40302  0       1       0       1
-        """
-
-        columns = len(self.queries) + 4
-
-        rows = [
-            [
-                organism.full_name,
-                accession,
-                str(cluster[0].start),
-                str(cluster[-1].end),
-                *[
-                    str(x)
-                    for x in (
-                        get_max_hit_identities(self.queries, cluster)
-                        if identity
-                        else count_query_hits(self.queries, cluster)
-                    )
-                ],
-            ]
-            for organism in self.organisms
-            for accession, scaffold in organism.scaffolds.items()
-            for cluster in scaffold.clusters
-        ]
-
-        if headers:
-            rows.insert(0, ["Organism", "Scaffold", "Start", "End", *self.queries])
-
-        if human:
-            # Calculate lengths of each column for spacing
-            lengths = [max(len(row[i]) for row in rows) for i in range(columns)]
-            table = "\n".join(
-                "  ".join(f"{row[i]:{lengths[i]}}" for i in range(columns))
-                for row in rows
-            )
-        else:
-            table = "\n".join(",".join(row) for row in rows)
-
-        return table
-
-    def format(self, form, fp, human=True, headers=True, **kwargs):
+    def format(self, form, fp=None, human=True, headers=True, **kwargs):
         """Generates a summary table.
 
         Args:
@@ -275,9 +147,9 @@ class Session(Serializer):
             Summary table.
         """
         if form == "summary":
-            table = self._summary(human=human, headers=headers, **kwargs)
+            table = summary(self, human=human, headers=headers, **kwargs)
         elif form == "binary":
-            table = self._binary(human=human, headers=headers, **kwargs)
+            table = binary(self, human=human, headers=headers, **kwargs)
         else:
             raise ValueError("Expected 'summary' or 'binary'")
         print(table, file=fp)
@@ -313,30 +185,12 @@ class Organism(Serializer):
         return sum(len(scaffold.clusters) for scaffold in self.scaffolds.values())
 
     def summary(self, decimals=4, human=True, headers=True):
-        """Generates a summary table of the organism.
-
-        Args:
-            decimals (int): Total decimal places to show in score values.
-            human (bool): Use human-readable format.
-            headers (bool): Show table headers.
-        Returns:
-            The summary table.
-        """
-
-        if self.total_hit_clusters == 0:
-            raise ValueError("No hit clusters in this Organism")
-
-        report = "\n\n".join(
-            scaffold.summary(decimals=decimals, human=human, show_header=headers)
-            for scaffold in self.scaffolds.values()
-            if scaffold.clusters
+        return summarise_organism(
+            self,
+            decimals=decimals,
+            human=human,
+            headers=headers
         )
-
-        if headers:
-            header = generate_header_string(self.full_name, "=")
-            return f"{header}\n{report}"
-
-        return report
 
     @property
     def full_name(self):
@@ -385,38 +239,21 @@ class Scaffold(Serializer):
             self.accession, len(self.hits), len(self.clusters)
         )
 
-    def summary(self, human=True, show_header=True, decimals=4):
-        """Generates a summary of hit clusters on this Scaffold.
-
-        Args:
-            human (bool): Use human-readable format.
-            show_header (bool): Show table headers.
-            decimals (int): Total decimal places to show in score values.
-        Returns:
-            The summary table.
-        """
-        if not self.clusters:
-            raise ValueError("No clusters on this Scaffold")
-
-        report = "\n\n".join(
-            generate_cluster_table(
-                cluster, decimals=decimals, show_headers=show_header, human=human
-            )
-            for cluster in self.clusters
+    def summary(self, human=True, headers=True, decimals=4):
+        return summarise_scaffold(
+            self,
+            decimals=decimals,
+            human=human,
+            headers=headers
         )
-
-        if show_header:
-            header = generate_header_string(self.accession)
-            return f"{header}\n{report}"
-
-        return report
 
     def to_dict(self):
         return {
             "accession": self.accession,
             "hits": [hit.to_dict() for hit in self.hits],
             "clusters": [
-                [self.hits.index(hit) for hit in cluster] for cluster in self.clusters
+                [self.hits.index(hit) for hit in cluster]
+                for cluster in self.clusters
             ],
         }
 
