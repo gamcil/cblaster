@@ -16,12 +16,13 @@ each hit, and automatically group them into `Scaffold` and `Organism` objects as
 
 import logging
 from collections import defaultdict, namedtuple
+from itertools import combinations, product
 from operator import attrgetter
 
 import requests
 
 from cblaster import database
-from cblaster.classes import Organism, Scaffold
+from cblaster.classes import Organism, Scaffold, Subject
 
 
 LOG = logging.getLogger(__name__)
@@ -71,6 +72,57 @@ def efetch_IPGs(ids, output_handle=None):
     return table.split("\n")
 
 
+def parse_IP_groups(results):
+    """Parse groups from an Identical Protein Groups (IPG) table."""
+    fields = [
+        "source",
+        "scaffold",
+        "start",
+        "end",
+        "strand",
+        "protein_id",
+        "protein_name",
+        "organism",
+        "strain",
+        "assembly",
+    ]
+    Entry = namedtuple("Entry", fields)
+    groups = defaultdict(list)
+    for line in results:
+        if not line or line.startswith("Id\tSource") or line.isspace():
+            continue
+        ipg, *fields = line.split("\t")
+        entry = Entry(*fields)
+
+        # Avoid incomplete entries
+        if not all([entry.scaffold, entry.start, entry.end, entry.strand]):
+            continue
+
+        # Avoid vectors, single Gene nucleotide entries, etc
+        if entry.source not in ("RefSeq", "INSDC",):
+            continue
+
+        groups[ipg].append(entry)
+    return groups
+
+
+def find_IPG_hits(group, hit_dict):
+    """Finds all hits to query sequences in an identical protein group."""
+    seen = set()
+    hits = []
+    for entry in group:
+        try:
+            new = hit_dict.pop(entry.protein_id)
+        except KeyError:
+            continue
+        for h in new:
+            if h.query in seen:
+                continue
+            seen.add(h.query)
+            hits.append(h)
+    return hits
+
+
 def parse_IPG_table(results, hits):
     """Parse IPG results table from `efetch_IPGs`.
 
@@ -91,65 +143,30 @@ def parse_IPG_table(results, hits):
         Organism objects containing hits sorted into genomic scaffolds.
     """
 
-    hits_dict = {hit.subject: hit for hit in hits}
+    # Group hits by their subject ID's
+    hit_dict = defaultdict(list)
+    for hit in hits:
+        hit_dict[hit.subject].append(hit)
 
-    fields = [
-        "source",
-        "scaffold",
-        "start",
-        "end",
-        "strand",
-        "protein_id",
-        "protein_name",
-        "organism",
-        "strain",
-        "assembly",
-    ]
-
-    Entry = namedtuple("Entry", fields)
+    # Parse IPGs from the table
+    groups = parse_IP_groups(results)
 
     seen = set()
-    groups = defaultdict(list)
-
-    # Parse table, form groups of identical proteins
-    for line in results:
-        if not line or line.startswith("Id\tSource") or line.isspace():
-            continue
-
-        ipg, *fields = line.split("\t")
-        entry = Entry(*fields)
-
-        if not all(
-            [entry.scaffold, entry.start, entry.end, entry.strand]
-        ) or entry.source not in ("RefSeq", "INSDC",):
-            # Avoid vectors, single Gene nucleotide entries, etc
-            continue
-
-        groups[ipg].append(entry)
-
     organisms = defaultdict(dict)
-
     for ipg in list(groups):
-        group = groups.pop(ipg)  # Remove groups as we go
-        hit = None
+        group = groups.pop(ipg)
 
-        # Find a representative Hit object per IPG
-        for entry in group:
-            try:
-                hit = hits_dict[entry.protein_id]
-            except KeyError:
-                continue
-            break
+        # Find any hits corresponding to this IPG
+        hit_list = find_IPG_hits(group, hit_dict)
 
-        if not hit:
-            LOG.warning("Could not find Hit object for IPG %s", ipg)
+        if not hit_list:
+            LOG.warning("Found no hits for IPG %s", ipg)
             continue
 
         # Now populate the organisms dictionary with copies
         for entry in group:
             if entry.protein_id in seen:
                 continue
-
             seen.add(entry.protein_id)
 
             org, st, acc = entry.organism, entry.strain, entry.scaffold
@@ -163,13 +180,14 @@ def parse_IPG_table(results, hits):
                 organisms[org][st].scaffolds[acc] = Scaffold(acc)
 
             # Copy the original Hit object and add contextual information
-            h = hit.copy(
-                subject=entry.protein_id,
+            subject = Subject(
+                hits=hit_list,
+                ipg=group,
                 end=int(entry.end),
                 start=int(entry.start),
                 strand=entry.strand,
             )
-            organisms[org][st].scaffolds[acc].hits.append(h)
+            organisms[org][st].scaffolds[acc].subjects.append(subject)
 
     return [organism for strains in organisms.values() for organism in strains.values()]
 
@@ -213,12 +231,17 @@ def query_local_DB(hits, database):
 
     organisms = defaultdict(dict)
 
+    # Form non-redundant dictionary of hits. Each key will become a unique Subject.
+    hit_dict = defaultdict(list)
     for hit in hits:
+        hit_dict[hit.subject].append(hit)
+
+    for hit_index, hits in hit_dict.items():
         # Hit headers should follow form "i_j_k", where i, j and k refer to the
         # database indexes of organisms, scaffolds and proteins, respectively.
         # e.g. >2_56_123 => 123rd protein of 56th scaffold of the 2nd organism
         try:
-            i, j, k = [int(index) for index in hit.subject.split("_")]
+            i, j, k = [int(index) for index in hit_index.split("_")]
         except ValueError:
             LOG.exception("Hit has malformed header")
 
@@ -242,12 +265,16 @@ def query_local_DB(hits, database):
         if not identifier:
             LOG.warning("Could not find identifier for hit %, skipping", hit.subject)
             continue
-        hit.subject = identifier
+        for hit in hits:
+            hit.subject = identifier
 
         # Save genomic location on the Hit instance
-        hit.start = protein.location.min()
-        hit.end = protein.location.max()
-        hit.strand = protein.location.strand
+        subject = Subject(
+            hits=hits,
+            start=protein.location.min(),
+            end=protein.location.max(),
+            strand=protein.location.strand
+        )
 
         organisms[org][st].scaffolds[sc].hits.append(hit)
 
@@ -258,30 +285,18 @@ def query_local_DB(hits, database):
     ]
 
 
-def hits_contain_required_queries(hits, queries):
-    """Checks that a group of Hit objects has one Hit per query.
+def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3):
+    """Tests if a cluster of Subjects meets query conditions.
 
-    Args:
-        hits (list): Hit objects to be tested.
-        queries (list): Names of query sequences to test for.
-    Returns:
-        True or False
+    Finds all unique query sequences in hits, then returns True if total number is above
+    unique threshold, and any required queries are represented.
     """
-    bools = [False] * len(queries)
-    for index, query in enumerate(queries):
-        for hit in hits:
-            if hit.query == query:
-                bools[index] = True
-                break
-    return all(bools)
+    required = [False] * (len(require) if require else 0)
+    queries = set(hit.query for subject in cluster for hit in subject.hits)
+    return len(queries) >= unique and queries.issuperset(required)
 
 
-def hits_contain_unique_queries(hits, threshold=3):
-    """Checks for at least threshold unique queries in a collection of Hit objects."""
-    return len(set(hit.query for hit in hits)) >= threshold
-
-
-def find_clusters(hits, require=None, unique=3, min_hits=3, gap=20000):
+def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
     """Finds clusters of Hit objects matching user thresholds.
 
     Args:
@@ -296,37 +311,62 @@ def find_clusters(hits, require=None, unique=3, min_hits=3, gap=20000):
     if unique < 0 or min_hits < 0 or gap < 0:
         raise ValueError("Expected positive integer")
 
-    total_hits = len(hits)
+    total_subjects = len(subjects)
 
-    if total_hits < unique:
+    if total_subjects < unique:
         return []
 
-    if total_hits == 1:
+    if total_subjects == 1:
         if unique == 1 or min_hits == 1:
             return [hits]
         return []
 
-    def conditions_met(group):
-        req = hits_contain_required_queries(group, require) if require else True
-        con = hits_contain_unique_queries(group, unique)
-        siz = len(group) >= min_hits
-        return req and con and siz
-
-    sorted_hits = sorted(hits, key=attrgetter("start"))
-    first = sorted_hits.pop(0)
+    sorted_subjects = sorted(subjects, key=attrgetter("start"))
+    first = sorted_subjects.pop(0)
     group, border = [first], first.end
 
-    for hit in sorted_hits:
-        if hit.start <= border + gap:
-            group.append(hit)
-            border = max(border, hit.end)
+    for subject in sorted_subjects:
+        if subject.start <= border + gap:
+            group.append(subject)
+            border = max(border, subject.end)
         else:
-            if conditions_met(group):
+            if cluster_satisfies_conditions(group):
                 yield group
-            group, border = [hit], hit.end
+            group, border = [subject], subject.end
 
-    if conditions_met(group):
+    if cluster_satisfies_conditions(group):
         yield group
+
+
+def clusters_are_identical(one, two):
+    if not len(one) == len(two):
+        return False
+    for subA, subB in zip(one, two):
+        if subA.ipg != subB.ipg:
+            return False
+    return True
+
+
+def deduplicate(organism):
+    """Removes any duplicate clusters within an Organism.
+
+    Some redundancy is unavoidable due to duplicate entries on NCBI. This function
+    attempts to remedy this partially by searching for identical clusters within a
+    single, unique Organism. Clusters are compared from start to finish, and are tagged
+    for removal if every Subject is of the same IPG for the length of the clusters.
+    """
+    remove = defaultdict(list)
+
+    for scafA, scafB in combinations(organism.scaffolds.values(), 2):
+        for one, two in product(scafA.clusters, scafB.clusters):
+            if one == two:
+                continue
+            if clusters_are_identical(one, two):
+                remove[scafB.accession].append(two)
+
+    for accession, clusters in remove.items():
+        scaffold = organism.scaffolds[accession]
+        scaffold.clusters = [c for c in scaffold.clusters if c not in clusters]
 
 
 def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require=None):
@@ -334,7 +374,7 @@ def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require
     for scaffold in organism.scaffolds.values():
         scaffold.clusters = list(
             find_clusters(
-                scaffold.hits,
+                scaffold.subjects,
                 unique=unique,
                 min_hits=min_hits,
                 gap=gap,
@@ -347,6 +387,48 @@ def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require
             scaffold.accession,
             len(scaffold.clusters),
         )
+
+    deduplicate(organism)
+
+
+
+def filter_session(
+    session,
+    min_identity=30,
+    min_coverage=50,
+    max_evalue=0.01,
+    gap=20000,
+    unique=3,
+    min_hits=3,
+    require=None,
+):
+    """Filter a Session object with new thresholds.
+
+    This function is destructive!
+    """
+    for organism in session.organisms:
+        for scaffold in organism.scaffolds.values():
+            for subject in scaffold.subjects:
+                subject.hits = [
+                    hit
+                    for hit in subject.hits
+                    if (
+                        hit.identity > min_identity
+                        and hit.coverage > min_coverage
+                        and hit.evalue < max_evalue
+                    )
+                ]
+            scaffold.clusters = list(
+                find_clusters(
+                    scaffold.subjects,
+                    gap=gap,
+                    min_hits=min_hits,
+                    require=require,
+                    unique=unique,
+                )
+            )
+        context.deduplicate(organism)
+
 
 
 def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
