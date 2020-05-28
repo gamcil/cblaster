@@ -12,8 +12,6 @@ from cblaster.formatters import (
     summary,
     summarise_scaffold,
     summarise_organism,
-    count_query_hits,
-    get_max_hit_identities
 )
 
 
@@ -133,7 +131,12 @@ class Session(Serializer):
 
         return names, scafs, counts, idents
 
-    def format(self, form, fp=None, human=True, headers=True, **kwargs):
+    def format(
+        self,
+        form,
+        fp=None,
+        **kwargs
+    ):
         """Generates a summary table.
 
         Args:
@@ -147,9 +150,9 @@ class Session(Serializer):
             Summary table.
         """
         if form == "summary":
-            table = summary(self, human=human, headers=headers, **kwargs)
+            table = summary(self, **kwargs)
         elif form == "binary":
-            table = binary(self, human=human, headers=headers, **kwargs)
+            table = binary(self, **kwargs)
         else:
             raise ValueError("Expected 'summary' or 'binary'")
         print(table, file=fp)
@@ -174,22 +177,30 @@ class Organism(Serializer):
 
     def __str__(self):
         total_scaffolds = len(self.scaffolds)
-        total_hits = sum(len(s.hits) for s in self.scaffolds.values())
-        return "ORGANISM: {} {} [{} hits on {} scaffolds]".format(
-            self.name, self.strain, total_hits, total_scaffolds
+        total_subjects = sum(len(s.subjects) for s in self.scaffolds.values())
+        return "ORGANISM: {} {} [{} subjects on {} scaffolds]".format(
+            self.name, self.strain, total_subjects, total_scaffolds
         )
+
+    @property
+    def clusters(self):
+        return [
+            cluster
+            for scaffold in self.scaffolds.values()
+            for cluster in scaffold.clusters
+        ]
 
     @property
     def total_hit_clusters(self):
         """Counts total amount of hit clusters in this Organism."""
         return sum(len(scaffold.clusters) for scaffold in self.scaffolds.values())
 
-    def summary(self, decimals=4, human=True, headers=True):
+    def summary(self, decimals=4, hide_headers=True, delimiter=None):
         return summarise_organism(
             self,
             decimals=decimals,
-            human=human,
-            headers=headers
+            hide_headers=headers,
+            delimiter=delimiter,
         )
 
     @property
@@ -229,39 +240,91 @@ class Scaffold(Serializer):
         clusters (list): Clusters of hits identified on this scaffold.
     """
 
-    def __init__(self, accession, clusters=None, hits=None):
+    def __init__(self, accession, clusters=None, subjects=None):
         self.accession = accession
-        self.hits = hits if hits else []
+        self.subjects = subjects if subjects else []
         self.clusters = clusters if clusters else []
 
     def __str__(self):
         return "SCAFFOLD: {} [{} hits in {} clusters]".format(
-            self.accession, len(self.hits), len(self.clusters)
+            self.accession, len(self.subjects), len(self.clusters)
         )
 
-    def summary(self, human=True, headers=True, decimals=4):
+    def summary(self, hide_headers=False, delimiter=None, decimals=4):
         return summarise_scaffold(
             self,
             decimals=decimals,
-            human=human,
-            headers=headers
+            hide_headers=headers,
+            delimiter=delimiter,
         )
 
     def to_dict(self):
         return {
             "accession": self.accession,
-            "hits": [hit.to_dict() for hit in self.hits],
+            "subjects": [subject.to_dict() for subject in self.subjects],
             "clusters": [
-                [self.hits.index(hit) for hit in cluster]
+                [self.subjects.index(subject) for subject in cluster]
                 for cluster in self.clusters
             ],
         }
 
     @classmethod
     def from_dict(cls, d):
-        hits = [Hit.from_dict(hit) for hit in d["hits"]]
-        clusters = [[hits[ix] for ix in cluster] for cluster in d["clusters"]]
-        return cls(accession=d["accession"], hits=hits, clusters=clusters)
+        subjects = [Subject.from_dict(subject) for subject in d["subjects"]]
+        clusters = [[subjects[ix] for ix in cluster] for cluster in d["clusters"]]
+        return cls(accession=d["accession"], subjects=subjects, clusters=clusters)
+
+
+class Subject(Serializer):
+    """A sequence representing one or more BLAST hits.
+
+    This class is instantiated during the contextual lookup stage. It is
+    important since it allows for subject sequences which hit >1 of
+    the query sequences, while still staying non-redundant.
+
+    Attributes:
+        hits (list): Hit objects referencing this subject sequence.
+        ipg (int): NCBI Identical Protein Group (IPG) id.
+        start (int): Start of sequence on parent scaffold.
+        end (int): End of sequence on parent scaffold.
+        strand (str): Strandedness of the sequence ('+' or '-').
+    """
+
+    def __init__(self, hits=None, ipg=None, start=None, end=None, strand=None):
+        self.hits = hits if hits else []
+        self.ipg = ipg if ipg else None
+        self.start = int(start) if start is not None else None
+        self.end = int(end) if end is not None else None
+        self.strand = strand
+
+    def to_dict(self):
+        return {
+            "hits": [hit.to_dict() for hit in self.hits],
+            "start": self.start,
+            "end": self.end,
+            "strand": self.strand
+        }
+
+    def values(self, decimals=4):
+        records = []
+        for hit in self.hits:
+            record = (
+                *hit.values(decimals),
+                str(self.start),
+                str(self.end),
+                self.strand,
+            )
+            records.append(record)
+        return records
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            hits=[Hit.from_dict(h) for h in d["hits"]],
+            start=d["start"],
+            end=d["end"],
+            strand=d["strand"]
+        )
 
 
 class Hit(Serializer):
@@ -290,10 +353,7 @@ class Hit(Serializer):
         identity,
         coverage,
         evalue,
-        bitscore,
-        start=None,
-        end=None,
-        strand=None,
+        bitscore
     ):
         self.query = query
 
@@ -306,14 +366,9 @@ class Hit(Serializer):
         self.coverage = float(coverage)
         self.evalue = float(evalue)
 
-        self.start = int(start) if start is not None else None
-        self.end = int(end) if end is not None else None
-        self.strand = strand
-
     def __str__(self):
         return (
             f"Hit: {self.query} - {self.subject}:"
-            f"{self.start}-{self.end}[{self.strand}] "
             f" {self.identity:.2%}/{self.coverage:.2%}"
         )
 
@@ -339,9 +394,6 @@ class Hit(Serializer):
             f"{round(self.coverage, decimals):g}",
             f"{self.evalue:.{decimals}g}",
             f"{round(self.bitscore, decimals):g}",
-            str(self.start),
-            str(self.end),
-            self.strand,
         ]
 
     def to_dict(self):
@@ -352,11 +404,10 @@ class Hit(Serializer):
             "coverage": self.coverage,
             "evalue": self.evalue,
             "bitscore": self.bitscore,
-            "start": self.start,
-            "end": self.end,
-            "strand": self.strand,
         }
 
     @classmethod
     def from_dict(cls, d):
         return cls(**d)
+
+
