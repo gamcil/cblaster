@@ -3,7 +3,7 @@ cblaster result formatters.
 """
 
 
-import builtins
+from operator import attrgetter
 
 
 def get_maximum_row_lengths(rows):
@@ -42,65 +42,67 @@ def generate_header_string(text, symbol="-"):
     return f"{text}\n{symbol * len(text)}"
 
 
-def count_query_hits(queries, hits):
-    """Counts total hits per query in a colllection of Hit objects.
+def get_cell_values(queries, subjects, key=len, attr=None):
+    """Generates the values of cells in the binary matrix.
 
-    >>> queries = ["query1", "query2", "query3"]
-    >>> hits = [Hit(query="query1"), Hit(query="query2"), Hit(query="other")]
-    >>> count_query_hits(queries, hits)
-    [1, 1, 0]
+    This function calls some specified key function (def. max) against all
+    values of a specified attribute (def. None) from Hits inside Subjects which
+    match each query. By default, this function will just count all matching Hits
+    (i.e. len() is called on all Hits whose query attribute matches). To find
+    maximum identities, for example, provide key=max and attr='identity' to this
+    function.
 
-    Args:
-        hits (list): Hit objects
-    Returns:
-        List of per-query counts corresponding to input.
+    Parameters:
+        queries (list): Names of query sequences.
+        subjects (list): Subject objects to generate vlaues for.
+        key (callable): Some callable that takes a list and produces a value.
+        attr (str): A Hit attribute to calculate values with in key function.
     """
-    return [sum(query == hit.query for hit in hits) for query in queries]
+    result = [0] * len(queries)
+    for index, query in enumerate(queries):
+        values = [
+            getattr(hit, attr) if attr else hit
+            for subject in subjects
+            for hit in subject.hits
+            if hit.query == query
+        ]
+        result[index] = key(values)
+    return result
 
 
-def get_hit_identities(queries, hits, key=max):
-    """Get the maximum hit identity per query in a collection of `Hit` objects.
-
-    Argument passed to key must be a callable, e.g. max or sum.
-
-    >>> queries = ["query1", "query2", "query3"]
-    >>> hits = [
-    ...     Hit(query="query1", identity=0.9),
-    ...     Hit(query="query2", identity=0.4),
-    ...     Hit(query="query2", identity=0.7),
-    ... ]
-    >>> get_hit_identities(queries, hits, key=max)
-    [0.9, 0.7, 0]
-    >>> get_hit_identities(queries, hits, key=sum)
-    [0.9, 1.1, 0]
-    """
-    return [
-        key([hit.identity if query == hit.query else 0 for hit in hits])
-        for query in queries
-    ]
-
-
-def binary(session, headers=False, human=False, identity=None, delimiter=","):
+def binary(
+    session,
+    hide_headers=False,
+    delimiter=None,
+    key=len,
+    attr="identity",
+    decimals=4
+):
     """Generates a binary summary table from a Session object."""
-    if identity:
-        value_fn = lambda q, c: get_hit_identities(q, c, key=identity)
-    else:
-        value_fn = count_query_hits
+    value_fn = lambda q, c: get_cell_values(q, c, key=identity, attr=attr)
     rows = [
         [
             organism.full_name,
             accession,
             str(cluster[0].start),
             str(cluster[-1].end),
-            *[str(value) for value in value_fn(session.queries, cluster)]
+            *[
+                f"{value:.{decimals}g}"
+                for value in get_cell_values(
+                    session.queries,
+                    cluster,
+                    key=key,
+                    attr=attr
+                )
+            ]
         ]
         for organism in session.organisms
         for accession, scaffold in organism.scaffolds.items()
         for cluster in scaffold.clusters
     ]
-    if headers:
+    if not hide_headers:
         rows.insert(0, ["Organism", "Scaffold", "Start", "End", *session.queries])
-    if human:
+    if not delimiter:
         delimiter = "  "
         rows = humanise(rows)
     return "\n".join(delimiter.join(row) for row in rows)
@@ -112,6 +114,7 @@ def _summarise(
     header_string,
     header_symbol="-",
     condition_fn=None,
+    separator="\n\n",
     **kwargs,
 ):
     blocks = []
@@ -120,40 +123,39 @@ def _summarise(
             continue
         block = block_fn(item, **kwargs)
         blocks.append(block)
-    report = "\n\n".join(blocks)
+    report = separator.join(blocks)
     if header_string:
         hdr = generate_header_string(header_string, header_symbol)
         return f"{hdr}\n{report}"
     return report
 
 
-def summarise_organism(organism, headers=True, human=True, decimals=4, delimiter=","):
+def summarise_organism(organism, hide_headers=True, delimiter=None, decimals=4):
     return _summarise(
         organism.scaffolds.values(),
         summarise_scaffold,
         organism.full_name,
         condition_fn=lambda s: len(s.clusters) > 0,
         header_symbol="=",
-        headers=headers,
-        human=human,
-        decimals=decimals,
+        hide_headers=hide_headers,
         delimiter=delimiter,
+        decimals=decimals,
+        separator="\n\n\n",
     )
 
 
-def summarise_scaffold(scaffold, headers=True, human=True, decimals=4, delimiter=","):
+def summarise_scaffold(scaffold, hide_headers=True, delimiter=None, decimals=4):
     return _summarise(
         scaffold.clusters,
-        summarise_cluster,
+        summarise_subjects,
         scaffold.accession,
-        headers=headers,
-        human=human,
-        decimals=decimals,
+        hide_headers=hide_headers,
         delimiter=delimiter,
+        decimals=decimals,
     )
 
 
-def summarise_cluster(hits, decimals=4, headers=True, human=True, delimiter=","):
+def summarise_subjects(subjects, decimals=4, hide_headers=True, delimiter=None):
     """Generates a summary table for a hit cluster.
 
     Args:
@@ -164,8 +166,14 @@ def summarise_cluster(hits, decimals=4, headers=True, human=True, delimiter=",")
     Returns:
         summary table
     """
-    rows = [h.values(decimals) for h in hits]
-    if headers:
+    subjects.sort(key=attrgetter("start"))
+
+    rows = []
+    for subject in subjects:
+        values = subject.values(decimals)
+        rows.extend(values)
+
+    if not hide_headers:
         hdrs = [
             "Query",
             "Subject",
@@ -178,21 +186,20 @@ def summarise_cluster(hits, decimals=4, headers=True, human=True, delimiter=",")
             "Strand",
         ]
         rows.insert(0, hdrs)
-    if human:
+    if not delimiter:
         delimiter = "  "
         rows = humanise(rows)
     return "\n".join(delimiter.join(hit) for hit in rows)
 
 
-def summary(session, headers=True, human=True, decimals=4, delimiter=","):
+def summary(session, hide_headers=False, delimiter=None, decimals=4):
     return _summarise(
         session.organisms,
         summarise_organism,
         "cblaster search",
         condition_fn=lambda o: o.total_hit_clusters > 0,
-        headers=headers,
-        human=human,
-        decimals=decimals,
+        hide_headers=hide_headers,
         delimiter=delimiter,
+        decimals=decimals,
         header_symbol="=",
     )
