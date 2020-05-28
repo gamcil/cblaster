@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>cblaster</title>
+		<link href="index.css" rel="stylesheet"></link>
+		<script src="d3.min.js"></script>
+	</head>
+	<body>
+		<main>
+			<div id="plot"></div>
+			<div id="div-floater">
+				<button class="collapsible active" type="button" onclick="toggleActive()">cblaster</button>
+				<div id="div-summary">
+					<p id="p-result-summary"></p>
+					<hr>
+					<p>If you found cblaster useful, please cite:</p>
+					<pre>
+						Gilchrist, C.L.M, 2020. cblaster: a Python toolkit for detecting co-located BLAST hits.
+					</pre>
+					<hr>
+					<p>
+						Click clusters to hide rows, or queries to hide columns.
+						The original view can be restored using the reset filters button.
+					</p>
+					<button id="btn-save-svg">Save SVG</button>
+					<button id="btn-reset-filters">Reset filters</button>
+					<button id="btn-toggle-counts">Toggle hit counts</button>
+				</div>
+			</div>
+			<script>
+				const coll = document.querySelector(".collapsible");
+				const menu = document.querySelector("#div-summary");
+				function toggleActive(event) {
+					coll.classList.toggle("active");
+					menu.style.display = menu.style.display === "none" ? "block" : "none";
+				}
+			</script>
+			<script src="cblaster.js"></script>
+		</main>
+	</body>
+</html>
