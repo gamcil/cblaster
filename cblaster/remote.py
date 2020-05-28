@@ -67,47 +67,27 @@ def start(
         2. `BLAST documentation
         <https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp>`
 
-    Parameters
-    ----------
-    query_file: str
-        Path to a query FASTA file
-    query_ids: list, tuple
-        Collection of NCBI sequence identifiers
-    database: str
-        Target NCBI BLAST database
-    program: str
-        BLAST variant to run
-    megablast: bool
-        Enable megaBLAST option (only with BLASTn)
-    filtering: str
-        Low complexity filtering
-    evalue: float
-        E-value cutoff
-    nucl_reward: int
-        Reward for matching bases (only with BLASTN/megaBLAST)
-    nucl_penalty: int
-        Penalty for mismatched bases (only with BLASTN/megaBLAST)
-    gap_costs: str
-        Gap existence and extension costs
-    matrix: str
-        Scoring matrix name
-    hitlist_size: int
-        Number of database sequences to keep
-    threshold: int
-        Neighbouring score for initial words
-    word_size: int
-        Size of word for initial matches
-    comp_based_stats: int
-        Composition based statistics algorithm
-    entrez_query: str
-        NCBI Entrez search term for pre-filtering the BLAST database
+    Args:
+        query_file (str): Path to a query FASTA file
+        query_ids (list): Collection of NCBI sequence identifiers
+        database (str): Target NCBI BLAST database
+        program (str): BLAST variant to run
+        megablast (bool): Enable megaBLAST option (only with BLASTn)
+        filtering (str): Low complexity filtering
+        evalue (float): E-value cutoff
+        nucl_reward (int): Reward for matching bases (only with BLASTN/megaBLAST)
+        nucl_penalty (int): Penalty for mismatched bases (only with BLASTN/megaBLAST)
+        gap_costs (str): Gap existence and extension costs
+        matrix (str): Scoring matrix name
+        hitlist_size (int): Number of database sequences to keep
+        threshold (int): Neighbouring score for initial words
+        word_size (int): Size of word for initial matches
+        comp_based_stats (int): Composition based statistics algorithm
+        entrez_query (str): NCBI Entrez search term for pre-filtering the BLAST database
 
-    Returns
-    -------
-    rid: str
-        Request Identifier (RID) assigned to the search
-    rtoe: int
-        Request Time Of Execution (RTOE), estimated run time (in seconds) of the search
+    Returns:
+        rid (str): Request Identifier (RID) assigned to the search
+        rtoe (int): Request Time Of Execution (RTOE), estimated run time of the search
     """
     query = _prepare_input(query_file, query_ids)
 
