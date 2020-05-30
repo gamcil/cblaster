@@ -2,18 +2,17 @@
  * Cameron L.M. Gilchrist, 2020.
  */
 
-
-if (typeof data === 'undefined') {
-	// Load from HTTP server
-	const data = d3.json("data.json").then(data => outer_plot(data));
-} else {
-	outer_plot(data);
-}
-
 const constants = {
 	"cellHeight": 27,
 	"cellWidth": 44,
 	"dendroWidth": 140,
+}
+
+if (typeof data === 'undefined') {
+	// Load from HTTP server
+	const data = d3.json("data.json").then(data => plot(data));
+} else {
+	plot(data);
 }
 
 // TODO: ignore zoom/drag transforms here
@@ -238,6 +237,8 @@ function pruneHierarchy(node, label) {
 }
 
 function plot(data) {
+	data.matrix = flattenArray(data.matrix);
+
   const originalData = JSON.parse(JSON.stringify(data))
 
 	// Reset to the original data. Have to make a deep copy here, since update
@@ -452,12 +453,4 @@ function plot(data) {
 	}
 
 	update(data)
-}
-
-function outer_plot(data) {
-	// Save data being plotted, and bind to button to allow resetting of any
-	// hidden rows/columns, transforms, etc
-	data.matrix = flattenArray(data.matrix);
-	plot(data);
-
 }
