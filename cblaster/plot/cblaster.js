@@ -5,9 +5,15 @@
 
 if (typeof data === 'undefined') {
 	// Load from HTTP server
-	const data = d3.json("data.json").then(data => plot(data));
+	const data = d3.json("data.json").then(data => outer_plot(data));
 } else {
-	plot(data);
+	outer_plot(data);
+}
+
+const constants = {
+	"cellHeight": 27,
+	"cellWidth": 44,
+	"dendroWidth": 140,
 }
 
 // TODO: ignore zoom/drag transforms here
@@ -18,7 +24,6 @@ function serialise(svg) {
 	 * correctly.
 	 * This function returns a new Blob, which can then be downloaded.
 	*/
-	console.log(svg);
 	node = svg.node();
 	const xmlns = "http://www.w3.org/2000/xmlns/";
 	const xlinkns = "http://www.w3.org/1999/xlink";
@@ -46,33 +51,6 @@ function download(blob, filename) {
 	document.body.appendChild(link);
 	link.click();
 	document.body.removeChild(link);
-}
-
-function resetFilters(originalData) {
-	/* Resets any hidden rows/columns to original data.
-	 * This is attached to the Reset filters button in plot.html.
-	*/
-	d3.select("#plot")
-		.select("svg")
-		.remove();
-	plot(originalData)
-}
-
-function scaleBranchLengths(node, w) {
-	/* Scales the branch lengths of the cluster dendrogram.
-	 * This requires cluster distances to be normalised (e.g. divide all distances
-	 * in SciPy linkage matrix by the maximum distance). A linear scale maps the
-	 * normalised distances to the total width of the dendrogram, and then y values
-	 * of every link source and target are scaled accordingly. Terminal targets will
-	 * have no length attribute and thus default to 0 (i.e. drawn to max width).
-	 */
-	const y = d3.scaleLinear()
-		.domain([1, 0])  // inversed, since thats how Scipy reports distances
-		.range([0, w]);
-	node.links().map(link => {
-		link.source.y = y(link.source.data.length)	
-		link.target.y = y(link.target.data.length || 0)	
-	})
 }
 
 function colourBarGradient(colors) {
@@ -155,98 +133,84 @@ function flattenArray(array) {
 	return array.reduce((flat, next) => flat.concat(next), []);
 }
 
-function plot(data) {
-	// Save data being plotted, and bind to button to allow resetting of any
-	// hidden rows/columns, transforms, etc
-	const originalData = data;
-	d3.select("#btn-reset-filters")
-		.on("click", () => resetFilters(originalData));
+function getTooltipHTML(d, data) {
+	/* Generates the HTML content for a cell hovering tooltip.
+	 * It provides the name of the query, as well as a table of each hit.
+	 */
+	return `<b>Query:</b> ${d.query}<br>`
+		+ `<b>Organism:</b> ${data.labels[d.cluster].name}<br>`
+		+ `<b>Scaffold:</b> ${data.labels[d.cluster].scaffold}<br>`
+		+ `<b>${d.hits.length} ${d.hits.length > 1 ? "Hits:" : "Hit:"}</b>`
+		+ '<table class="tooltip-table">'
+		+ "<thead>"
+		+ "<th>Name</th>"
+		+ "<th>Ident. (%)</th>"
+		+ "<th>Cov. (%)</th>"
+		+ "<th>Bitscore</th>"
+		+ "<th>E-value</th>"
+		+ "</thead>"
+		+ "<tbody>"
+		+ d.hits.map(h => (
+			"<tr>"
+			+ `<td>${h.name}</td>`
+			+ `<td>${h.identity.toFixed(2)}</td>`
+			+ `<td>${h.coverage.toFixed(2)}</td>`
+			+ `<td>${h.bitscore.toFixed(2)}</td>`
+			+ `<td>${h.evalue}</td>`
+			+ "</tr>"
+		)).join("")
+		+ "</tbody>"
+		+ "</table>";
+}
 
-	// Define constant size for heatmap cells. Scales are based on these values
-	// * the number of total clusters/queries, so the figure will not scale to fit
-	// a given window size.
-	const cellHeight = 27;
-	const cellWidth = 44;
+function tooltipOver(d) {
+	// Heatmap cell mouseover behaviour to toggle tooltip opacity.
+	d3.select(".tooltip").style("opacity", "1");
+}
 
-	const queries = data.queries;
-	const clusters = data.matrix.map((d, i) => i);
+function tooltipMove(d, data) {
+	// Heatmap cell mousemove behaviour to update content and screen position.
+	d3.select(".tooltip")
+		.html(getTooltipHTML(d, data))
+		.style("left", d3.event.pageX + 10 + "px")
+		.style("top", d3.event.pageY + 10 + "px")
+}
 
-	// Define width and height of the dendrogram.
-	const dendroWidth = 140;
-	const dendroHeight = clusters.length * cellHeight;
+function tooltipLeave(d) {
+	// Heatmap cell mouseleave behaviour to toggle tooltip opacity.
+	d3.select(".tooltip").style("opacity", "0");
+}
 
-	// x-axis scale is only used for the heatmap, and is based on user queries.
-	const x = d3.scaleBand()
-		.domain(data.queries)
-		.range([0, queries.length * cellWidth])
-		.padding(0.05);
+function scaleBranchLengths(node, width) {
+	/* Scales the branch lengths of the cluster dendrogram.
+	 * This requires cluster distances to be normalised (e.g. divide all distances
+	 * in SciPy linkage matrix by the maximum distance). A linear scale maps the
+	 * normalised distances to the total width of the dendrogram, and then y values
+	 * of every link source and target are scaled accordingly. Terminal targets will
+	 * have no length attribute and thus default to 0 (i.e. drawn to max width).
+	 */
+	const y = d3.scaleLinear()
+		.domain([1, 0])  // inversed, since thats how Scipy reports distances
+		.range([0, width]);
+	node.links().forEach(link => {
+		link.source.y = y(link.source.data.length)	
+		link.target.y = y(link.target.data.length || 0)	
+	})
+}
 
-	// Heat map color scheme
-	const colors = d3
-		.scaleSequential(d3.interpolateBlues)
-		.domain([0, 1]);
+function getScaledTree(hierarchy, width, height) {
+	// Generate d3 cluster object from data.
+	const root = d3.hierarchy(hierarchy);
+	const tree = d3.cluster()
+		.size([height, width])
+		.separation(() => 1)(root);
+	scaleBranchLengths(tree, width);
+	return tree;
+}
 
-	// Create the root SVG element
-	const svg = d3
-		.select("#plot")
-		.append("svg")
-		.classed("wrapper-svg", true)
-		.attr("id", "root_svg")
-		.attr("cursor", "grab")
-		.attr("xmlns", "http://www.w3.org/2000/svg");
-
-	// Create a group which everything in the plot will be inside
-	const g = svg.append("g").attr("transform", "translate(2,0)");
-
-	// Set up pan/zoom behaviour. Affects the <g> element, which does not include
-	// the colour bar.
-	svg.call(d3.zoom()
-		.scaleExtent([0, 8])
-		.on("zoom", () => g.attr("transform", d3.event.transform))
-		.on("start", () => svg.attr("cursor", "grabbing"))
-		.on("end", () => svg.attr("cursor", "grab"))
-	);
-
-	// Create the colour bar
-	const def = svg.append("defs");
-	def.append(() => colourBarGradient(colors));
-	svg.append(() => colourBar());
-
-	// Generate the dendrogram from the clustering hierarchy, then scale branch
-	// lengths based on distances from the linkage matrix.
-	const tree = (data) => {
-		const root = d3.hierarchy(data);
-		return d3.cluster()
-			.size([dendroHeight, dendroWidth])
-			.separation(() => 1)(root);
-	}
-	const root = tree(data.hierarchy);
-	scaleBranchLengths(root, dendroWidth);
-
-	// y-axis scale is used for both plots, and is based on hit clusters.
-	// Must be calculated after creating the tree, so we can get order.
-	const y = d3.scaleBand()
-		.domain(root.leaves().map(l => l.data.name))
-		.range([0, dendroHeight])
-		.padding(0.05);
-
-	// Draw the paths in the dendrogram
-	const dendro = g.append("g")
-		.classed("g-dendro", true);
-	dendro.append("g")
-    .attr("fill", "none")
-    .attr("stroke", "#555")
-    .attr("stroke-opacity", 0.4)
-    .attr("stroke-width", 1.5)
-		.selectAll("path")
-    .data(root.links())
-    .join("path")
-		.attr("d", elbow);
-
-	// Generate the heatmap cell tooltip, hidden by default.
-	const tooltip = d3
-		.select("#plot")
-		.append("div")
+function addTooltipDiv(parent) {
+	// Set up the <div> element used for the tooltip.
+	const tooltip = parent.append("div")
 		.classed("tooltip", true)
 		.style("position", "absolute")
 		.style("opacity", 0)
@@ -255,176 +219,245 @@ function plot(data) {
 		.style("border", "solid")
 		.style("border-width", "1px")
 		.style("border-radius", "3px");
+	return tooltip;
+}
 
-	const dendroBBox = d3.select(".g-dendro").node().getBBox()
+function pruneHierarchy(node, label) {
+	/* Prune any children of a nested object whose name is equal to label.
+	 * Additionally, if pruning results in an empty children list, remove the
+	 * parent.
+	*/
+	return node.filter(child => {
+		if (child.children) {
+			child.children = pruneHierarchy(child.children, label)	
+			if (child.children.length === 0)
+				return false
+		}
+		return child.name !== label
+	})
+}
 
-	// Define groups for the heatmap.
-	// One for entire heatmap, another just for heatmap cells.
-	const heatmap = g.append("g");
+function plot(data) {
+  const originalData = JSON.parse(JSON.stringify(data))
 
-	const heatWidth = cellWidth * data.queries.length;
-	const heatHeight = cellHeight * data.labels.length + 2;
+	// Reset to the original data. Have to make a deep copy here, since update
+	// will mutate data
+	d3.select("#btn-reset-filters")
+		.on("click", () => {
+			const copy = JSON.parse(JSON.stringify(originalData))
+			update(copy)
+		});
 
-	// Draw a padded border around the heatmap
-	heatmap.append("rect")
-		.attr("width", heatWidth)
-		.attr("height", heatHeight)
+	const plotDiv = d3.select("#plot");
+	const tooltip = addTooltipDiv(plotDiv);
+	const svg = plotDiv.append("svg")
+		.classed("wrapper-svg", true)
+		.attr("id", "root_svg")
+		.attr("cursor", "grab")
+		.attr("xmlns", "http://www.w3.org/2000/svg");
+
+	const g = svg.append("g").attr("transform", "translate(2,0)");
+
+	svg.call(d3.zoom()
+		.scaleExtent([0, 8])
+		.on("zoom", () => g.attr("transform", d3.event.transform))
+		.on("start", () => svg.attr("cursor", "grabbing"))
+		.on("end", () => svg.attr("cursor", "grab"))
+	);
+
+	const x = d3.scaleBand().padding(0.05)
+	const y = d3.scaleBand().padding(0.05)
+	const colorScale = d3
+		.scaleSequential(d3.interpolateBlues)
+		.domain([0, 1])
+
+	const def = svg.append("defs");
+	def.append(() => colourBarGradient(colorScale));
+	svg.append(() => colourBar());
+
+	const dendro = g.append("g")
+	const heatmap = g.append("g")
+	const heatmapBG = heatmap.append("rect")
+		.attr("class", "heatmap-bg")
 		.style("fill", "white")
 		.style("stroke", "black")
 		.style("stroke-width", "thin");
+	const cellGroup = heatmap.append("g")
+	const heatmapX = heatmap.append("g")
+		.attr("class", "g-heatmap-xaxis")
+	const heatmapY = heatmap.append("g")
+		.attr("class", "g-heatmap-yaxis")
 
-  const heatGroup = heatmap.append("g");
-	const heatCell = heatGroup.selectAll("rect")
-		.data(flattenArray(data.matrix))
-		.enter()
-		.append("g");
-
-	// Generates the HTML content for a cell hovering tooltip.
-	// It provides the name of the query, as well as a table of each hit.
-	const getTooltipHTML = (d) => {
-		return `<b>Query:</b> ${d.query}<br>`
-			+ `<b>Organism:</b> ${data.labels[d.cluster].name}<br>`
-			+ `<b>Scaffold:</b> ${data.labels[d.cluster].scaffold}<br>`
-			+ `<b>${d.hits.length} ${d.hits.length > 1 ? "Hits:" : "Hit:"}</b>`
-			+ '<table class="tooltip-table">'
-			+ "<thead>"
-			+ "<th>Name</th>"
-			+ "<th>Ident. (%)</th>"
-			+ "<th>Cov. (%)</th>"
-			+ "<th>Bitscore</th>"
-			+ "<th>E-value</th>"
-			+ "</thead>"
-			+ "<tbody>"
-			+ d.hits.map(h => (
-				"<tr>"
-				+ `<td>${h.name}</td>`
-				+ `<td>${h.identity.toFixed(2)}</td>`
-				+ `<td>${h.coverage.toFixed(2)}</td>`
-				+ `<td>${h.bitscore.toFixed(2)}</td>`
-				+ `<td>${h.evalue}</td>`
-				+ "</tr>"
-			)).join("")
-			+ "</tbody>"
-			+ "</table>";
-	}
-
-	// Heatmap cell mouseover behaviour to toggle tooltip opacity.
-	const tooltipOver = (d) => {
-		tooltip.style("opacity", "1");
-	}
-
-	// Heatmap cell mousemove behaviour to update content and screen position.
-	const tooltipMove = (d) => {
-		const content = getTooltipHTML(d);
-		tooltip.html(content)
-			.style("left", d3.event.pageX + 10 + "px")
-			.style("top", d3.event.pageY + 10 + "px")
-	}
-
-	// Heatmap cell mouseleave behaviour to toggle tooltip opacity.
-	const tooltipLeave = (d) => {
-		d3.select(".tooltip").style("opacity", "0");
-	}
-
-	heatCell.filter(d => d.hits.length > 0)
-		.on("mouseover", tooltipOver)
-		.on("mousemove", tooltipMove)
-		.on("mouseleave", tooltipLeave);
-
-	// Draw heatmap cells
-	heatCell.filter(d => d.hits.length > 0)
-		.append("rect")
-		.classed("heatmap-cell", true)
-		.attr("fill", d => colors(d.value / 100))
-		.attr("width", x.bandwidth())
-		.attr("height", y.bandwidth())
-		.attr("x", d => x(d.query))
-		.attr("y", d => y(d.cluster))
-		.style("stroke-width", "thin")
-		.style("stroke", d => d.hits.length > 1 ? "red" : null);
-
-	// Draw hit counts in the center of each cell
-	heatCell.filter(d => d.hits.length > 0)
-		.append("text")
-		.classed("heatmap-count", true)
-		.text(d => d.hits.length)
-		.attr("x", d => x(d.query) + cellWidth / 2)
-		.attr("y", d => y(d.cluster) + cellHeight / 2 + 4)
-		.style("text-anchor", "middle")
-		.style("fill", d => d.value < 60 ? colors(1) : colors(0))
-
-	const heatBBox = heatGroup.node().getBBox()
-
-	// Species names and scaffold coordinates
-	heatmap.append("g")
-    .selectAll("text")
-    .data(root.leaves())
-		.join("g")
-	.append("text")
-		.text(d => data.labels[d.data.name].name)
-		.attr("x", heatBBox.x + heatWidth)
-		.attr("y", d => d.x)
-		.attr("dy", "0em")
-		.attr("dx", "1.1em")
-		.attr("text-anchor", "start")
-		.style("font-family", "sans-serif")
-		.style("font-style", "italic")
-		.style("font-size", "12px")
-	.append("svg:tspan")
-		.text(d => data.labels[d.data.name].scaffold)
-		.attr("x", heatBBox.x + heatWidth)
-		.attr("y", d => d.x)
-		.attr("dy", "1.2em")
-		.attr("dx", "1.2em")
-		.attr("text-anchor", "start")
-		.style("font-style", "normal")
-		.style("font-family", "sans-serif")
-		.style("font-size", "10px")
-		.style("fill", "grey");
-
-	// Set up ticks and labels on top of the heatmap. The group is defined
-	// separately to the axisTop call since we use its bounding box to determine
-	// the offset from the top of the <svg>.
-	const heatXAxis = heatmap.append("g");
-	heatXAxis.call(d3.axisTop(x).tickSize(6).tickPadding(6))
-		.selectAll("text")
-		.style("font-size", "12px")
-		.style("text-anchor", "start")
-		.attr("transform", "rotate(-25)");
-
-	// Set up ticks on the right of the heatmap, and remove any labels since
-	// those are drawn separately.
-	const heatYAxis = heatmap.append("g")
-		.call(d3.axisRight(y).tickSize(6))
-		.attr("transform", `translate(${heatWidth}, 0)`)
-		.selectAll("text")
-		.remove();
-
-	// Get height of heatmap ticks, then translate dendrogram/heatmap y values accordingly.
-	const offset = d3.max([40, heatXAxis.node().getBBox().height]);
-	heatmap.attr("transform", `translate(${dendroBBox.x + dendroBBox.width + 6}, ${offset})`)
-	dendro.attr("transform", `translate(0, ${offset})`);
-
-	// Hide domain <path> element created in axisTop()
-	heatmap.selectAll("path").style("opacity", "0");
-
-	// Bind save button to serialisation/download
+	// Save SVG
 	d3.select("#btn-save-svg")
 		.on("click", () => {
-			const blob = serialise(svg.node());
+			const blob = serialise(svg)
 			download(blob, "cblaster.svg")
 		})
 
-	// Generate HTML for the count summary
-	d3.select("#p-result-summary").html(() => getSummaryHTML(data.counts));
+	const summaryHTML = getSummaryHTML(data.counts)
+	d3.select("#p-result-summary")
+		.html(summaryHTML)
 
-	// Toggle visibility of cell counts
 	let showCounts = true;
 	d3.select("#btn-toggle-counts")
 		.on("click", () => {
-			showCounts = !showCounts;
-			let result = showCounts ? "visible" : "hidden";
+			showCounts = !showCounts
+			let result = showCounts ? "visible" : "hidden"
 			d3.selectAll(".heatmap-count")
-				.style("visibility", result);
+				.style("visibility", result)
+		})
+
+	function update(data) {
+		t = d3.transition().duration(500)
+
+		x.domain(data.queries)
+			.range([0, data.queries.length * constants.cellWidth])
+
+		const tree = getScaledTree(
+			data.hierarchy,
+			constants.dendroWidth,
+			constants.cellHeight * Object.keys(data.labels).length,
+		);
+
+		dendro.selectAll("path")
+			.data(tree.links())
+			.join("path")
+			.attr("fill", "none")
+			.attr("stroke", "#555")
+			.attr("stroke-opacity", 0.4)
+			.attr("stroke-width", 1.5)
+			.attr("d", elbow);
+
+		const dendroBBox = dendro.node().getBBox()
+		const dendroLeaves = tree.leaves()
+
+		y.domain(dendroLeaves.map(l => l.data.name))
+			.range([0, dendroLeaves.length * constants.cellHeight])
+
+		const translate = (d) => `translate(${x(d.query)}, ${y(d.cluster)})`
+
+		const cells = cellGroup
+			.selectAll("g")
+			.data(data.matrix, d => `${d.query}-${d.cluster}`)
+			.join(
+				enter => {
+					enter = enter.append("g").attr("transform", translate)
+					enter.append("rect")
+					enter.append("text")
+					return enter
+				},
+				update => update.call(
+					update => update.transition(t)
+						.attr("transform", translate)
+				)
+			)
+			.filter(d => d.hits.length > 0)
+			.on("mouseover", tooltipOver)
+			.on("mousemove", d => tooltipMove(d, data))
+			.on("mouseleave", tooltipLeave)
+
+		cells.selectAll("rect")
+			.attr("fill", d => colorScale(d.value / 100))
+			.attr("width", x.bandwidth())
+			.attr("height", y.bandwidth())
+			.style("stroke-width", "thin")
+			.style("stroke", d => d.hits.length > 1 ? "red" : null)
+
+		cells.selectAll("text")
+			.text(d => d.hits.length)
+			.attr("x", constants.cellWidth / 2)
+			.attr("y", constants.cellHeight / 2 + 4)
+			.attr("class", "heatmap-count")
+			.style("text-anchor", "middle")
+			.style("fill", d => d.value < 60 ? colorScale(1) : colorScale(0))
+
+		const bbox = cellGroup.node().getBBox()
+		const heatWidth = data.queries.length * constants.cellWidth
+		const heatHeight = Object.keys(data.labels).length * constants.cellHeight
+
+		heatmapBG.transition(t)
+			.attr("width", heatWidth)
+			.attr("height", heatHeight)
+
+		const axisTop = d3.axisTop(x)
+			.tickSize(6)
+			.tickPadding(6)
+
+		heatmapX.transition(t)
+			.call(axisTop)
+
+		heatmapX.selectAll("text")
+			.style("font-size", "12px")
+			.style("text-anchor", "start")
+			.attr("transform", "rotate(-25)")
+			.on("click", (query) => {
+				let newData = {
+					...data,
+					"queries": data.queries.filter(q => q !== query),
+					"matrix": data.matrix.filter(cell => cell.query !== query)
+				}
+				update(newData)
 			})
+
+		const axisRight = d3.axisRight(y)
+			.tickSize(6)
+
+		heatmapY.transition(t)
+			.attr("transform", `translate(${heatWidth}, 0)`)
+	
+		heatmapY.call(axisRight)
+			.selectAll("text")
+				.call(t => {
+					t.text("")
+					t.append("tspan")
+						.text(d => data.labels[d].name)
+						.attr("x", 10)
+						.attr("dy", "-0.1em")
+						.attr("text-anchor", "start")
+						.style("font-family", "sans-serif")
+						.style("font-style", "italic")
+						.style("font-size", "12px")
+					t.append("tspan")
+						.text(d => data.labels[d].scaffold)
+						.attr("x", 10)
+						.attr("dy", "1.3em")
+						.attr("text-anchor", "start")
+						.style("font-style", "normal")
+						.style("font-family", "sans-serif")
+						.style("font-size", "10px")
+						.style("fill", "grey");				
+				})
+				.on("click", (label) => {
+					const newData = {
+						...data,
+						"hierarchy": {
+							...data.hierarchy,
+							"children": pruneHierarchy(data.hierarchy.children, label)
+						},
+						"matrix": data.matrix.filter(cell => cell.cluster !== label)
+					}
+					delete newData.labels[label]
+					update(newData)
+				})
+
+		heatmap.selectAll("path").style("opacity", "0");
+
+		// Wait until transition has finished until re-organising groups 
+		setTimeout(() => {
+			const offset = d3.max([40, heatmapX.node().getBBox().height]);
+			heatmap.attr("transform", `translate(${constants.dendroWidth + 10}, ${offset})`)
+			dendro.attr("transform", `translate(0, ${offset})`);
+		}, 0)
+	}
+
+	update(data)
+}
+
+function outer_plot(data) {
+	// Save data being plotted, and bind to button to allow resetting of any
+	// hidden rows/columns, transforms, etc
+	data.matrix = flattenArray(data.matrix);
+	plot(data);
+
 }
