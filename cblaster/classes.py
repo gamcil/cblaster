@@ -300,6 +300,7 @@ class Subject(Serializer):
     def to_dict(self):
         return {
             "hits": [hit.to_dict() for hit in self.hits],
+            "ipg": self.ipg,
             "start": self.start,
             "end": self.end,
             "strand": self.strand
