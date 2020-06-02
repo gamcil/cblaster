@@ -1,16 +1,31 @@
 #!/usr/bin/env python3
 
 """
-The `context` module provides methods for interacting with the NCBI's Identical
-Protein Group (IPG) resource, grouping of `Hit` objects by genomic scaffold and
-organism, and identifying hit clusters.
+This module provides methods for retrieving contextual information about search hits
+from the NCBI's Identical Protein Group (IPG) resource and JSON databases created using
+cblaster makedb. It also provides methods for filtering and clustering hits based on
+user specified thresholds.
 
-The main functionality of this module is wrapped up in the `search()` function.
+The main functionality of this module is wrapped up in the search() function.
+Given a list of Hit objects (resulting from a cblaster search), we can call it:
 
-For example, given a list of `Hit` objects, we can query NCBI for genomic coordinates of
-each hit, and automatically group them into `Scaffold` and `Organism` objects as follows:
+>>> search(hits)
 
+This will:
+1. Search the identifiers of the subject hits against the IPG and retrieve results
+2. Parse protein groups from the IPG table
+3. Create Subject objects for each entry in any given IPG, containing copies of Hit
+   objects, grouped by organism and scaffold
+4. Identify clusters based on user thresholds for intergenic distance, copy number, etc
+5. De-duplicate clusters within an organism, where all Subject objects in any two
+   clusters are members of the same IPG
 
+Note that cblaster uses Subject objects, not Hit objects, for this step. A Subject
+refers to a unique protein in any given organism, which can be hit in a search any
+number of times. A Hit object just stores information about one of these hits (query
+and subject protein identifiers, score values). In order to prevent redundancy, Subjects
+are created for each unique protein found in the search, which then store the Hit
+objects linking them to the query sequences.
 """
 
 
@@ -43,7 +58,7 @@ def efetch_IPGs(ids, output_handle=None):
     """
 
     # Split into chunks since retmax=10000
-    chunks = [ids[i : i + 10000] for i in range(0, len(ids), 10000)]
+    chunks = [ids[i: i + 10000] for i in range(0, len(ids), 10000)]
 
     table = ""
     for ix, chunk in enumerate(chunks, 1):
@@ -73,7 +88,17 @@ def efetch_IPGs(ids, output_handle=None):
 
 
 def parse_IP_groups(results):
-    """Parse groups from an Identical Protein Groups (IPG) table."""
+    """Parse groups from an Identical Protein Groups (IPG) table.
+
+    This function converts rows in the IPG table to namedtuple objects which have
+    attributes corresponding to each field in the table. These objects are grouped
+    by the IPG they belong to.
+
+    Args:
+        results (list): Rows in the IPG table.
+    Returns:
+        Dictionary of table entries (namedtuple objects) grouped by IPG.
+    """
     fields = [
         "source",
         "scaffold",
@@ -107,7 +132,14 @@ def parse_IP_groups(results):
 
 
 def find_IPG_hits(group, hit_dict):
-    """Finds all hits to query sequences in an identical protein group."""
+    """Finds all hits to query sequences in an identical protein group.
+
+    Args:
+        group (list): Entry namedtuples from an IPG from parse_IP_groups().
+        hit_dict (dict): All Hit objects found during cblaster search.
+    Returns:
+        List of all Hit objects corresponding to any proteins in a IPG.
+    """
     seen = set()
     hits = []
     for entry in group:
@@ -124,17 +156,16 @@ def find_IPG_hits(group, hit_dict):
 
 
 def parse_IPG_table(results, hits):
-    """Parse IPG results table from `efetch_IPGs`.
+    """Links Hit objects to their genomic context from an IPG table.
 
-    Process:
-        1. Parse individual entries in IPG table, grouping by UID
-        2. Find representative `Hit` object and make a copy for each IPG entry
-        3. Update each `Hit` copy with genomic location from IPG
-        4. Save `Hit` copies to corresponding `Organism` objects
-
-    Though this will capture a lot of redundant information (e.g. gene clusters
-    that have been deposited separately to their parent genomes) it should not
-    miss any hits.
+    This function:
+    1. Parses entries from the table, grouped by IPG number with parse_IP_groups()
+    2. For each group:
+       a) Find Hit objects linked to any member of the group with find_IPG_hits()
+       b) For each group member, create a Subject object, then place it on its
+          corresponding Scaffold and Organism objects (creating new objects when new
+          scaffolds and organisms are encountered)
+       c) Add Hit objects to every Subject object in the group
 
     Args:
         results (list): Results from IPG search.
@@ -187,6 +218,11 @@ def parse_IPG_table(results, hits):
                 start=int(entry.start),
                 strand=entry.strand,
             )
+
+            # Update hits to refer to this specific entry
+            for hit in subject.hits:
+                hit.subject = entry.protein_id
+
             organisms[org][st].scaffolds[acc].subjects.append(subject)
 
     return [organism for strains in organisms.values() for organism in strains.values()]
@@ -215,12 +251,13 @@ def find_identifier(qualifiers):
 def query_local_DB(hits, database):
     """Build Organisms/Scaffolds using database.DB instance.
 
-    Retrieves corresponding Protein object from the DB by passing it the Hit subject
-    attribute, which should be a 4 field '|' delimited header string containing the full
-    lineage of the protein (e.g. organism|strain|scaffold|protein).
-
-    Internally uses defaultdict to build up hierarchy of unique organisms, then returns
-    list of just each organism dictionary.
+    This function essentially mirrors parse_IPG_table, but is adapted to the JSON
+    database created using cblaster makedb. Protein headers in the DIAMOND database
+    follow the form "i_j_k" where i, j and k refer to the database indexes of organisms,
+    scaffolds and proteins, respectively. For example, >2_56_123 refers to the 123rd
+    protein of the 56th scaffold of the 2nd organism in the database. Context of each
+    hit is found by directly accessing those indices in the database, and then
+    Organism, Scaffold and Subject objects are generated as in parse_IPG_table.
 
     Args:
         hits (list): Hit objects created during cblaster search.
@@ -276,7 +313,7 @@ def query_local_DB(hits, database):
             strand=protein.location.strand
         )
 
-        organisms[org][st].scaffolds[sc].hits.append(hit)
+        organisms[org][st].scaffolds[sc].hits.append(subject)
 
     return [
         organism
@@ -318,7 +355,7 @@ def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
 
     if total_subjects == 1:
         if unique == 1 or min_hits == 1:
-            return [hits]
+            return [subjects]
         return []
 
     sorted_subjects = sorted(subjects, key=attrgetter("start"))
@@ -339,6 +376,11 @@ def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
 
 
 def clusters_are_identical(one, two):
+    """Tests if two collections of Subject objects are identical.
+
+    This function compares clusters element-wise for IPG numbers, returning True
+    if all are identical.
+    """
     if not len(one) == len(two):
         return False
     for subA, subB in zip(one, two):
@@ -391,7 +433,6 @@ def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require
     deduplicate(organism)
 
 
-
 def filter_session(
     session,
     min_identity=30,
@@ -427,8 +468,7 @@ def filter_session(
                     unique=unique,
                 )
             )
-        context.deduplicate(organism)
-
+        deduplicate(organism)
 
 
 def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
