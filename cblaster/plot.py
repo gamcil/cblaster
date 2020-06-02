@@ -76,7 +76,7 @@ def get_cell(query, cluster, cluster_id):
 
 def get_data(session):
     matrix = []
-    labels = []
+    labels = {}
     counts = {
         "queries": len(session.queries),
         "hits": 0,
@@ -100,12 +100,11 @@ def get_data(session):
                 counts["clusters"] += 1
 
                 # Save the cluster name and scaffold
-                label = {
+                labels[cluster_id] = {
                     "id": cluster_id,
                     "name": organism.full_name,
                     "scaffold": f"{accession}:{cluster[0].start}-{cluster[-1].end}"
                 }
-                labels.append(label)
 
                 # Generate all cells for the heatmap
                 cells = [
