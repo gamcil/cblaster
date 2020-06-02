@@ -207,20 +207,6 @@ function getScaledTree(hierarchy, width, height) {
 	return tree;
 }
 
-function addTooltipDiv(parent) {
-	// Set up the <div> element used for the tooltip.
-	const tooltip = parent.append("div")
-		.classed("tooltip", true)
-		.style("position", "absolute")
-		.style("opacity", 0)
-		.style("padding", "5px")
-		.style("background-color", "white")
-		.style("border", "solid")
-		.style("border-width", "1px")
-		.style("border-radius", "3px");
-	return tooltip;
-}
-
 function pruneHierarchy(node, label) {
 	/* Prune any children of a nested object whose name is equal to label.
 	 * Additionally, if pruning results in an empty children list, remove the
@@ -250,7 +236,18 @@ function plot(data) {
 		});
 
 	const plotDiv = d3.select("#plot");
-	const tooltip = addTooltipDiv(plotDiv);
+
+	const tooltip = plotDiv.append("div")
+		.classed("tooltip", true)
+		.style("pointer-events", "none")
+		.style("position", "absolute")
+		.style("opacity", 0)
+		.style("padding", "5px")
+		.style("background-color", "white")
+		.style("border", "solid")
+		.style("border-width", "1px")
+		.style("border-radius", "3px")
+
 	const svg = plotDiv.append("svg")
 		.classed("wrapper-svg", true)
 		.attr("id", "root_svg")
@@ -330,14 +327,15 @@ function plot(data) {
 			.attr("stroke-width", 1.5)
 			.attr("d", elbow);
 
-		const dendroBBox = dendro.node().getBBox()
 		const dendroLeaves = tree.leaves()
 
 		y.domain(dendroLeaves.map(l => l.data.name))
 			.range([0, dendroLeaves.length * constants.cellHeight])
 
+		// Plot cells in the heatmap.
+		// Expects data.matrix to be flattened, then draws each cell given its
+		// corresponding query/cluster number.
 		const translate = (d) => `translate(${x(d.query)}, ${y(d.cluster)})`
-
 		const cells = cellGroup
 			.selectAll("g")
 			.data(data.matrix, d => `${d.query}-${d.cluster}`)
@@ -373,7 +371,6 @@ function plot(data) {
 			.style("text-anchor", "middle")
 			.style("fill", d => d.value < 60 ? colorScale(1) : colorScale(0))
 
-		const bbox = cellGroup.node().getBBox()
 		const heatWidth = data.queries.length * constants.cellWidth
 		const heatHeight = Object.keys(data.labels).length * constants.cellHeight
 
