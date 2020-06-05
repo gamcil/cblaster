@@ -132,7 +132,7 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
 
     def __init__(self, data, *args, **kwargs):
         self._data = data
-        self._dir = get_project_root() / "cblaster" / "plot"
+        self._dir = get_project_root() / "plot"
         super().__init__(*args, **kwargs)
 
     def copy_file(self, source):
@@ -172,7 +172,7 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
 def save_html(data, output):
     """Generates a static HTML file with all visualisation code."""
 
-    directory = get_project_root() / "cblaster" / "plot"
+    directory = get_project_root() / "plot"
 
     with (directory / "index.html").open() as fp:
         html = fp.read()

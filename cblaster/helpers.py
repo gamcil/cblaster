@@ -138,4 +138,4 @@ def get_sequences(query_file=None, query_ids=None):
 
 
 def get_project_root():
-    return Path(__file__).resolve().parent.parent
+    return Path(__file__).resolve().parent
