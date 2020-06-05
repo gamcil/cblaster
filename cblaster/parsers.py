@@ -89,7 +89,6 @@ def add_binary_arguments(group):
     group.add_argument(
         "-bde",
         "--binary_delimiter",
-        type=int,
         help="Delimiter used in binary table (def. none = human readable).",
         default=None,
     )
