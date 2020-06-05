@@ -33,6 +33,7 @@ import logging
 from collections import defaultdict, namedtuple
 from itertools import combinations, product
 from operator import attrgetter
+from functools import partial
 
 import requests
 
@@ -196,9 +197,12 @@ def parse_IPG_table(results, hits):
 
         # Now populate the organisms dictionary with copies
         for entry in group:
-            if entry.protein_id in seen:
+            # Test unique scaffold and coordinates - sometimes will have many identical
+            # protein_id in one CDS region
+            test = (entry.scaffold, entry.start, entry.end)
+            if test in seen:
                 continue
-            seen.add(entry.protein_id)
+            seen.add(test)
 
             org, st, acc = entry.organism, entry.strain, entry.scaffold
 
@@ -212,16 +216,12 @@ def parse_IPG_table(results, hits):
 
             # Copy the original Hit object and add contextual information
             subject = Subject(
-                hits=hit_list,
+                hits=[hit.copy(subject=entry.protein_id) for hit in hit_list],
                 ipg=group,
                 end=int(entry.end),
                 start=int(entry.start),
                 strand=entry.strand,
             )
-
-            # Update hits to refer to this specific entry
-            for hit in subject.hits:
-                hit.subject = entry.protein_id
 
             organisms[org][st].scaffolds[acc].subjects.append(subject)
 
@@ -328,9 +328,12 @@ def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3):
     Finds all unique query sequences in hits, then returns True if total number is above
     unique threshold, and any required queries are represented.
     """
-    required = [False] * (len(require) if require else 0)
     queries = set(hit.query for subject in cluster for hit in subject.hits)
-    return len(queries) >= unique and queries.issuperset(required)
+    return (
+        len(cluster) >= minimum
+        and len(queries) >= unique
+        and queries.issuperset(require) if require else True
+    )
 
 
 def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
@@ -362,16 +365,23 @@ def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
     first = sorted_subjects.pop(0)
     group, border = [first], first.end
 
+    rules_satisfied = partial(
+        cluster_satisfies_conditions,
+        require=require,
+        unique=unique,
+        minimum=min_hits
+    )
+
     for subject in sorted_subjects:
         if subject.start <= border + gap:
             group.append(subject)
             border = max(border, subject.end)
         else:
-            if cluster_satisfies_conditions(group):
+            if rules_satisfied(group):
                 yield group
             group, border = [subject], subject.end
 
-    if cluster_satisfies_conditions(group):
+    if rules_satisfied(group):
         yield group
 
 
@@ -384,6 +394,8 @@ def clusters_are_identical(one, two):
     if not len(one) == len(two):
         return False
     for subA, subB in zip(one, two):
+        if not subA.ipg or not subB.ipg:
+            return False
         if subA.ipg != subB.ipg:
             return False
     return True
@@ -401,8 +413,6 @@ def deduplicate(organism):
 
     for scafA, scafB in combinations(organism.scaffolds.values(), 2):
         for one, two in product(scafA.clusters, scafB.clusters):
-            if one == two:
-                continue
             if clusters_are_identical(one, two):
                 remove[scafB.accession].append(two)
 
@@ -411,7 +421,8 @@ def deduplicate(organism):
         scaffold.clusters = [c for c in scaffold.clusters if c not in clusters]
 
 
-def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require=None):
+def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require=None,
+                              remote=True):
     """Runs find_clusters() on all scaffolds in an organism."""
     for scaffold in organism.scaffolds.values():
         scaffold.clusters = list(
@@ -429,8 +440,8 @@ def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require
             scaffold.accession,
             len(scaffold.clusters),
         )
-
-    deduplicate(organism)
+    if remote:
+        deduplicate(organism)
 
 
 def filter_session(
@@ -468,7 +479,6 @@ def filter_session(
                     unique=unique,
                 )
             )
-        deduplicate(organism)
 
 
 def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
@@ -507,7 +517,12 @@ def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))
     for organism in organisms:
         find_clusters_in_organism(
-            organism, unique=unique, min_hits=min_hits, gap=gap, require=require
+            organism,
+            unique=unique,
+            min_hits=min_hits,
+            gap=gap,
+            require=require,
+            remote=json_db is None,
         )
 
     return organisms

@@ -94,7 +94,6 @@ def cblaster(
                 min_hits,
                 require,
             )
-
             if recompute is not True:
                 LOG.info("Writing recomputed session to %s", recompute)
                 with open(recompute, "w") as fp:
@@ -110,7 +109,6 @@ def cblaster(
                 "max_evalue": max_evalue,
             },
         )
-
         if query_file:
             with open(query_file) as fp:
                 sequences = helpers.parse_fasta(fp)
