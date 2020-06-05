@@ -313,7 +313,7 @@ def query_local_DB(hits, database):
             strand=protein.location.strand
         )
 
-        organisms[org][st].scaffolds[sc].hits.append(subject)
+        organisms[org][st].scaffolds[sc].subjects.append(subject)
 
     return [
         organism
