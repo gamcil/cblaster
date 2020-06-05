@@ -332,7 +332,7 @@ def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3):
     return (
         len(cluster) >= minimum
         and len(queries) >= unique
-        and queries.issuperset(require) if require else True
+        and (queries.issuperset(require) if require else True)
     )
 
 
@@ -380,7 +380,6 @@ def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
             if rules_satisfied(group):
                 yield group
             group, border = [subject], subject.end
-
     if rules_satisfied(group):
         yield group
 
@@ -421,8 +420,14 @@ def deduplicate(organism):
         scaffold.clusters = [c for c in scaffold.clusters if c not in clusters]
 
 
-def find_clusters_in_organism(organism, unique=3, min_hits=3, gap=20000, require=None,
-                              remote=True):
+def find_clusters_in_organism(
+    organism,
+    unique=3,
+    min_hits=3,
+    gap=20000,
+    require=None,
+    remote=True
+):
     """Runs find_clusters() on all scaffolds in an organism."""
     for scaffold in organism.scaffolds.values():
         scaffold.clusters = list(
