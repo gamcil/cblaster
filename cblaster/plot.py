@@ -201,7 +201,7 @@ def serve_html(data):
     handler = partial(CustomHandler, data)
 
     # Instantiate a new server, bind to any open port
-    with socketserver.TCPServer(("", 0), handler) as httpd:
+    with socketserver.TCPServer(("localhost", 0), handler) as httpd:
 
         # Automatically open web browser to bound address
         address, port = httpd.server_address
