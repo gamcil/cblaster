@@ -90,47 +90,6 @@ class Session(Serializer):
             organisms=[Organism.from_dict(o) for o in d["organisms"]],
         )
 
-    def to_plot_json(self):
-        """Generate JSON file to use in plots.
-
-        Generate hierarchy
-        1. get 2d array of identities/counts
-        2. scipy linkage
-            returns n-1 by 4 matrix.
-            [i, 0] + [i, 1] are clustered
-            [i, 2] gives distance between clusters [i, 0] and [i, 1]
-            [i, 3] num of observations in new cluster
-        """
-
-    def form_matrices(self, html=False):
-        """Form 2D count matrices required for plotting.
-
-        If `html` is False, generated dendrogram leaves will contain LaTeX formatting.
-        """
-
-        def form_row(organism, accession, cluster):
-            name = organism.name
-            scaf = f"{accession}:{cluster[0].start}-{cluster[-1].end}"
-            cnts = count_query_hits(self.queries, cluster)
-            idts = get_max_hit_identities(self.queries, cluster)
-            return name, scaf, cnts, idts
-
-        names = []  # Species names for dendrogram yticklabels
-        scafs = []  # Scaffold positions for matshow yticklabels
-        counts = []  # Total # of hits in cluster per query
-        idents = []  # Maximum identity of single hit per query
-
-        for organism in self.organisms:
-            for accession, scaffold in organism.scaffolds.items():
-                for cluster in scaffold.clusters:
-                    name, scaf, cnts, idts = form_row(organism, accession, cluster)
-                    names.append(name)
-                    scafs.append(scaf)
-                    counts.append(cnts)
-                    idents.append(idts)
-
-        return names, scafs, counts, idents
-
     def format(
         self,
         form,
