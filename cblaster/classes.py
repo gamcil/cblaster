@@ -75,6 +75,17 @@ class Session(Serializer):
         self.params = params
         self.organisms = organisms if organisms else []
 
+    def __add__(self, other):
+        if not isinstance(other, Session):
+            raise NotImplementedError("Expected Session object")
+        if not self.queries == other.queries:
+            raise ValueError("Query sequences do not match")
+        return Session(
+            queries=self.queries,
+            params=self.params,
+            organisms=self.organisms + other.organisms
+        )
+
     def to_dict(self):
         return {
             "queries": self.queries,
@@ -90,12 +101,7 @@ class Session(Serializer):
             organisms=[Organism.from_dict(o) for o in d["organisms"]],
         )
 
-    def format(
-        self,
-        form,
-        fp=None,
-        **kwargs
-    ):
+    def format(self, form, fp=None, **kwargs):
         """Generates a summary table.
 
         Args:
