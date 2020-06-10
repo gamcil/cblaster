@@ -1,6 +1,7 @@
 """A basic GUI for cblaster."""
 
 import sys
+import builtins
 
 import PySimpleGUI as sg
 
@@ -62,31 +63,36 @@ def run_cblaster(values):
             )
 
         if values["summary_gen"]:
-            summary = sys.stdout
+            summary = None
 
             if values["summary_text"]:
                 summary = values["summary_text"]
 
             args.update(
                 output=summary,
-                output_human=values["summary_hr"],
-                output_headers=values["summary_he"]
+                output_decimals=values["summary_decimals"],
+                output_delimiter=values["summary_delimiter"],
+                output_hide_headers=values["summary_hide_headers"]
             )
 
         if values["binary_gen"]:
             args.update(
                 binary=values["binary_text"],
-                binary_human=values["binary_hr"],
-                binary_headers=values["binary_he"]
+                binary_delimiter=values["binary_delimiter"],
+                binary_hide_headers=values["binary_hide_headers"],
+                binary_decimals=values["binary_decimals"],
+                binary_attr=values["binary_attr"],
+                binary_key=getattr(builtins, values["binary_key"]),
             )
 
         if values["figure_gen"]:
-            figure = values["figure_text"] if values["figure_text"] else True
-            args.update(
-                figure=figure,
-                figure_dpi=values["figure_spin"],
-                use_plotly=values["figure_plotly"]
-            )
+            plot = values["figure_text"] if values["figure_text"] else True
+            args.update(plot=plot)
+
+        # Overwrite any placeholder text
+        for arg, value in args.items():
+            if isinstance(value, str) and value.startswith("e.g."):
+                args[arg] = ""
 
         main.cblaster(**args)
 
@@ -131,13 +137,13 @@ def cblaster_gui():
             break
 
         # Disable binary & summary table, figure options if not enabled
-        for key in ("browse", "text", "hr", "he"):
+        for key in ("browse", "text", "delimiter", "decimals", "hide_headers", "key", "attr"):
             window[f"binary_{key}"].update(disabled=not values["binary_gen"])
 
-        for key in ("browse", "text", "hr", "he"):
+        for key in ("browse", "text", "decimals", "hide_headers", "delimiter"):
             window[f"summary_{key}"].update(disabled=not values["summary_gen"])
 
-        for key in ("browse", "text", "spin", "plotly"):
+        for key in ("browse", "text"):
             window[f"figure_{key}"].update(disabled=not values["figure_gen"])
 
         # Disable start button when on citation tab
