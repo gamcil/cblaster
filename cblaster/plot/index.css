@@ -4,9 +4,51 @@ body {
 	overflow: hidden;
 }
 
-.tooltip-table {
+.tooltip {
+	background-color: hsla(0, 0%, 20%, 0.9);
+	color: white;
+	border-radius: 4px;
+}
+
+.tooltip a {
+	color: hsla(210, 100%, 90%, 1.0);
+}
+
+.tooltip .tooltip-hits::after {
+	content: " ";
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	margin-left: -5px;
+	border-width: 7px;
+	border-style: solid;
+	border-color: transparent transparent hsla(0, 0%, 20%, 0.9) transparent;
+}
+
+.tooltip-summary {
+	text-align: center;
+	margin-top: 0;
+	margin-bottom: 5px;
+}
+
+.tooltip-summary span {
+	font-style: italic;
+}
+
+.tooltip-hits {
 	font-size: 0.8rem;
-	text-align: left;
+}
+
+.tooltip-hits th {
+	padding-left: 4px;
+	padding-right: 4px;
+	padding-bottom: 0;
+}
+
+.tooltip-hits td {
+	padding: 4px;
+	padding-bottom: 0;
+	text-align: center;
 }
 
 .wrapper-svg {
