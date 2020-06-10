@@ -58,7 +58,11 @@ def get_cell(query, cluster, cluster_id):
             "identity": hit.identity,
             "coverage": hit.coverage,
             "bitscore": hit.bitscore,
-            "evalue": hit.evalue
+            "evalue": hit.evalue,
+            "strand": subject.strand,
+            "start": subject.start,
+            "end": subject.end,
+            "ipg": subject.ipg,
         }
         for subject in cluster
         for hit in subject.hits
@@ -103,7 +107,9 @@ def get_data(session):
                 labels[cluster_id] = {
                     "id": cluster_id,
                     "name": organism.full_name,
-                    "scaffold": f"{accession}:{cluster[0].start}-{cluster[-1].end}"
+                    "scaffold": accession,
+                    "start": cluster[0].start,
+                    "end": cluster[-1].end,
                 }
 
                 # Generate all cells for the heatmap
