@@ -19,7 +19,8 @@ LOG = logging.getLogger("cblaster")
 class Database:
     """A cblaster database.
 
-    This class handles reading/writing of the local JSON database.
+    This class acts as a wrapper around the genome2json classes (organism, scaffold,
+    protein), consolidating them for use as a database.
     """
 
     def __init__(self, organisms=None):

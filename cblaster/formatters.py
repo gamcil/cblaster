@@ -117,6 +117,7 @@ def _summarise(
     separator="\n\n",
     **kwargs,
 ):
+    """Skeleton function for generating a summary of a given iterable."""
     blocks = []
     for item in iterable:
         if condition_fn and not condition_fn(item):

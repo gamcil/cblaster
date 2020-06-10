@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 
-import argparse
 import logging
 import sys
 from pathlib import Path
 
 from cblaster import (
-    __version__,
     context,
     database,
     helpers,
@@ -43,7 +41,6 @@ def makedb(genbanks, filename, indent=None):
     LOG.info("Done.")
 
 
-
 def cblaster(
     query_file=None,
     query_ids=None,
@@ -72,10 +69,44 @@ def cblaster(
     session_file=None,
     indent=None,
     plot=False,
-    save_html=None,
     recompute=False,
 ):
-    """Run cblaster."""
+    """Run cblaster.
+
+    This function is the central workflow for the entire cblaster package.
+
+    Arguments:
+        query_file (str): Path to FASTA format query file
+        query_ids (list): NCBI protein sequence identifiers
+        mode (str): Search mode ('local' or 'remote')
+        json_db (str): JSON database created with cblaster makedb
+        database (str): Search database (NCBI if remote, DIAMOND if local)
+        gap (int): Maximum gap (kilobase) between cluster hits
+        unique (int): Minimum number of query sequences with hits in clusters
+        min_hits (int): Minimum number of hits in clusters
+        min_identity (float): Minumum identity (%) cutoff
+        min_coverage (float): Minumum coverage (%) cutoff
+        max_evalue (float): Maximum e-value threshold
+        entrez_query (str): NCBI Entrez query to filter search database
+        output (str): Path to cblaster summary output file
+        output_hide_headers (bool): Hide headers in summary table
+        output_delimiter (str): Delimiter used in summary table
+        output_decimals (int): Total decimal places in hit scores in summary table
+        binary (str): Path to cblaster binary output file
+        binary_hide_headers (bool): Hide headers in binary table
+        binary_delimiter (str): Delimiter used in binary table
+        binary_key (str): Key function used in binary table (len, max or sum)
+        binary_attr (str): Hit attribute used for calculating cell values in binary table
+        binary_decimals (int): Total decimal places in cell values in binary table
+        rid (str): NCBI BLAST search request identifier (RID)
+        require (list): Query sequences that must be in hit clusters
+        session_file (str): Path to cblaster session JSON file
+        indent (int): Total spaces to indent JSON files
+        plot (str): Path to cblaster plot HTML file
+        recompute (str): Path to recomputed session JSON file
+    Returns:
+        Session: cblaster search Session object
+    """
 
     if session_file and Path(session_file).exists():
         LOG.info("Loading %s", session_file)
@@ -195,6 +226,7 @@ def cblaster(
 
 
 def main():
+    """cblaster entry point."""
     args = parsers.parse_args(sys.argv[1:])
 
     if args.debug:
