@@ -136,48 +136,45 @@ function getTooltipHTML(d, data) {
 	/* Generates the HTML content for a cell hovering tooltip.
 	 * It provides the name of the query, as well as a table of each hit.
 	 */
-	return `<b>Query:</b> ${d.query}<br>`
-		+ `<b>Organism:</b> ${data.labels[d.cluster].name}<br>`
-		+ `<b>Scaffold:</b> ${data.labels[d.cluster].scaffold}<br>`
-		+ `<b>${d.hits.length} ${d.hits.length > 1 ? "Hits:" : "Hit:"}</b>`
-		+ '<table class="tooltip-table">'
-		+ "<thead>"
-		+ "<th>Name</th>"
-		+ "<th>Ident. (%)</th>"
-		+ "<th>Cov. (%)</th>"
-		+ "<th>Bitscore</th>"
-		+ "<th>E-value</th>"
-		+ "</thead>"
-		+ "<tbody>"
-		+ d.hits.map(h => (
-			"<tr>"
-			+ `<td>${h.name}</td>`
-			+ `<td>${h.identity.toFixed(2)}</td>`
-			+ `<td>${h.coverage.toFixed(2)}</td>`
-			+ `<td>${h.bitscore.toFixed(2)}</td>`
-			+ `<td>${h.evalue}</td>`
-			+ "</tr>"
-		)).join("")
-		+ "</tbody>"
-		+ "</table>";
-}
-
-function tooltipOver(d) {
-	// Heatmap cell mouseover behaviour to toggle tooltip opacity.
-	d3.select(".tooltip").style("opacity", "1");
-}
-
-function tooltipMove(d, data) {
-	// Heatmap cell mousemove behaviour to update content and screen position.
-	d3.select(".tooltip")
-		.html(getTooltipHTML(d, data))
-		.style("left", d3.event.pageX + 10 + "px")
-		.style("top", d3.event.pageY + 10 + "px")
-}
-
-function tooltipLeave(d) {
-	// Heatmap cell mouseleave behaviour to toggle tooltip opacity.
-	d3.select(".tooltip").style("opacity", "0");
+	let ncbi = "https://www.ncbi.nlm.nih.gov"
+	let cluster = data.labels[d.cluster]
+	let mapUrl = `${ncbi}/nuccore/${cluster.scaffold}`
+		+ `?report=graph&from=${cluster.start}&to=${cluster.end}`
+	d.hits.sort((a, b) => b.identity / b.coverage - a.identity / a.coverage)
+	return `
+	<p class="tooltip-summary">
+		<span>${cluster.name}</span>
+		<br>
+		<a href="${mapUrl}">
+			${getScaffoldString(cluster)}
+		</a>
+	<table class="tooltip-hits">
+	<tbody>
+		<tr>
+			<th><b>Name</b></th>
+			<th><b>Start</b></th>
+			<th><b>End</b></th>
+			<th><b>Identity</b></th>
+			<th><b>Coverage</b></th>
+			<th><b>Bitscore</b></th>
+			<th><b>E-value</b></th>
+		</tr>
+		${d.hits.map(h => (`
+			<tr>
+				<td>
+					<a href="${ncbi}/protein/${h.name}">${h.name}</a>
+				</td>
+				<td>${h.strand === "+" ? h.start : h.end}</td>
+				<td>${h.strand === "+" ? h.end : h.start}</td>
+				<td>${h.identity.toFixed(2)}</td>
+				<td>${h.coverage.toFixed(2)}</td>
+				<td>${h.bitscore.toFixed(2)}</td>
+				<td>${h.evalue}</td>
+			</tr>
+		`)).join("")}
+	</tbody>
+	</table>
+	`
 }
 
 function scaleBranchLengths(node, width) {
@@ -222,6 +219,10 @@ function pruneHierarchy(node, label) {
 	})
 }
 
+function getScaffoldString(data) {
+	return data.scaffold + ":" + data.start + "-" + data.end
+}
+
 function plot(data) {
 	data.matrix = flattenArray(data.matrix);
 
@@ -235,44 +236,40 @@ function plot(data) {
 			update(copy)
 		});
 
+	// Base <svg> and <g> elements. All chart elements go inside <g>. Pan/zoom
+	// behaviour is attached to the <svg>.
 	const plotDiv = d3.select("#plot");
-
-	const tooltip = plotDiv.append("div")
-		.classed("tooltip", true)
-		.style("pointer-events", "none")
-		.style("position", "absolute")
-		.style("opacity", 0)
-		.style("padding", "5px")
-		.style("background-color", "white")
-		.style("border", "solid")
-		.style("border-width", "1px")
-		.style("border-radius", "3px")
-
 	const svg = plotDiv.append("svg")
 		.classed("wrapper-svg", true)
 		.attr("id", "root_svg")
 		.attr("cursor", "grab")
 		.attr("xmlns", "http://www.w3.org/2000/svg");
-
 	const g = svg.append("g").attr("transform", "translate(2,0)");
 
-	svg.call(d3.zoom()
+	// Set up pan/zoom behaviour, and set default pan/zoom position
+	const zoom = d3.zoom()
 		.scaleExtent([0, 8])
 		.on("zoom", () => g.attr("transform", d3.event.transform))
 		.on("start", () => svg.attr("cursor", "grabbing"))
 		.on("end", () => svg.attr("cursor", "grab"))
-	);
+	const transform = d3.zoomIdentity
+		.translate(20, 50)
+		.scale(1.2)
+	svg.call(zoom).call(zoom.transform, transform)
 
+	// Set up bandwidth scales for x and y axes, and heatmap color scale
 	const x = d3.scaleBand().padding(0.05)
 	const y = d3.scaleBand().padding(0.05)
 	const colorScale = d3
 		.scaleSequential(d3.interpolateBlues)
 		.domain([0, 1])
 
+	// Generate colour bar and linear gradient definition
 	const def = svg.append("defs");
 	def.append(() => colourBarGradient(colorScale));
 	svg.append(() => colourBar());
 
+	// cblaster chart skeleton to be populated in update()
 	const dendro = g.append("g")
 	const heatmap = g.append("g")
 	const heatmapBG = heatmap.append("rect")
@@ -286,17 +283,19 @@ function plot(data) {
 	const heatmapY = heatmap.append("g")
 		.attr("class", "g-heatmap-yaxis")
 
-	// Save SVG
+	// Set up the save SVG button
 	d3.select("#btn-save-svg")
 		.on("click", () => {
 			const blob = serialise(svg)
 			download(blob, "cblaster.svg")
 		})
 
+	// Populate the search summary
 	const summaryHTML = getSummaryHTML(data.counts)
 	d3.select("#p-result-summary")
 		.html(summaryHTML)
 
+	// Set up cell hit count toggle button.
 	let showCounts = true;
 	d3.select("#btn-toggle-counts")
 		.on("click", () => {
@@ -306,18 +305,69 @@ function plot(data) {
 				.style("visibility", result)
 		})
 
-	function update(data) {
-		t = d3.transition().duration(500)
+	// Populate tooltip with current cell data, and adjust position to match the
+	// cell in the heatmap (ignoring <g> transforms).
+	const cellEnter = (d, i, n) => {
+		tooltip
+			.html(getTooltipHTML(d, data))
+		let rect = n[i].getBoundingClientRect()
+		let bbox = tooltip.node().getBoundingClientRect()
+		let xOffset = rect.width / 2 - bbox.width / 2
+		let yOffset = rect.height * 1.2
+		tooltip
+			.style("left", rect.x + xOffset + "px")
+			.style("top", rect.y + yOffset + "px")
+		tooltip.transition()
+			.duration(100)
+			.style("opacity", 1)
+			.style("pointer-events", "all")
+	}
 
+	// Transition upon entering the tooltip <div>. This cancels out a previously
+	// called transition (i.e. delayed transition in tooltipLeave). Also enables
+	// pointer events to allow text selection, clicking hyperlinks, etc.
+	const tooltipEnter = () => {
+		tooltip.transition()
+			.duration(0)
+			.style("opacity", 1)
+			.style("pointer-events", "all")
+	}
+
+	// Delayed tooltip transition for either 1) when user has left heatmap cell
+	// and does not go into another, or 2) user entered tooltip <div> and has now
+	// left it. Hides tooltip after 400ms, and disables pointer events which would
+	// swallow pan/zoom events.
+	const tooltipLeave = () => {
+		tooltip.transition()
+			.delay(400)
+			.style("opacity", 0)
+			.style("pointer-events", "none")
+	}
+
+	const tooltip = plotDiv.append("div")
+		.classed("tooltip", true)
+		.style("opacity", 0)
+		.style("pointer-events", "none")
+		.style("position", "absolute")
+		.style("padding", "5px")
+		.on("mouseenter", tooltipEnter)
+		.on("mouseleave", tooltipLeave)
+
+	function update(data) {
+		t = d3.transition().duration(400)
+
+		// Update x-axis domain/range based on current query sequences.
 		x.domain(data.queries)
 			.range([0, data.queries.length * constants.cellWidth])
 
+		// Generate a scaled d3.cluster object based on the current hierarchy.
 		const tree = getScaledTree(
 			data.hierarchy,
 			constants.dendroWidth,
 			constants.cellHeight * Object.keys(data.labels).length,
 		);
 
+		// Draw 'elbow' <path> elements for each link in the dendrogram.
 		dendro.selectAll("path")
 			.data(tree.links())
 			.join("path")
@@ -327,8 +377,8 @@ function plot(data) {
 			.attr("stroke-width", 1.5)
 			.attr("d", elbow);
 
+		// Update y-axis domain/range based on the new dendrogram
 		const dendroLeaves = tree.leaves()
-
 		y.domain(dendroLeaves.map(l => l.data.name))
 			.range([0, dendroLeaves.length * constants.cellHeight])
 
@@ -352,10 +402,10 @@ function plot(data) {
 				)
 			)
 			.filter(d => d.hits.length > 0)
-			.on("mouseover", tooltipOver)
-			.on("mousemove", d => tooltipMove(d, data))
+			.on("mouseenter", cellEnter)
 			.on("mouseleave", tooltipLeave)
 
+		// Heatmap cell rectangles
 		cells.selectAll("rect")
 			.attr("fill", d => colorScale(d.value / 100))
 			.attr("width", x.bandwidth())
@@ -363,6 +413,7 @@ function plot(data) {
 			.style("stroke-width", "thin")
 			.style("stroke", d => d.hits.length > 1 ? "red" : null)
 
+		// Heatmap cell hit counts
 		cells.selectAll("text")
 			.text(d => d.hits.length)
 			.attr("x", constants.cellWidth / 2)
@@ -371,6 +422,7 @@ function plot(data) {
 			.style("text-anchor", "middle")
 			.style("fill", d => d.value < 60 ? colorScale(1) : colorScale(0))
 
+		// Calculate current heatmap width/height and transition the background.
 		const heatWidth = data.queries.length * constants.cellWidth
 		const heatHeight = Object.keys(data.labels).length * constants.cellHeight
 
@@ -378,13 +430,13 @@ function plot(data) {
 			.attr("width", heatWidth)
 			.attr("height", heatHeight)
 
+		// Calculate new d3 axes for x-axis and call transition.
 		const axisTop = d3.axisTop(x)
 			.tickSize(6)
 			.tickPadding(6)
+		heatmapX.transition(t).call(axisTop)
 
-		heatmapX.transition(t)
-			.call(axisTop)
-
+		// Rotate query sequence labels and attach click delete behaviour.
 		heatmapX.selectAll("text")
 			.style("font-size", "12px")
 			.style("text-anchor", "start")
@@ -398,12 +450,14 @@ function plot(data) {
 				update(newData)
 			})
 
+		// Calculate new d3 axes for y-axis, and transition based on new heatmap
+		// width (on query column deletion).
 		const axisRight = d3.axisRight(y)
 			.tickSize(6)
-
-		heatmapY.transition(t)
-			.attr("transform", `translate(${heatWidth}, 0)`)
+		heatmapY.transition(t).attr("transform", `translate(${heatWidth}, 0)`)
 	
+		// Convert cluster IDs to multiline text labels with organism name and
+		// cluster scaffold coordinates, and attach click delete behaviour.
 		heatmapY.call(axisRight)
 			.selectAll("text")
 				.call(t => {
@@ -417,7 +471,7 @@ function plot(data) {
 						.style("font-style", "italic")
 						.style("font-size", "12px")
 					t.append("tspan")
-						.text(d => data.labels[d].scaffold)
+						.text(d => getScaffoldString(data.labels[d]))
 						.attr("x", 10)
 						.attr("dy", "1.3em")
 						.attr("text-anchor", "start")
@@ -439,6 +493,7 @@ function plot(data) {
 					update(newData)
 				})
 
+		// Hide axes <path> elements
 		heatmap.selectAll("path").style("opacity", "0");
 
 		// Wait until transition has finished until re-organising groups 
