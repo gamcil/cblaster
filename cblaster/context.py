@@ -12,13 +12,12 @@ Given a list of Hit objects (resulting from a cblaster search), we can call it:
 >>> search(hits)
 
 This will:
-1. Search the identifiers of the subject hits against the IPG and retrieve results
-2. Parse protein groups from the IPG table
-3. Create Subject objects for each entry in any given IPG, containing copies of Hit
-   objects, grouped by organism and scaffold
-4. Identify clusters based on user thresholds for intergenic distance, copy number, etc
-5. De-duplicate clusters within an organism, where all Subject objects in any two
-   clusters are members of the same IPG
+    1. Search the identifiers of the subject hits against the IPG and retrieve results
+    2. Parse protein groups from the IPG table
+    3. Create Subject objects for each entry in any given IPG, containing copies of Hit objects, grouped by organism and scaffold
+    4. Identify clusters based on user thresholds for intergenic distance, copy number, etc
+    5. De-duplicate clusters within an organism, where all Subject objects in any two clusters are members of the same IPG
+
 
 Note that cblaster uses Subject objects, not Hit objects, for this step. A Subject
 refers to a unique protein in any given organism, which can be hit in a search any
