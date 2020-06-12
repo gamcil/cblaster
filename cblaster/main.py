@@ -41,6 +41,37 @@ def makedb(genbanks, filename, indent=None):
     LOG.info("Done.")
 
 
+def gne(
+    session,
+    output,
+    max_gap=1000000,
+    samples=1000,
+    scale="log",
+    delimiter=","
+):
+    """Estimate gene neighbourhood."""
+    LOG.info("Starting cblaster gene neighbourhood estimation")
+    LOG.info("Loading session from: %s", session)
+    with open(session) as fp:
+        session = Session.from_json(fp)
+
+    LOG.info("Computing gene neighbourhood statistics")
+    results = context.estimate_neighbourhood(
+        session,
+        max_gap=max_gap,
+        samples=samples,
+        scale=scale
+    )
+
+    LOG.info("Writing results to: %s", output)
+    headers = ["Gap", "No. clusters", "Mean (kb)", "Median (kb)"]
+    with open(output, "w") as fp:
+        fp.write(delimiter.join(headers) + "\n")
+        for row in results:
+            fp.write(delimiter.join(str(value) for value in row) + "\n")
+    LOG.info("Done.")
+
+
 def cblaster(
     query_file=None,
     query_ids=None,
@@ -270,6 +301,16 @@ def main():
     elif args.subcommand == "gui":
         from cblaster.gui.main import cblaster_gui
         cblaster_gui()
+
+    elif args.subcommand == "gne":
+        gne(
+            args.session,
+            args.output,
+            max_gap=args.max_gap,
+            samples=args.samples,
+            scale=args.scale,
+            delimiter=args.delimiter,
+        )
 
 
 if __name__ == "__main__":

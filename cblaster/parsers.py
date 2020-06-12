@@ -257,6 +257,21 @@ def add_search_subparser(subparsers):
     add_filtering_group(search)
 
 
+def add_gne_subparser(subparsers):
+    gne = subparsers.add_parser("gne", help="Perform gene neighbourhood estimation")
+    gne.add_argument("session", help="cblaster session file")
+    gne.add_argument("output", help="Path to output file")
+    gne.add_argument("--delimiter", default=",", help="Character used as delimiter")
+    gne.add_argument("--max_gap", type=int, default=1000000, help="Maximum intergenic distance")
+    gne.add_argument("--samples", type=int, default=1000, help="Total samples taken from max_gap")
+    gne.add_argument(
+        "--scale",
+        choices=["linear", "log"],
+        default="log",
+        help="Draw sampling values from a linear or log scale"
+    )
+
+
 def get_parser():
     parser = argparse.ArgumentParser(
         "cblaster",
@@ -278,6 +293,7 @@ def get_parser():
     add_gui_subparser(subparsers)
     add_makedb_subparser(subparsers)
     add_search_subparser(subparsers)
+    add_gne_subparser(subparsers)
     return parser
 
 
@@ -289,7 +305,7 @@ def parse_args(args):
         parser.print_help()
         raise SystemExit
 
-    if arguments.subcommand in ("gui", "makedb"):
+    if arguments.subcommand in ("gui", "makedb", "gne"):
         return arguments
 
     if arguments.mode == "remote":

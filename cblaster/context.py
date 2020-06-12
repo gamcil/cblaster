@@ -12,12 +12,11 @@ Given a list of Hit objects (resulting from a cblaster search), we can call it:
 >>> search(hits)
 
 This will:
-    1. Search the identifiers of the subject hits against the IPG and retrieve results
-    2. Parse protein groups from the IPG table
-    3. Create Subject objects for each entry in any given IPG, containing copies of Hit objects, grouped by organism and scaffold
-    4. Identify clusters based on user thresholds for intergenic distance, copy number, etc
-    5. De-duplicate clusters within an organism, where all Subject objects in any two clusters are members of the same IPG
-
+1. Search the identifiers of the subject hits against the IPG and retrieve results
+2. Parse protein groups from the IPG table
+3. Create Subject objects for each entry in any given IPG, containing copies of Hit objects, grouped by organism and scaffold
+4. Identify clusters based on user thresholds for intergenic distance, copy number, etc
+5. De-duplicate clusters within an organism, where all Subject objects in any two clusters are members of the same IPG
 
 Note that cblaster uses Subject objects, not Hit objects, for this step. A Subject
 refers to a unique protein in any given organism, which can be hit in a search any
@@ -35,6 +34,7 @@ from operator import attrgetter
 from functools import partial
 
 import requests
+import numpy as np
 
 from cblaster import database
 from cblaster.classes import Organism, Scaffold, Subject
@@ -216,7 +216,7 @@ def parse_IPG_table(results, hits):
             # Copy the original Hit object and add contextual information
             subject = Subject(
                 hits=[hit.copy(subject=entry.protein_id) for hit in hit_list],
-                ipg=group,
+                ipg=ipg,
                 end=int(entry.end),
                 start=int(entry.start),
                 strand=entry.strand,
@@ -483,6 +483,39 @@ def filter_session(
                     unique=unique,
                 )
             )
+
+
+def calculate_gne(session):
+    """
+    No. clusters
+    Mean gn size
+    Median gn size
+    """
+    clusters = [
+        cluster[-1].end - cluster[0].start
+        for organism in session.organisms
+        for accession, scaffold in organism.scaffolds.items()
+        for cluster in scaffold.clusters
+    ]
+    if not clusters:
+        return 0, 0, 0
+    return len(clusters), np.mean(clusters), np.median(clusters)
+
+
+def estimate_neighbourhood(session, max_gap=1000000, samples=1000, scale="log"):
+    """Estimate gene neighbourhood of a cblaster session."""
+    if scale == "linear":
+        space = np.linspace(0, max_gap, num=samples, dtype=int)
+    elif scale == "log":
+        space = np.geomspace(1, max_gap, num=samples, dtype=int)
+    else:
+        raise ValueError("Invalid scale specified, expected 'linear' or 'log'")
+    results = []
+    for value in space:
+        filter_session(session, gap=value)
+        result = [value, *calculate_gne(session)]
+        results.append(result)
+    return results
 
 
 def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
