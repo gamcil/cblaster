@@ -136,8 +136,9 @@ def get_data(session):
 class CustomHandler(http.server.BaseHTTPRequestHandler):
     """Handler for serving cblaster plots."""
 
-    def __init__(self, data, *args, **kwargs):
+    def __init__(self, data, chart, *args, **kwargs):
         self._data = data
+        self._chart = chart
         self._dir = get_project_root() / "plot"
         super().__init__(*args, **kwargs)
 
@@ -159,15 +160,21 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
             self.send_headers("text/json")
             self.wfile.write(json.dumps(self._data).encode())
             return
+
         path, mime = None, None
         if self.path == "/":
-            path, mime = self._dir / "index.html", "text/html"
+            if self._chart == "heatmap":
+                path, mime = self._dir / "index.html", "text/html"
+            elif self._chart == "gne":
+                path, mime = self._dir / "gne.html", "text/html"
         elif self.path == "/index.css":
             path, mime = self._dir / "index.css", "text/css"
         elif self.path == "/d3.min.js":
             path, mime = self._dir / "d3.min.js", "text/javascript"
         elif self.path == "/cblaster.js":
             path, mime = self._dir / "cblaster.js", "text/javascript"
+        elif self.path == "/gne.js":
+            path, mime = self._dir / "gne.js", "text/javascript"
         if not path:
             return
         with path.open("rb") as fp:
@@ -175,17 +182,24 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
             self.copy_file(fp)
 
 
-def save_html(data, output):
+def save_html(data, output, chart="heatmap"):
     """Generates a static HTML file with all visualisation code."""
+
+    if chart == "heatmap":
+        base, script = "cblaster.html", "cblaster.js"
+    elif chart == "gne":
+        base, script = "gne.html", "gne.js"
+    else:
+        raise ValueError("Invalid chart specified, expected 'heatmap' or 'gne'")
 
     directory = get_project_root() / "plot"
 
-    with (directory / "index.html").open() as fp:
+    with (directory / base).open() as fp:
         html = fp.read()
 
     css_string = '<link href="index.css" rel="stylesheet"></link>'
     d3_string = '<script src="d3.min.js"></script>'
-    cb_string = '<script src="cblaster.js"></script>'
+    cb_string = f'<script src="{script}"></script>'
 
     with (directory / "index.css").open() as fp:
         css = fp.read()
@@ -195,16 +209,16 @@ def save_html(data, output):
         d3 = fp.read()
         html = html.replace(d3_string, f"<script>{d3}</script>")
 
-    with (directory / "cblaster.js").open() as fp:
-        cb = f"const data={json.dumps(data)}" + fp.read()
-        html = html.replace(cb_string, f"<script>{cb}</script>")
+    with (directory / script).open() as fp:
+        js = f"const data={json.dumps(data)}" + fp.read()
+        html = html.replace(cb_string, f"<script>{js}</script>")
 
     with open(output, "w") as fp:
         fp.write(html)
 
 
-def serve_html(data):
-    handler = partial(CustomHandler, data)
+def serve_html(data, chart="heatmap"):
+    handler = partial(CustomHandler, data, chart)
 
     # Instantiate a new server, bind to any open port
     with socketserver.TCPServer(("localhost", 0), handler) as httpd:
@@ -230,6 +244,15 @@ def plot_session(session, output=None):
         webbrowser.open(output)
     else:
         serve_html(data)
+
+
+def plot_gne(data, output=None):
+    if output:
+        LOG.info(f"Saving gne plot HTML to: {output}")
+        save_html(data, chart="gne", output=output)
+        webbrowser.open(output)
+    else:
+        serve_html(data, chart="gne")
 
 
 def plot_session_file(path, serve=True, html=None):
