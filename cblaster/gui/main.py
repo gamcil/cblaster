@@ -7,7 +7,7 @@ import PySimpleGUI as sg
 
 from cblaster import __version__
 from cblaster import main
-from cblaster.gui import search, makedb, citation
+from cblaster.gui import search, makedb, citation, gne
 
 
 sg.theme("Lightgrey1")
@@ -102,6 +102,15 @@ def run_cblaster(values):
             filename=values["makedb_filename"],
             indent=values["json_indent"]
         )
+
+    elif values["cblaster_tabs"] == "Neighbourhood":
+        main.gne(
+            session=values["session"],
+            output=values["output"],
+            max_gap=int(values["max_gap"]),
+            samples=int(values["samples"]),
+            scale=values["scale"],
+        )
     else:
         raise ValueError("Expected 'Search' or 'Makedb'")
 
@@ -113,6 +122,7 @@ def cblaster_gui():
         [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
         [sg.TabGroup([
             [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
+            [sg.Tab("Neighbourhood", [[Column(gne.layout)]])],
             [sg.Tab("Makedb", [[Column(makedb.layout)]])],
             [sg.Tab("Citation", [[Column(citation.layout)]])],
         ], enable_events=True, key="cblaster_tabs"
@@ -148,7 +158,8 @@ def cblaster_gui():
 
         # Disable start button when on citation tab
         window["start_button"].update(
-            disabled=values["cblaster_tabs"] not in ("Search", "Makedb")
+            disabled=values["cblaster_tabs"]
+            not in ("Search", "Makedb", "Neighbourhood")
         )
 
         if event:
