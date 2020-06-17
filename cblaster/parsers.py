@@ -260,7 +260,7 @@ def add_search_subparser(subparsers):
 def add_gne_subparser(subparsers):
     gne = subparsers.add_parser("gne", help="Perform gene neighbourhood estimation")
     gne.add_argument("session", help="cblaster session file")
-    gne.add_argument("output", help="Path to output file")
+    gne.add_argument("--output", help="Path to output file")
     gne.add_argument("--delimiter", default=",", help="Character used as delimiter")
     gne.add_argument("--max_gap", type=int, default=1000000, help="Maximum intergenic distance")
     gne.add_argument("--samples", type=int, default=1000, help="Total samples taken from max_gap")
