@@ -499,21 +499,32 @@ def calculate_gne(session):
     ]
     if not clusters:
         return 0, 0, 0
-    return len(clusters), np.mean(clusters), np.median(clusters)
+    return (
+        len(clusters),
+        float(np.mean(clusters)),
+        int(np.median(clusters))
+    )
 
 
 def estimate_neighbourhood(session, max_gap=1000000, samples=1000, scale="log"):
     """Estimate gene neighbourhood of a cblaster session."""
     if scale == "linear":
-        space = np.linspace(0, max_gap, num=samples, dtype=int)
+        space = np.linspace(0, max_gap, num=samples)
     elif scale == "log":
-        space = np.geomspace(1, max_gap, num=samples, dtype=int)
+        space = np.geomspace(1, max_gap, num=samples)
     else:
         raise ValueError("Invalid scale specified, expected 'linear' or 'log'")
     results = []
     for value in space:
+        value = int(value)
         filter_session(session, gap=value)
-        result = [value, *calculate_gne(session)]
+        clusters, means, medians = calculate_gne(session)
+        result = {
+            "gap": value,
+            "means": means,
+            "medians": medians,
+            "clusters": clusters,
+        }
         results.append(result)
     return results
 
