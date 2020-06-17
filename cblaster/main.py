@@ -3,6 +3,8 @@
 
 import logging
 import sys
+import json
+
 from pathlib import Path
 
 from cblaster import (
@@ -14,7 +16,7 @@ from cblaster import (
     parsers,
 )
 from cblaster.classes import Session
-from cblaster.plot import plot_session
+from cblaster.plot import plot_session, plot_gne
 
 
 logging.basicConfig(
@@ -43,7 +45,7 @@ def makedb(genbanks, filename, indent=None):
 
 def gne(
     session,
-    output,
+    output=None,
     max_gap=1000000,
     samples=1000,
     scale="log",
@@ -62,13 +64,8 @@ def gne(
         samples=samples,
         scale=scale
     )
+    plot_gne(results, output=output)
 
-    LOG.info("Writing results to: %s", output)
-    headers = ["Gap", "No. clusters", "Mean (kb)", "Median (kb)"]
-    with open(output, "w") as fp:
-        fp.write(delimiter.join(headers) + "\n")
-        for row in results:
-            fp.write(delimiter.join(str(value) for value in row) + "\n")
     LOG.info("Done.")
 
 
