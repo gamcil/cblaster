@@ -155,6 +155,13 @@ def find_IPG_hits(group, hit_dict):
     return hits
 
 
+def group_hits(hits):
+    hit_dict = defaultdict(list)
+    for hit in hits:
+        hit_dict[hit.subject].append(hit)
+    return hit_dict
+
+
 def parse_IPG_table(results, hits):
     """Links Hit objects to their genomic context from an IPG table.
 
@@ -175,9 +182,7 @@ def parse_IPG_table(results, hits):
     """
 
     # Group hits by their subject ID's
-    hit_dict = defaultdict(list)
-    for hit in hits:
-        hit_dict[hit.subject].append(hit)
+    hit_dict = group_hits(hits)
 
     # Parse IPGs from the table
     groups = parse_IP_groups(results)
@@ -224,7 +229,11 @@ def parse_IPG_table(results, hits):
 
             organisms[org][st].scaffolds[acc].subjects.append(subject)
 
-    return [organism for strains in organisms.values() for organism in strains.values()]
+    return [
+        organism
+        for strains in organisms.values()
+        for organism in strains.values()
+    ]
 
 
 def find_identifier(qualifiers):
@@ -408,12 +417,10 @@ def deduplicate(organism):
     for removal if every Subject is of the same IPG for the length of the clusters.
     """
     remove = defaultdict(list)
-
     for scafA, scafB in combinations(organism.scaffolds.values(), 2):
         for one, two in product(scafA.clusters, scafB.clusters):
             if clusters_are_identical(one, two):
                 remove[scafB.accession].append(two)
-
     for accession, clusters in remove.items():
         scaffold = organism.scaffolds[accession]
         scaffold.clusters = [c for c in scaffold.clusters if c not in clusters]
