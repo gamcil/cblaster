@@ -257,10 +257,21 @@ class Subject(Serializer):
 
     def __init__(self, hits=None, ipg=None, start=None, end=None, strand=None):
         self.hits = hits if hits else []
-        self.ipg = ipg if ipg else None
+        self.ipg = ipg
         self.start = int(start) if start is not None else None
         self.end = int(end) if end is not None else None
         self.strand = strand
+
+    def __eq__(self, other):
+        if not isinstance(other, Subject):
+            raise NotImplementedError("Expected Subject object")
+        return (
+            set(self.hits) == set(other.hits)
+            and self.ipg == other.ipg
+            and self.start == other.start
+            and self.end == other.end
+            and self.strand == other.strand
+        )
 
     def to_dict(self):
         return {
@@ -338,6 +349,23 @@ class Hit(Serializer):
             f" {self.identity:.2%}/{self.coverage:.2%}"
         )
 
+    def __key(self):
+        return (
+            self.query,
+            self.bitscore,
+            self.identity,
+            self.coverage,
+            self.evalue
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        if not isinstance(other, Hit):
+            raise NotImplementedError("Expected Hit object")
+        return self.__key() == other.__key()
+
     def copy(self, **kwargs):
         """Creates a copy of this Hit with any additional args."""
         copy = Hit(**self.__dict__)
@@ -375,5 +403,3 @@ class Hit(Serializer):
     @classmethod
     def from_dict(cls, d):
         return cls(**d)
-
-
