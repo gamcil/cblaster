@@ -164,7 +164,7 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
         path, mime = None, None
         if self.path == "/":
             if self._chart == "heatmap":
-                path, mime = self._dir / "index.html", "text/html"
+                path, mime = self._dir / "cblaster.html", "text/html"
             elif self._chart == "gne":
                 path, mime = self._dir / "gne.html", "text/html"
         elif self.path == "/index.css":
