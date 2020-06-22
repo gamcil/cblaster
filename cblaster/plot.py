@@ -1,217 +1,261 @@
-import numpy as np
+import http.server
+import socketserver
+import webbrowser
+import json
+import shutil
+import logging
+
+from functools import partial
+
 import scipy
-from matplotlib import pyplot as plt
-from matplotlib import rcParams
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.cluster.hierarchy import dendrogram, linkage, to_tree
+from scipy.cluster.hierarchy import linkage
+
+from cblaster.classes import Session
+from cblaster.helpers import get_project_root
 
 
-def ply(session):
-    """Plot a session using Plotly.
-
-    Use this when data is large since matplotlib will choke.
-    """
-
-    from plotly.subplots import make_subplots
-    import plotly.graph_objects as go
-    import plotly.figure_factory as ff
-
-    names, scafs, counts, identities = session.form_matrices(html=True)
-
-    counts = np.array(counts)
-    identities = np.array(identities)
-
-    fig = make_subplots(rows=1, cols=2)
-
-    dendro = ff.create_dendrogram(identities, orientation="right")
-    leaves = dendro["layout"]["yaxis"]["ticktext"]
-    leaves = list(map(int, leaves))
-
-    for item in dendro["data"]:
-        item.pop("xaxis", None)
-        item.pop("yaxis", None)
-        fig.append_trace(item, 1, 1)
-
-    identities = identities[leaves, :]
-    names = [names[i] for i in leaves]
-    scafs = [scafs[i] for i in leaves]
-
-    heatmap = go.Heatmap(
-        y=[int(v) for v in dendro["layout"]["yaxis"]["tickvals"]],
-        z=identities,
-        xaxis="x2",
-        colorscale="Blues",
-        colorbar={"title": "Identity (%)", "len": 0.2},
-        ygap=1,
-        xgap=1
-    )
-
-    fig.add_trace(heatmap, row=1, col=2)
-
-    yvals = [int(v) for v in dendro["layout"]["yaxis"]["tickvals"]]
-
-    fig.update_layout(
-        height=15*len(yvals),
-        showlegend=False,
-        title_text="cblaster",
-        autosize=True,
-        margin=dict(l=50, r=50, b=100, t=100, pad=4),
-        template="simple_white"
-    )
-    fig.update_yaxes(matches="y", range=[yvals[0] - 10, yvals[-1] + 10], automargin=True)
-    fig.update_yaxes(
-        tickvals=yvals,
-        ticktext=names,
-        row=1,
-        col=1,
-        showline=False,
-        ticks="",
-        side="right",
-        automargin=True,
-    )
-    fig.update_xaxes(
-        domain=[0, 0.2],
-        row=1,
-        col=1,
-        ticks="",
-        showline=False,
-        showticklabels=False,
-        automargin=True,
-    )
-    fig.update_xaxes(
-        domain=[0.6, 1],
-        tickvals=list(range(len(session.queries))),
-        ticktext=session.queries,
-        side="top",
-        row=1,
-        col=2,
-        ticks="",
-        showline=False,
-        automargin=True,
-    )
-    fig.update_yaxes(
-        tickvals=yvals,
-        ticktext=scafs,
-        showline=False,
-        row=1,
-        col=2,
-        ticks="",
-        automargin=True,
-    )
-
-    fig.show(config={"toImageButtonOptions": {"width": None, "height": None}})
+LOG = logging.getLogger(__name__)
 
 
-def plot(session, figure=None, dpi=300, show_counts=False):
-    """Plot a cblaster Session using `matplotlib`.
+def transform_linkage_matrix(matrix):
+    """Converts SciPy linkage matrix to D3 hierarchical format."""
 
-    `matplotlib` will produce nicer figures than `plot.ly`, but will choke when the
-    session becomes large. When the `Session` object contains a large number of organisms,
-    the `ply()` function should be used.
+    hierarchy = {}
+    total = matrix.shape[0] + 1  # Linkage matrix is n-1 by 4
 
-    Parameters
-    ----------
-    session: cblaster.models.Session
-        A `Session` object containing `cblaster` results
-    figure: str
-        Path to write generated figure to. This should include a file extension, which
-        matplotlib will use to automatically determine the file type to save in.
-    dpi: int
-        Resolution of generated figure in dots per inch (DPI)
-    show_counts: bool
-        Draw hit counts over the hit heatmap
-    """
+    # Generate placeholders to pop for each label
+    for index in range(total):
+        hierarchy[index] = {"name": index}
 
-    rcParams["savefig.dpi"] = dpi
+    for index, (one, two, distance, count) in enumerate(matrix):
+        one = int(one)
+        two = int(two)
+        new = total + index  # total rows + index
+        hierarchy[new] = {
+            "name": new,
+            "length": distance,
+            "children": [hierarchy.pop(one), hierarchy.pop(two)]
+        }
 
-    names, scafs, counts, identities = session.form_matrices()
+    return hierarchy[new]
 
-    counts = np.array(counts)
-    identities = np.array(identities)
 
-    # Rough initial figure size calculations
-    # qname = longest query name
-    qname = max(len(q) for q in session.queries) * 0.06
-    width = 6 + 0.45 * len(session.queries) + qname
-    height = max(2, 0.2 * len(names) + qname)
+def generate_linkage_matrix(array):
+    """Generate a normalised linkage matrix from a given array."""
+    array = [
+        [cell["value"] for cell in cells]
+        for cells in array
+    ]
+    matrix = linkage(array, "ward")
+    matrix[:, 2] /= matrix[:, 2].max()
+    return matrix
 
-    fig, (dendro, matrix) = plt.subplots(
-        1,
-        2,
-        figsize=(width, height),
-        gridspec_kw={"width_ratios": [1, 0.3 * len(session.queries)]},
-    )
 
-    # Plot dendrogram
-    Y = linkage(identities, method="ward")
-    Z = dendrogram(Y, orientation="left", ax=dendro, labels=names, leaf_font_size=9)
+def get_cell(query, cluster, cluster_id):
+    hits = [
+        {
+            "name": hit.subject,
+            "identity": hit.identity,
+            "coverage": hit.coverage,
+            "bitscore": hit.bitscore,
+            "evalue": hit.evalue,
+            "strand": subject.strand,
+            "start": subject.start,
+            "end": subject.end,
+            "ipg": subject.ipg,
+        }
+        for subject in cluster
+        for hit in subject.hits
+        if hit.query == query
+    ]
+    value = max(hit["identity"] for hit in hits) if hits else 0
+    cell = {
+        "query": query,
+        "cluster": cluster_id,
+        "value": value,
+        "hits": hits
+    }
+    return cell
 
-    # Hide borders
-    for spine in dendro.spines.values():
-        spine.set_visible(False)
 
-    dendro.set_xticks([])
+def get_data(session):
+    matrix = []
+    labels = {}
+    counts = {
+        "queries": len(session.queries),
+        "hits": 0,
+        "subjects": 0,
+        "clusters": 0,
+        "scaffolds": 0,
+        "organisms": 0
+    }
 
-    # Plot matrix
-    index = Z["leaves"]
-    counts = counts[index, :]
-    identities = identities[index, :]
-    identities[identities == 0.0] = np.nan
-    scafs = [scafs[i] for i in index]
-    im = matrix.matshow(
-        identities, cmap="Blues", aspect="auto", origin="lower", clim=(0, 100)
-    )
+    cluster_id = 0
 
-    # Annotate with counts
-    if show_counts:
-        colours = ["black", "white"]
-        textkw = dict(fontsize=6, va="center", ha="right")
+    for organism in session.organisms:
+        counts["organisms"] += 1
 
-        for i in range(counts.shape[0]):
-            for j in range(counts.shape[1]):
-                # Choose black or white, depending if identity is greater than 80%
-                # False -> 0, True -> 1, then use as index
-                textkw["color"] = colours[int(im.norm(identities[i, j]) > 0.8)]
-                im.axes.text(j, i, counts[i, j], **textkw)
+        for accession, scaffold in organism.scaffolds.items():
+            counts["scaffolds"] += 1
+            counts["subjects"] += len(scaffold.subjects)
+            counts["hits"] += sum(len(sub.hits) for sub in scaffold.subjects)
 
-    # Hide actual tick marks
-    matrix.tick_params(axis="x", which="both", bottom=False)
-    matrix.tick_params(axis="x", which="minor", top=False)
-    matrix.tick_params(axis="y", which="both", left=False)
+            for cluster in scaffold.clusters:
+                counts["clusters"] += 1
 
-    # Set yticklabels to scaffold locations
-    matrix.set_yticks(range(len(scafs)))
-    matrix.set_yticklabels(scafs, fontsize=9)
+                # Save the cluster name and scaffold
+                labels[cluster_id] = {
+                    "id": cluster_id,
+                    "name": organism.full_name,
+                    "scaffold": accession,
+                    "start": cluster[0].start,
+                    "end": cluster[-1].end,
+                }
 
-    # Set xticklabels to query protein IDs
-    matrix.set_xticks(range(identities.shape[1]))
-    matrix.set_xticklabels(session.queries, rotation=30, ha="left", fontsize=9)
+                # Generate all cells for the heatmap
+                cells = [
+                    get_cell(query, cluster, cluster_id)
+                    for query in session.queries
+                ]
+                matrix.append(cells)
+                cluster_id += 1
 
-    # Set minor ticks to be between 'cells', set white grid for separation
-    matrix.set_xticks(np.arange(identities.shape[1] + 1) - 0.5, minor=True)
-    matrix.set_yticks(np.arange(identities.shape[0] + 1) - 0.5, minor=True)
-    matrix.grid(which="minor", color="w", linestyle="-", linewidth=2)
+    # Generate input for linkage
+    linkage_matrix = generate_linkage_matrix(matrix)
+    hierarchy = transform_linkage_matrix(linkage_matrix)
 
-    # Set dividers on both axes so colorbar can be used without changing figure size
-    div1 = make_axes_locatable(dendro)
-    div2 = make_axes_locatable(matrix)
-    cax1 = div1.append_axes("bottom", size=0.1, pad=0.1)
-    cax2 = div2.append_axes("bottom", size=0.1, pad=0.1)
-    cax1.axis("off")
+    return {
+        "queries": session.queries,
+        "labels": labels,
+        "counts": counts,
+        "matrix": matrix,
+        "hierarchy": hierarchy,
+    }
 
-    # Create colourbar
-    cbar = plt.colorbar(im, cax=cax2, orientation="horizontal")
-    cbar.ax.set_xlabel("Identity (%)", va="bottom", labelpad=12)
 
-    plt.tight_layout()
+class CustomHandler(http.server.BaseHTTPRequestHandler):
+    """Handler for serving cblaster plots."""
 
-    if not figure:
-        fig.canvas.mpl_connect("resize_event", resize)
-        plt.show()
+    def __init__(self, data, chart, *args, **kwargs):
+        self._data = data
+        self._chart = chart
+        self._dir = get_project_root() / "plot"
+        super().__init__(*args, **kwargs)
+
+    def copy_file(self, source):
+        shutil.copyfileobj(source, self.wfile)
+
+    def send_headers(self, mime):
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.end_headers()
+
+    def log_message(self, format, *args):
+        """Suppresses logging messages on every request."""
+        return
+
+    def do_GET(self):
+        """Serves each component of the cblaster plot."""
+        if self.path == "/data.json":
+            self.send_headers("text/json")
+            self.wfile.write(json.dumps(self._data).encode())
+            return
+
+        path, mime = None, None
+        if self.path == "/":
+            if self._chart == "heatmap":
+                path, mime = self._dir / "cblaster.html", "text/html"
+            elif self._chart == "gne":
+                path, mime = self._dir / "gne.html", "text/html"
+        elif self.path == "/index.css":
+            path, mime = self._dir / "index.css", "text/css"
+        elif self.path == "/d3.min.js":
+            path, mime = self._dir / "d3.min.js", "text/javascript"
+        elif self.path == "/cblaster.js":
+            path, mime = self._dir / "cblaster.js", "text/javascript"
+        elif self.path == "/gne.js":
+            path, mime = self._dir / "gne.js", "text/javascript"
+        if not path:
+            return
+        with path.open("rb") as fp:
+            self.send_headers(mime)
+            self.copy_file(fp)
+
+
+def save_html(data, output, chart="heatmap"):
+    """Generates a static HTML file with all visualisation code."""
+
+    if chart == "heatmap":
+        base, script = "cblaster.html", "cblaster.js"
+    elif chart == "gne":
+        base, script = "gne.html", "gne.js"
     else:
-        plt.savefig(figure)
+        raise ValueError("Invalid chart specified, expected 'heatmap' or 'gne'")
+
+    directory = get_project_root() / "plot"
+
+    with (directory / base).open() as fp:
+        html = fp.read()
+
+    css_string = '<link href="index.css" rel="stylesheet"></link>'
+    d3_string = '<script src="d3.min.js"></script>'
+    cb_string = f'<script src="{script}"></script>'
+
+    with (directory / "index.css").open() as fp:
+        css = fp.read()
+        html = html.replace(css_string, f"<style>{css}</style>")
+
+    with (directory / "d3.min.js").open() as fp:
+        d3 = fp.read()
+        html = html.replace(d3_string, f"<script>{d3}</script>")
+
+    with (directory / script).open() as fp:
+        js = f"const data={json.dumps(data)}" + fp.read()
+        html = html.replace(cb_string, f"<script>{js}</script>")
+
+    with open(output, "w") as fp:
+        fp.write(html)
 
 
-def resize(event):
-    plt.tight_layout()
-    plt.gcf().canvas.draw()
+def serve_html(data, chart="heatmap"):
+    handler = partial(CustomHandler, data, chart)
+
+    # Instantiate a new server, bind to any open port
+    with socketserver.TCPServer(("localhost", 0), handler) as httpd:
+
+        # Automatically open web browser to bound address
+        address, port = httpd.server_address
+        url = f"http://{address}:{port}/"
+        webbrowser.open(url)
+
+        # Start serving the plot; shutdown on a keyboard interrupt
+        try:
+            LOG.info(f"Serving cblaster plot at {url} (Ctrl+C to stop).")
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            httpd.shutdown()
+
+
+def plot_session(session, output=None):
+    data = get_data(session)
+    if output:
+        LOG.info(f"Saving cblaster plot HTML to: {output}")
+        save_html(data, output)
+        webbrowser.open(output)
+    else:
+        serve_html(data)
+
+
+def plot_gne(data, output=None):
+    if output:
+        LOG.info(f"Saving gne plot HTML to: {output}")
+        save_html(data, chart="gne", output=output)
+        webbrowser.open(output)
+    else:
+        serve_html(data, chart="gne")
+
+
+def plot_session_file(path, serve=True, html=None):
+    with open(path) as fp:
+        session = Session.from_json(fp)
+    plot_session(session, serve=serve, html=html)

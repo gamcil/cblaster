@@ -5,6 +5,8 @@ import shutil
 import requests
 import logging
 
+from pathlib import Path
+
 
 LOG = logging.getLogger(__name__)
 
@@ -12,20 +14,12 @@ LOG = logging.getLogger(__name__)
 def get_program_path(aliases):
     """Get programs path given a list of program names.
 
-    Parameters
-    ----------
-    aliases: list
-        Alternative names for a program, e.g. ["diamond", "diamond-aligner"]
-
-    Raises
-    ------
-    ValueError
-        Could not find any of the given aliases on system $PATH
-
-    Returns
-    -------
-    str
-        Path to program executable
+    Parameters:
+        aliases (list): Program aliases, e.g. ["diamond", "diamond-aligner"]
+    Raises:
+        ValueError: Could not find any of the given aliases on system $PATH.
+    Returns:
+        Path to program executable.
     """
     for alias in aliases:
         which = shutil.which(alias)
@@ -48,9 +42,7 @@ def form_command(parameters):
 def parse_fasta(handle):
     """Parse sequences in a FASTA file.
 
-    Returns
-    -------
-    dict:
+    Returns:
         Sequences in FASTA file keyed on their headers (i.e. > line)
     """
     sequences = {}
@@ -76,22 +68,13 @@ def parse_fasta_file(path):
 def efetch_sequences_request(headers):
     """Launch E-Fetch request for a list of sequence accessions.
 
-    Parameters
-    ----------
-    headers: list
-        NCBI sequence accessions
-
-    Raises
-    ------
-    requests.HTTPError
-        Received bad status code from NCBI
-
-    Returns
-    -------
-    requests.models.Response
-        Response object returned by `requests` library
+    Parameters:
+        headers (list): NCBI sequence accessions.
+    Raises:
+        requests.HTTPError: Received bad status code from NCBI.
+    Returns:
+        requests.models.Response: Response returned by requests library.
     """
-
     response = requests.post(
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
         params={"db": "protein", "rettype": "fasta"},
@@ -119,15 +102,11 @@ def efetch_sequences(headers):
     FASTA will contain a full sequence description in the header line after the
     accession.
 
-    Parameters
-    ----------
-    headers : list, tuple
-        A list of valid NCBI sequence identifiers (accession, GI, etc). Should
-        correspond to an entry in the Protein database.
+    Parameters:
+        headers (list): Valid NCBI sequence identifiers (accession, GI, etc.).
     """
     LOG.info("Querying NCBI for sequences of: %s", headers)
     response = efetch_sequences_request(headers)
-
     sequences = {}
     for key, value in parse_fasta(response.text.split("\n")).items():
         for header in headers:
@@ -140,22 +119,13 @@ def efetch_sequences(headers):
 def get_sequences(query_file=None, query_ids=None):
     """Convenience function to get dictionary of query sequences from file or IDs.
 
-    Parameters
-    ----------
-    query_file: str
-        Path to FASTA file containing query protein sequences
-    query_ids: list
-        NCBI sequence accessions
-
-    Raises
-    ------
-    ValueError
-        Did not receive values for `query_file` or `query_ids`
-
-    Returns
-    -------
-    sequences: dict
-        Dictionary of query sequences keyed on accession
+    Parameters:
+        query_file (str): Path to FASTA file containing query protein sequences.
+        query_ids (list): NCBI sequence accessions.
+    Raises:
+        ValueError: Did not receive values for query_file or query_ids.
+    Returns:
+        sequences (dict): Dictionary of query sequences keyed on accession.
     """
     if query_file and not query_ids:
         with open(query_file) as query:
@@ -165,3 +135,7 @@ def get_sequences(query_file=None, query_ids=None):
     else:
         raise ValueError("Expected 'query_file' or 'query_ids'")
     return sequences
+
+
+def get_project_root():
+    return Path(__file__).resolve().parent

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>cblaster</title>
+		<link href="index.css" rel="stylesheet"></link>
+		<script src="d3.min.js"></script>
+	</head>
+	<body>
+		<main>
+			<div id="plot"></div>
+			<div id="div-floater">
+				<button class="collapsible active" type="button" onclick="toggleActive()">cblaster</button>
+				<div id="div-summary">
+					<p>
+						This plot shows the effect of increasing the intergenic distance threshold
+						(--gap argument in cblaster) on both the total amount of predicted
+						clusters, as well as the mean and median cluster size (bp).
+					</p>
+					<hr>
+					<p>If you found cblaster useful, please cite:</p>
+					<pre>
+						Gilchrist, C.L.M, 2020. cblaster: a Python toolkit for detecting co-located BLAST hits.
+					</pre>
+					<hr>
+					<p>
+						Zoom with middle mouse, pan by clicking and dragging.
+					</p>
+					<button id="btn-save-svg">Save SVG</button>
+				</div>
+			</div>
+			<script>
+				const coll = document.querySelector(".collapsible");
+				const menu = document.querySelector("#div-summary");
+				function toggleActive(event) {
+					coll.classList.toggle("active");
+					menu.style.display = menu.style.display === "none" ? "block" : "none";
+				}
+			</script>
+			<script src="gne.js"></script>
+		</main>
+	</body>
+</html>

@@ -16,22 +16,13 @@ LOG = logging.getLogger(__name__)
 def parse(results, min_identity=30, min_coverage=50, max_evalue=0.01):
     """Parse a string containing results of a BLAST/DIAMOND search.
 
-    Parameters
-    ----------
-    results: str
-        Result of `diamond()` or `blastp()`, the stdout from diamond/blastp
-        subprocess call.
-    min_identity: float
-        Minimum percent identity cutoff
-    min_coverage: float
-        Minimum percent coverage cutoff
-    max_evalue: float
-        Maximum e-value threshold
-
-    Return
-    ------
-    hits: list
-        Hit objects representing each hit that surpasses the scoring thresholds.
+    Arguments:
+        results (list): Results returned by diamond() or blastp()
+        min_identity (float): Minimum identity (%) cutoff
+        min_coverage (float): Minimum coverage (%) cutoff
+        max_evalue (float): Maximum e-value threshold
+    Returns:
+        list: Hit objects representing hits that surpass scoring thresholds
     """
     hits = []
     for row in results[:-1]:
@@ -50,27 +41,15 @@ def parse(results, min_identity=30, min_coverage=50, max_evalue=0.01):
 def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, cpus=1):
     """Launch a local DIAMOND search against a database.
 
-    Parameters
-    ----------
-    fasta: str
-        Path to FASTA query file.
-    database: str
-        Path to a DIAMOND database to be searched against. This should consist of
-        sequences derived from NCBI, such that `sseqid` field of results will
-        correspond to valid NCBI identifiers.
-    max_evalue: float
-        Maximum e-value.
-    min_identity: float
-        Minimum percent identity.
-    min_coverage: float
-        Minimum percent query coverage.
-    cpus: int
-        Number of CPU threads to use.
-
-    Returns
-    -------
-    str
-        Search results, taken directly from stdout of the subprocess call.
+    Arguments:
+        fasta (str): Path to FASTA format query file
+        database (str): Path to DIAMOND database generated with cblaster makedb
+        max_evalue (float): Maximum e-value threshold
+        min_identity (float): Minimum identity (%) cutoff
+        min_coverage (float): Minimum coverage (%) cutoff
+        cpus (int): Number of CPU threads for DIAMOND to use
+    Returns:
+        list: Rows from DIAMOND search result table (split by newline)
     """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
     LOG.debug("diamond path: %s", diamond)
@@ -129,24 +108,14 @@ def _search_ids(ids, database, **kwargs):
 def search(database, query_file=None, query_ids=None, **kwargs):
     """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote).
 
-    Parameters
-    ----------
-    database: str
-        Path to DIAMOND database
-    query_file: str, optional
-        Path to FASTA file containing query sequences
-    query_ids: list, optional
-        NCBI sequence accessions
-
-    Raises
-    ------
-    ValueError
-        No value given for `query_file` or `query_ids`
-
-    Returns
-    -------
-    results: list
-        Parsed rows with hits from DIAMOND results table
+    Arguments:
+        database (str): Path to DIAMOND database
+        query_file (str): Path to FASTA file containing query sequences
+        query_ids (list): NCBI sequence accessions
+    Raises:
+        ValueError: No value given for query_file or query_ids
+    Returns:
+        list: Parsed rows with hits from DIAMOND results table
     """
     if query_file and not query_ids:
         return _search_file(query_file, database, **kwargs)
