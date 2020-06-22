@@ -12,12 +12,12 @@
 in BLAST searches.
 
 ## Outline
-1. Perform BLAST search, remotely (via BLAST API) or locally (via `diamond`)
-2. Parse results, save hits meeting user-defined thresholds for identity, coverage and
+1. Performs BLAST search, remotely (via BLAST API) or locally (via `diamond`)
+2. Parses results, saving hits meeting user-defined thresholds for identity, coverage and
    e-value
-3. Query the Identical Protein Group (IPG) resource to fetch the position of each hit on
+3. Queries the NCBI's Identical Protein Group (IPG) resource to fetch the position of each hit on
    their respective genomic scaffolds
-4. Look for clusters of co-located hits meeting thresholds for intergenic distance and
+4. Looks for clusters of co-located hits meeting thresholds for intergenic distance and
    minimum number of conserved sequences
 
 ## Installation
@@ -50,7 +50,7 @@ on your system $PATH.
 A remote search can be performed as simply as:
 
 ```bash
-$ cblaster search -qf query.fasta
+$ cblaster search --query_file query.fasta
 ```
 
 For example, to remotely search the
@@ -59,6 +59,7 @@ For example, to remotely search the
 
 ```bash
 $ cblaster search -qf bua.fasta
+
 [12:14:17] INFO - Starting cblaster in remote mode
 [12:14:17] INFO - Launching new search
 [12:14:19] INFO - Request Identifier (RID): WHS0UGYJ015
@@ -90,21 +91,10 @@ QBE85647.1  XP_026607265.1  72.674    99.2048   0          764       1729735  17
 QBE85648.1  XP_026607266.1  56.098    98.324    4.24e-64   205       1731701  1732402  -
 QBE85649.1  XP_026607267.1  79.623    99.8746   0          6573      1732820  1745289  +
 
-<truncated>
+...
 ```
 
 A query sequence absence/presence matrix can be generated using the `--binary` argument:
-
-```bash
-$ cblaster search -qf bua.fasta --rid WHS0UGYJ015 --binary binary.txt hr he
-```
-
-Note that providing the `hr` and `he` flags toggles on human-readable format (as opposed
-to comma-delimited) and showing headers, respectively.
-Also note that once an RID has been assigned, `cblaster` can directly retrieve results
-from that RID instead of having to start a new search, as is done here.
-
-Now, in `binary.txt`:
 
 ```
 Organism                                   Scaffold        Start    End      QBE85641.1  QBE85642.1  QBE85643.1  QBE85644.1  QBE85645.1  QBE85646.1  QBE85647.1  QBE85648.1  QBE85649.1
@@ -118,6 +108,10 @@ Aureobasidium subglaciale EXF-2481         NW_013566983.1  700476   718693   1  
 Aureobasidium pullulans EXF-6514           QZBF01000009.1  18721    34295    1           1           0           0           0           1           1           0           0         
 Aureobasidium pullulans EXF-5628           QZBI01000512.1  329      13401    1           0           0           0           0           1           1           0           0         
 ```
+
+`cblaster` can also generate fully interactive visualisations of the binary
+table. To view an example, click here.
+
 
 For further usage examples, as well as API documentation, please refer to the
 [documentation](https://cblaster.readthedocs.io/en/latest/).
