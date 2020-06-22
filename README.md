@@ -1,5 +1,4 @@
 # cblaster
-[![Build Status](https://travis-ci.org/gamcil/cblaster.svg?branch=master)](https://travis-ci.org/gamcil/cblaster)
 ![Build Status](https://github.com/gamcil/cblaster/workflows/Python%20application/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/gamcil/cblaster/badge.svg?branch=master)](https://coveralls.io/github/gamcil/cblaster?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
