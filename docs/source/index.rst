@@ -14,11 +14,13 @@ Welcome to cblaster's documentation!
    classes 
    context
    database
-   genbank
    helpers
    local
    main
    remote
+   formatters
+   parsers
+   plot
 
 
 Indices and tables

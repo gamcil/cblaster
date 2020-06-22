@@ -47,4 +47,5 @@ setup(
     tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],
     python_requires=">=3.6",
     entry_points={"console_scripts": ["cblaster=cblaster.main:main"]},
+    package_data={"cblaster": ["plot/*"]},
 )

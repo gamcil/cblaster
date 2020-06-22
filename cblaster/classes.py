@@ -7,92 +7,12 @@ This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 import re
 import json
 
-
-def generate_header_string(text, symbol="-"):
-    """Generates a 2-line header string with underlined text.
-
-    >>> header = generate_header_string("header string", symbol="*")
-    >>> print(header)
-    header string
-    *************
-    """
-    return f"{text}\n{symbol * len(text)}"
-
-
-def generate_cluster_table(hits, decimals=4, show_headers=True, human=True):
-    """Generates a summary table for a hit cluster.
-
-    Args:
-        hits (list): collection of Hit objects
-        decimals (int): number of decimal points to show
-        show_headers (bool): show column headers in output
-        human (bool): use human-readable format
-    Returns:
-        summary table
-    """
-    rows = [h.values(decimals) for h in hits]
-
-    if show_headers:
-        headers = [
-            "Query",
-            "Subject",
-            "Identity",
-            "Coverage",
-            "E-value",
-            "Bitscore",
-            "Start",
-            "End",
-            "Strand",
-        ]
-        rows.insert(0, headers)
-
-    if human:
-        # Get lengths of longest values in each column for spacing purposes
-        lengths = [max(len(hit[i]) for hit in rows) for i in range(9)]
-
-        # Right-fill each column value with whitespace to width for that column
-        return "\n".join(
-            "  ".join(f"{hit[i]:{lengths[i]}}" for i in range(9)) for hit in rows
-        )
-    return "\n".join(",".join(hit) for hit in rows)
-
-
-def count_query_hits(queries, hits):
-    """Counts total hits per query in a colllection of `Hit` objects.
-
-    >>> queries = ["query1", "query2", "query3"]
-    >>> hits = [
-    ...     Hit(query="query1"),
-    ...     Hit(query="query2"),
-    ...     Hit(query="some_other_query"),
-    ... ]
-    >>> count_query_hits(queries, hits)
-    [1, 1, 0]
-
-    Args:
-        hits (list): Hit objects
-    Returns:
-        List of per-query counts corresponding to input.
-    """
-    return [sum(query == hit.query for hit in hits) for query in queries]
-
-
-def get_max_hit_identities(queries, hits):
-    """Get the maximum hit identity per query in a collection of `Hit` objects.
-
-    >>> queries = ["query1", "query2", "query3"]
-    >>> hits = [
-    ...     Hit(query="query1", identity=0.9),
-    ...     Hit(query="query2", identity=0.4),
-    ...     Hit(query="query2", identity=0.7),
-    ... ]
-    >>> get_max_hit_identities(queries, hits)
-    [0.9, 0.7, 0]
-    """
-    return [
-        max([hit.identity if query == hit.query else 0 for hit in hits])
-        for query in queries
-    ]
+from cblaster.formatters import (
+    binary,
+    summary,
+    summarise_scaffold,
+    summarise_organism,
+)
 
 
 class Serializer:
@@ -155,6 +75,17 @@ class Session(Serializer):
         self.params = params
         self.organisms = organisms if organisms else []
 
+    def __add__(self, other):
+        if not isinstance(other, Session):
+            raise NotImplementedError("Expected Session object")
+        if not self.queries == other.queries:
+            raise ValueError("Query sequences do not match")
+        return Session(
+            queries=self.queries,
+            params=self.params,
+            organisms=self.organisms + other.organisms
+        )
+
     def to_dict(self):
         return {
             "queries": self.queries,
@@ -170,98 +101,7 @@ class Session(Serializer):
             organisms=[Organism.from_dict(o) for o in d["organisms"]],
         )
 
-    def form_matrices(self, html=False):
-        """Form 2D count matrices required for plotting.
-
-        If `html` is False, generated dendrogram leaves will contain LaTeX formatting.
-        """
-
-        def form_row(organism, accession, cluster):
-            name = organism.name
-            scaf = f"{accession}:{cluster[0].start}-{cluster[-1].end}"
-            cnts = count_query_hits(self.queries, cluster)
-            idts = get_max_hit_identities(self.queries, cluster)
-            return name, scaf, cnts, idts
-
-        names = []  # Species names for dendrogram yticklabels
-        scafs = []  # Scaffold positions for matshow yticklabels
-        counts = []  # Total # of hits in cluster per query
-        idents = []  # Maximum identity of single hit per query
-
-        for organism in self.organisms:
-            for accession, scaffold in organism.scaffolds.items():
-                for cluster in scaffold.clusters:
-                    name, scaf, cnts, idts = form_row(organism, accession, cluster)
-                    names.append(name)
-                    scafs.append(scaf)
-                    counts.append(cnts)
-                    idents.append(idts)
-
-        return names, scafs, counts, idents
-
-    def _summary(self, human=True, headers=True):
-        """Generate summary of >1 Organisms, print to console or write to file.
-
-        Args:
-            human (bool): Use human-readable format.
-            headers (bool): Show table headers.
-        Returns:
-            The summary table.
-        """
-        return "\n\n\n".join(
-            organism.summary(headers=headers, human=human)
-            for organism in self.organisms
-            if organism.total_hit_clusters > 0
-        )
-
-    def _binary(self, human=False, headers=True, identity=False):
-        """Generate a binary summary table.
-
-        For example:
-
-        Organism  Scaffold  Start  End    Query1  Query2  Query3  Query4
-        Org 1     Scaf_1    1      20000  2       1       1       1
-        Org 1     Scaf_3    3123   40302  0       1       0       1
-        """
-
-        columns = len(self.queries) + 4
-
-        rows = [
-            [
-                organism.full_name,
-                accession,
-                str(cluster[0].start),
-                str(cluster[-1].end),
-                *[
-                    str(x)
-                    for x in (
-                        get_max_hit_identities(self.queries, cluster)
-                        if identity
-                        else count_query_hits(self.queries, cluster)
-                    )
-                ],
-            ]
-            for organism in self.organisms
-            for accession, scaffold in organism.scaffolds.items()
-            for cluster in scaffold.clusters
-        ]
-
-        if headers:
-            rows.insert(0, ["Organism", "Scaffold", "Start", "End", *self.queries])
-
-        if human:
-            # Calculate lengths of each column for spacing
-            lengths = [max(len(row[i]) for row in rows) for i in range(columns)]
-            table = "\n".join(
-                "  ".join(f"{row[i]:{lengths[i]}}" for i in range(columns))
-                for row in rows
-            )
-        else:
-            table = "\n".join(",".join(row) for row in rows)
-
-        return table
-
-    def format(self, form, fp, human=True, headers=True, **kwargs):
+    def format(self, form, fp=None, **kwargs):
         """Generates a summary table.
 
         Args:
@@ -275,9 +115,9 @@ class Session(Serializer):
             Summary table.
         """
         if form == "summary":
-            table = self._summary(human=human, headers=headers, **kwargs)
+            table = summary(self, **kwargs)
         elif form == "binary":
-            table = self._binary(human=human, headers=headers, **kwargs)
+            table = binary(self, **kwargs)
         else:
             raise ValueError("Expected 'summary' or 'binary'")
         print(table, file=fp)
@@ -302,41 +142,31 @@ class Organism(Serializer):
 
     def __str__(self):
         total_scaffolds = len(self.scaffolds)
-        total_hits = sum(len(s.hits) for s in self.scaffolds.values())
-        return "ORGANISM: {} {} [{} hits on {} scaffolds]".format(
-            self.name, self.strain, total_hits, total_scaffolds
+        total_subjects = sum(len(s.subjects) for s in self.scaffolds.values())
+        return "ORGANISM: {} {} [{} subjects on {} scaffolds]".format(
+            self.name, self.strain, total_subjects, total_scaffolds
         )
+
+    @property
+    def clusters(self):
+        return [
+            cluster
+            for scaffold in self.scaffolds.values()
+            for cluster in scaffold.clusters
+        ]
 
     @property
     def total_hit_clusters(self):
         """Counts total amount of hit clusters in this Organism."""
         return sum(len(scaffold.clusters) for scaffold in self.scaffolds.values())
 
-    def summary(self, decimals=4, human=True, headers=True):
-        """Generates a summary table of the organism.
-
-        Args:
-            decimals (int): Total decimal places to show in score values.
-            human (bool): Use human-readable format.
-            headers (bool): Show table headers.
-        Returns:
-            The summary table.
-        """
-
-        if self.total_hit_clusters == 0:
-            raise ValueError("No hit clusters in this Organism")
-
-        report = "\n\n".join(
-            scaffold.summary(decimals=decimals, human=human, show_header=headers)
-            for scaffold in self.scaffolds.values()
-            if scaffold.clusters
+    def summary(self, decimals=4, hide_headers=True, delimiter=None):
+        return summarise_organism(
+            self,
+            decimals=decimals,
+            hide_headers=headers,
+            delimiter=delimiter,
         )
-
-        if headers:
-            header = generate_header_string(self.full_name, "=")
-            return f"{header}\n{report}"
-
-        return report
 
     @property
     def full_name(self):
@@ -375,56 +205,103 @@ class Scaffold(Serializer):
         clusters (list): Clusters of hits identified on this scaffold.
     """
 
-    def __init__(self, accession, clusters=None, hits=None):
+    def __init__(self, accession, clusters=None, subjects=None):
         self.accession = accession
-        self.hits = hits if hits else []
+        self.subjects = subjects if subjects else []
         self.clusters = clusters if clusters else []
 
     def __str__(self):
         return "SCAFFOLD: {} [{} hits in {} clusters]".format(
-            self.accession, len(self.hits), len(self.clusters)
+            self.accession, len(self.subjects), len(self.clusters)
         )
 
-    def summary(self, human=True, show_header=True, decimals=4):
-        """Generates a summary of hit clusters on this Scaffold.
-
-        Args:
-            human (bool): Use human-readable format.
-            show_header (bool): Show table headers.
-            decimals (int): Total decimal places to show in score values.
-        Returns:
-            The summary table.
-        """
-        if not self.clusters:
-            raise ValueError("No clusters on this Scaffold")
-
-        report = "\n\n".join(
-            generate_cluster_table(
-                cluster, decimals=decimals, show_headers=show_header, human=human
-            )
-            for cluster in self.clusters
+    def summary(self, hide_headers=False, delimiter=None, decimals=4):
+        return summarise_scaffold(
+            self,
+            decimals=decimals,
+            hide_headers=headers,
+            delimiter=delimiter,
         )
-
-        if show_header:
-            header = generate_header_string(self.accession)
-            return f"{header}\n{report}"
-
-        return report
 
     def to_dict(self):
         return {
             "accession": self.accession,
-            "hits": [hit.to_dict() for hit in self.hits],
+            "subjects": [subject.to_dict() for subject in self.subjects],
             "clusters": [
-                [self.hits.index(hit) for hit in cluster] for cluster in self.clusters
+                [self.subjects.index(subject) for subject in cluster]
+                for cluster in self.clusters
             ],
         }
 
     @classmethod
     def from_dict(cls, d):
-        hits = [Hit.from_dict(hit) for hit in d["hits"]]
-        clusters = [[hits[ix] for ix in cluster] for cluster in d["clusters"]]
-        return cls(accession=d["accession"], hits=hits, clusters=clusters)
+        subjects = [Subject.from_dict(subject) for subject in d["subjects"]]
+        clusters = [[subjects[ix] for ix in cluster] for cluster in d["clusters"]]
+        return cls(accession=d["accession"], subjects=subjects, clusters=clusters)
+
+
+class Subject(Serializer):
+    """A sequence representing one or more BLAST hits.
+
+    This class is instantiated during the contextual lookup stage. It is
+    important since it allows for subject sequences which hit >1 of
+    the query sequences, while still staying non-redundant.
+
+    Attributes:
+        hits (list): Hit objects referencing this subject sequence.
+        ipg (int): NCBI Identical Protein Group (IPG) id.
+        start (int): Start of sequence on parent scaffold.
+        end (int): End of sequence on parent scaffold.
+        strand (str): Strandedness of the sequence ('+' or '-').
+    """
+
+    def __init__(self, hits=None, ipg=None, start=None, end=None, strand=None):
+        self.hits = hits if hits else []
+        self.ipg = ipg
+        self.start = int(start) if start is not None else None
+        self.end = int(end) if end is not None else None
+        self.strand = strand
+
+    def __eq__(self, other):
+        if not isinstance(other, Subject):
+            raise NotImplementedError("Expected Subject object")
+        return (
+            set(self.hits) == set(other.hits)
+            and self.ipg == other.ipg
+            and self.start == other.start
+            and self.end == other.end
+            and self.strand == other.strand
+        )
+
+    def to_dict(self):
+        return {
+            "hits": [hit.to_dict() for hit in self.hits],
+            "ipg": self.ipg,
+            "start": self.start,
+            "end": self.end,
+            "strand": self.strand
+        }
+
+    def values(self, decimals=4):
+        records = []
+        for hit in self.hits:
+            record = (
+                *hit.values(decimals),
+                str(self.start),
+                str(self.end),
+                self.strand,
+            )
+            records.append(record)
+        return records
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            hits=[Hit.from_dict(h) for h in d["hits"]],
+            start=d["start"],
+            end=d["end"],
+            strand=d["strand"]
+        )
 
 
 class Hit(Serializer):
@@ -453,10 +330,7 @@ class Hit(Serializer):
         identity,
         coverage,
         evalue,
-        bitscore,
-        start=None,
-        end=None,
-        strand=None,
+        bitscore
     ):
         self.query = query
 
@@ -469,16 +343,28 @@ class Hit(Serializer):
         self.coverage = float(coverage)
         self.evalue = float(evalue)
 
-        self.start = int(start) if start is not None else None
-        self.end = int(end) if end is not None else None
-        self.strand = strand
-
     def __str__(self):
         return (
             f"Hit: {self.query} - {self.subject}:"
-            f"{self.start}-{self.end}[{self.strand}] "
             f" {self.identity:.2%}/{self.coverage:.2%}"
         )
+
+    def __key(self):
+        return (
+            self.query,
+            self.bitscore,
+            self.identity,
+            self.coverage,
+            self.evalue
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        if not isinstance(other, Hit):
+            raise NotImplementedError("Expected Hit object")
+        return self.__key() == other.__key()
 
     def copy(self, **kwargs):
         """Creates a copy of this Hit with any additional args."""
@@ -502,9 +388,6 @@ class Hit(Serializer):
             f"{round(self.coverage, decimals):g}",
             f"{self.evalue:.{decimals}g}",
             f"{round(self.bitscore, decimals):g}",
-            str(self.start),
-            str(self.end),
-            self.strand,
         ]
 
     def to_dict(self):
@@ -515,9 +398,6 @@ class Hit(Serializer):
             "coverage": self.coverage,
             "evalue": self.evalue,
             "bitscore": self.bitscore,
-            "start": self.start,
-            "end": self.end,
-            "strand": self.strand,
         }
 
     @classmethod
