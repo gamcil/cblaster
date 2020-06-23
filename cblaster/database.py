@@ -37,7 +37,10 @@ class Database:
             fasta = ""
             for j, scaffold in enumerate(organism.scaffolds):
                 for k, feature in enumerate(scaffold.features):
-                    sequence = feature.qualifiers["translation"]
+                    try:
+                        sequence = feature.qualifiers["translation"]
+                    except KeyError:
+                        continue
                     fasta += f">{i}_{j}_{k}\n{sequence}\n"
             handle.write(fasta)
 
