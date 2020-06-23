@@ -109,10 +109,9 @@ Aureobasidium pullulans EXF-5628           QZBI01000512.1  329      13401    1  
 ```
 
 `cblaster` can also generate fully interactive visualisations of the binary
-table. To view an example, click here.
+table. To view an example, click [here](/docs/source/_static/example.html).
 
-
-For further usage examples, as well as API documentation, please refer to the
+For further usage examples and API documentation, please refer to the
 [documentation](https://cblaster.readthedocs.io/en/latest/).
 
 ## Citation
