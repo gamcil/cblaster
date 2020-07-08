@@ -3,24 +3,47 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to cblaster's documentation!
+cblaster
 ====================================
 
+Welcome to cblaster's documentation!
+
+cblaster is a tool for identifying co-located hits in BLAST searches against
+NCBI sequence databases. It leverages the NCBI's public APIs to facilitate fully
+remote searches, requiring no setup of local search databases.
+
+To view an example of what cblaster can produce, click here_.
+
+.. _here: /_static/example.html
+
+
+Features
+========
+
+- Fully remote searches against public NCBI sequence databases
+- One command to generate local search databases from many genomes
+- Easy to use graphical user interface (GUI)
+- Fully interactive visualisations
+
+
+User guide
+==========
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-  
-   usage
-   classes 
-   context
-   database
-   helpers
-   local
-   main
-   remote
-   formatters
-   parsers
-   plot
+        :maxdepth: 2
+        
+        guide/index
+
+
+API Documentation
+=================
+
+Comprehensive documentation for all public API exposed by `cblaster`:
+
+.. toctree::
+        :maxdepth: 2
+
+        api/index
 
 
 Indices and tables
