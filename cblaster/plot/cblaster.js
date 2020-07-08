@@ -354,7 +354,7 @@ function plot(data) {
 		.on("mouseleave", tooltipLeave)
 
 	function update(data) {
-		t = d3.transition().duration(400)
+		let t = d3.transition().duration(400)
 
 		// Update x-axis domain/range based on current query sequences.
 		x.domain(data.queries)

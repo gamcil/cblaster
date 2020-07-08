@@ -160,7 +160,6 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
             self.send_headers("text/json")
             self.wfile.write(json.dumps(self._data).encode())
             return
-
         path, mime = None, None
         if self.path == "/":
             if self._chart == "heatmap":
