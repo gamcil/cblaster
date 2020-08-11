@@ -298,6 +298,7 @@ class Subject(Serializer):
     def from_dict(cls, d):
         return cls(
             hits=[Hit.from_dict(h) for h in d["hits"]],
+            ipg=d["ipg"],
             start=d["start"],
             end=d["end"],
             strand=d["strand"]
