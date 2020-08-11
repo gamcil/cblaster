@@ -131,6 +131,16 @@ def add_output_group(search):
         " file name is specified, a static HTML file will be generated at that"
         " path."
     )
+    group.add_argument(
+        "--blast_file",
+        type=argparse.FileType("w"),
+        help="Save BLAST/DIAMOND hit table to file"
+    )
+    group.add_argument(
+        "--ipg_file",
+        type=argparse.FileType("w"),
+        help="Save IPG table to file"
+    )
 
 
 def add_searching_group(search):
@@ -187,6 +197,14 @@ def add_searching_group(search):
         " session will be written to the file specified by this argument. If this"
         " argument is specified with no value, the session will be filtered but"
         " not saved (e.g. for plotting purposes).",
+    )
+    group.add_argument(
+        "-hs",
+        "--hitlist_size",
+        type=int,
+        default=5000,
+        help="Maximum total hits to save in a BLAST search (def. 5000). Setting"
+        " this value too low may result in missed hits/clusters."
     )
 
 
