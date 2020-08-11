@@ -98,6 +98,9 @@ def cblaster(
     indent=None,
     plot=False,
     recompute=False,
+    blast_file=None,
+    ipg_file=None,
+    hitlist_size=None,
 ):
     """Run cblaster.
 
@@ -186,8 +189,8 @@ def cblaster(
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
+                blast_file=blast_file,
             )
-
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
 
@@ -203,8 +206,9 @@ def cblaster(
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
                 entrez_query=entrez_query,
+                blast_file=blast_file,
+                hitlist_size=hitlist_size,
             )
-
             session.params["rid"] = rid
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
@@ -216,6 +220,7 @@ def cblaster(
             gap=gap,
             require=require,
             json_db=json_db,
+            ipg_file=ipg_file,
         )
 
         if session_file:
@@ -249,7 +254,6 @@ def cblaster(
         plot_session(session, output=plot)
 
     LOG.info("Done.")
-
     return session
 
 
@@ -293,6 +297,9 @@ def main():
             indent=args.indent,
             recompute=args.recompute,
             plot=args.plot,
+            blast_file=args.blast_file,
+            ipg_file=args.ipg_file,
+            hitlist_size=args.hitlist_size,
         )
 
     elif args.subcommand == "gui":
