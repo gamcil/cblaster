@@ -100,7 +100,7 @@ class Session(Serializer):
         return s
 
     @classmethod
-    def from_files(cls, *files):
+    def from_files(cls, files):
         if len(files) == 1:
             return cls.from_file(files[0])
         first, *rest = files
