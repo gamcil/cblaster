@@ -151,10 +151,9 @@ def cblaster(
         Session: cblaster search Session object
     """
 
-    if session_file and Path(session_file).exists():
-        LOG.info("Loading %s", session_file)
-        with open(session_file) as fp:
-            session = Session.from_json(fp)
+    if session_file and all(Path(sf).exists() for sf in session_file):
+        LOG.info("Loading session(s) %s", session_file)
+        session = Session.from_files(session_file)
 
         if recompute:
             LOG.info("Filtering session with new thresholds")
@@ -236,8 +235,10 @@ def cblaster(
         )
 
         if session_file:
-            LOG.info("Writing current search session to %s", session_file)
-            with open(session_file, "w") as fp:
+            LOG.info("Writing current search session to %s", session_file[0])
+            if len(session_file) > 1:
+                LOG.warning("Multiple session files specified, using first")
+            with open(session_file[0], "w") as fp:
                 session.to_json(fp, indent=indent)
 
     if binary:
