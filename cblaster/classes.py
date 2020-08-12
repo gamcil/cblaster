@@ -94,6 +94,22 @@ class Session(Serializer):
         }
 
     @classmethod
+    def from_file(cls, file):
+        with open(file) as fp:
+            s = cls.from_json(fp)
+        return s
+
+    @classmethod
+    def from_files(cls, *files):
+        if len(files) == 1:
+            return cls.from_file(files[0])
+        first, *rest = files
+        s = cls.from_file(first)
+        for f in rest:
+            s += cls.from_file(f)
+        return s
+
+    @classmethod
     def from_dict(cls, d):
         return cls(
             d["queries"],
