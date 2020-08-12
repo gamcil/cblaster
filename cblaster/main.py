@@ -3,7 +3,6 @@
 
 import logging
 import sys
-import json
 
 from pathlib import Path
 
@@ -17,6 +16,7 @@ from cblaster import (
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
+from cblaster.formatters import summarise_gne
 
 
 logging.basicConfig(
@@ -46,10 +46,13 @@ def makedb(genbanks, filename, indent=None):
 def gne(
     session,
     output=None,
-    max_gap=1000000,
-    samples=1000,
-    scale="log",
-    delimiter=","
+    max_gap=100000,
+    samples=100,
+    scale="linear",
+    plot=None,
+    hide_headers=False,
+    delimiter=",",
+    decimals=4,
 ):
     """Estimate gene neighbourhood."""
     LOG.info("Starting cblaster gene neighbourhood estimation")
@@ -64,8 +67,17 @@ def gne(
         samples=samples,
         scale=scale
     )
-    plot_gne(results, output=output)
+    if output:
+        LOG.info("Writing GNE table to %s", output.name)
+        summary = summarise_gne(
+            results,
+            hide_headers=hide_headers,
+            delimiter=delimiter,
+            decimals=decimals,
+        )
+        output.write(summary)
 
+    plot_gne(results, output=plot)
     LOG.info("Done.")
 
 
@@ -314,6 +326,9 @@ def main():
             samples=args.samples,
             scale=args.scale,
             delimiter=args.delimiter,
+            hide_headers=args.hide_headers,
+            decimals=args.decimals,
+            plot=args.plot,
         )
 
 
