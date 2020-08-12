@@ -272,16 +272,18 @@ def add_search_subparser(subparsers):
         "search",
         help="Start a local/remote cblaster search",
         description="Remote/local cblaster searches.",
-        epilog="Examples usage\n--------------\n"
-        "Start a remote cblaster search, save the session and generate a plot:\n"
+        epilog="Example usage\n-------------\n"
+        "Run a remote cblaster search, save the session and generate a plot:\n"
         "  $ cblaster search -qf query.fa -s session.json -p\n\n"
         "Recompute a search session with new parameters:\n"
         "  $ cblaster search -s session.json -rcp new.json -u 4 -g 40000\n\n"
-        "Merge multiple separate search sessions:\n"
-        "  $ cblaster search -s one.json two.json three.json\n\n"
+        "Merge multiple search sessions:\n"
+        "  $ cblaster search -s one.json two.json three.json -rcp merged.json\n\n"
         "Perform a local search:\n"
         "  $ cblaster makedb $(ls folder/*.gbk) mydb\n"
         "  $ cblaster search -qf query.fa -db mydb.dmnd -jdb mydb.json\n\n"
+        "Save plot as a static HTML file:\n"
+        "  $ cblaster search -s session.json -p gne.html\n\n"
         "Kitchen sink example:\n"
         "  $ cblaster search --query_file query.fa \ \n"
         "      --session_file session.json \ \n"
@@ -363,11 +365,18 @@ def add_gne_subparser(subparsers):
         "gne",
         help="Perform gene neighbourhood estimation",
         description="Gene neighbourhood estimation.\n"
-        "Repeatedly recomputes homologue clusters with different --gap values.\n"
-        "By default, cblaster will recompute the session 100 times using values"
-        " up to 100Kbp.",
+        "Repeatedly recomputes homologue clusters with different --gap values.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Cameron Gilchrist, 2020",
+        epilog="Example usage\n-------------\n"
+        "Maximum gap value 200Kbp, with 200 evenly distributed gap values:\n"
+        "  $ cblaster gne session.json --max_gap 200000 --samples 200 --scale linear\n\n"
+        "Draw gap values from a log scale (gaps increase as values increase):\n"
+        "  $ cblaster gne session.json --scale log\n\n"
+        "Save delimited tabular output:\n"
+        "  $ cblaster gne session.json --output gne.csv --delimiter \",\"\n\n"
+        "Save plot as a static HTML file:\n"
+        "  $ cblaster gne session.json -p gne.html\n\n"
+        "Cameron Gilchrist, 2020",
     )
     gne.add_argument("session", help="cblaster session file")
     add_gne_params_group(gne)
