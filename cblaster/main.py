@@ -3,7 +3,6 @@
 
 import logging
 import sys
-import json
 
 from pathlib import Path
 
@@ -17,6 +16,7 @@ from cblaster import (
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
+from cblaster.formatters import summarise_gne
 
 
 logging.basicConfig(
@@ -46,10 +46,13 @@ def makedb(genbanks, filename, indent=None):
 def gne(
     session,
     output=None,
-    max_gap=1000000,
-    samples=1000,
-    scale="log",
-    delimiter=","
+    max_gap=100000,
+    samples=100,
+    scale="linear",
+    plot=None,
+    hide_headers=False,
+    delimiter=",",
+    decimals=4,
 ):
     """Estimate gene neighbourhood."""
     LOG.info("Starting cblaster gene neighbourhood estimation")
@@ -64,8 +67,17 @@ def gne(
         samples=samples,
         scale=scale
     )
-    plot_gne(results, output=output)
+    if output:
+        LOG.info("Writing GNE table to %s", output.name)
+        summary = summarise_gne(
+            results,
+            hide_headers=hide_headers,
+            delimiter=delimiter,
+            decimals=decimals,
+        )
+        output.write(summary)
 
+    plot_gne(results, output=plot)
     LOG.info("Done.")
 
 
@@ -98,6 +110,9 @@ def cblaster(
     indent=None,
     plot=False,
     recompute=False,
+    blast_file=None,
+    ipg_file=None,
+    hitlist_size=None,
 ):
     """Run cblaster.
 
@@ -136,10 +151,9 @@ def cblaster(
         Session: cblaster search Session object
     """
 
-    if session_file and Path(session_file).exists():
-        LOG.info("Loading %s", session_file)
-        with open(session_file) as fp:
-            session = Session.from_json(fp)
+    if session_file and all(Path(sf).exists() for sf in session_file):
+        LOG.info("Loading session(s) %s", session_file)
+        session = Session.from_files(session_file)
 
         if recompute:
             LOG.info("Filtering session with new thresholds")
@@ -186,8 +200,8 @@ def cblaster(
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
+                blast_file=blast_file,
             )
-
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
 
@@ -203,8 +217,9 @@ def cblaster(
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
                 entrez_query=entrez_query,
+                blast_file=blast_file,
+                hitlist_size=hitlist_size,
             )
-
             session.params["rid"] = rid
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
@@ -216,11 +231,14 @@ def cblaster(
             gap=gap,
             require=require,
             json_db=json_db,
+            ipg_file=ipg_file,
         )
 
         if session_file:
-            LOG.info("Writing current search session to %s", session_file)
-            with open(session_file, "w") as fp:
+            LOG.info("Writing current search session to %s", session_file[0])
+            if len(session_file) > 1:
+                LOG.warning("Multiple session files specified, using first")
+            with open(session_file[0], "w") as fp:
                 session.to_json(fp, indent=indent)
 
     if binary:
@@ -249,7 +267,6 @@ def cblaster(
         plot_session(session, output=plot)
 
     LOG.info("Done.")
-
     return session
 
 
@@ -293,6 +310,9 @@ def main():
             indent=args.indent,
             recompute=args.recompute,
             plot=args.plot,
+            blast_file=args.blast_file,
+            ipg_file=args.ipg_file,
+            hitlist_size=args.hitlist_size,
         )
 
     elif args.subcommand == "gui":
@@ -307,6 +327,9 @@ def main():
             samples=args.samples,
             scale=args.scale,
             delimiter=args.delimiter,
+            hide_headers=args.hide_headers,
+            decimals=args.decimals,
+            plot=args.plot,
         )
 
 

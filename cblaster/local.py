@@ -105,7 +105,7 @@ def _search_ids(ids, database, **kwargs):
     return results
 
 
-def search(database, query_file=None, query_ids=None, **kwargs):
+def search(database, query_file=None, query_ids=None, blast_file=None, **kwargs):
     """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote).
 
     Arguments:
@@ -118,7 +118,13 @@ def search(database, query_file=None, query_ids=None, **kwargs):
         list: Parsed rows with hits from DIAMOND results table
     """
     if query_file and not query_ids:
-        return _search_file(query_file, database, **kwargs)
-    if query_ids:
-        return _search_ids(query_ids, database, **kwargs)
-    raise ValueError("Expected either 'query_ids' or 'query_file'")
+        results = _search_file(query_file, database, **kwargs)
+    elif query_ids:
+        results = _search_ids(query_ids, database, **kwargs)
+    else:
+        raise ValueError("Expected either 'query_ids' or 'query_file'")
+    if blast_file:
+        LOG.info("Writing DIAMOND hit table to %s", blast_file.name)
+        blast = "\n".join(results)
+        blast_file.write(blast)
+    return results

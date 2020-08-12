@@ -81,7 +81,7 @@ def efetch_IPGs(ids, output_handle=None):
         table += response.text
 
     if output_handle:
-        LOG.info("Writing IPG output to %s", output_handle.name)
+        LOG.info("Writing IPG table to %s", output_handle.name)
         output_handle.write(table)
 
     return table.split("\n")
@@ -116,17 +116,8 @@ def parse_IP_groups(results):
     for line in results:
         if not line or line.startswith("Id\tSource") or line.isspace():
             continue
-        ipg, *fields = line.split("\t")
+        ipg, *fields = line.strip("\n").split("\t")
         entry = Entry(*fields)
-
-        # Avoid incomplete entries
-        if not all([entry.scaffold, entry.start, entry.end, entry.strand]):
-            continue
-
-        # Avoid vectors, single Gene nucleotide entries, etc
-        if entry.source not in ("RefSeq", "INSDC",):
-            continue
-
         groups[ipg].append(entry)
     return groups
 
@@ -181,7 +172,7 @@ def parse_IPG_table(results, hits):
         Organism objects containing hits sorted into genomic scaffolds.
     """
 
-    # Group hits by their subject ID's
+    # Group hits by their subject IDs
     hit_dict = group_hits(hits)
 
     # Parse IPGs from the table
@@ -201,6 +192,14 @@ def parse_IPG_table(results, hits):
 
         # Now populate the organisms dictionary with copies
         for entry in group:
+            # Avoid incomplete entries
+            if not all([entry.scaffold, entry.start, entry.end, entry.strand]):
+                continue
+
+            # Avoid vectors, single Gene nucleotide entries, etc
+            if entry.source not in ("RefSeq", "INSDC",):
+                continue
+
             # Test unique scaffold and coordinates - sometimes will have many identical
             # protein_id in one CDS region
             test = (entry.scaffold, entry.start, entry.end)
@@ -490,6 +489,7 @@ def filter_session(
                     unique=unique,
                 )
             )
+        deduplicate(organism)
 
 
 def calculate_gne(session):
@@ -536,7 +536,15 @@ def estimate_neighbourhood(session, max_gap=1000000, samples=1000, scale="log"):
     return results
 
 
-def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
+def search(
+    hits,
+    unique=3,
+    min_hits=3,
+    gap=20000,
+    require=None,
+    json_db=None,
+    ipg_file=None
+):
     """Gets the genomic context for a collection of Hit objects.
 
     This function wraps all functionality in this module, allowing for Organism objects
@@ -566,7 +574,10 @@ def search(hits, unique=3, min_hits=3, gap=20000, require=None, json_db=None):
         db = database.Database.from_json(json_db)
         organisms = query_local_DB(hits, db)
     else:
-        rows = efetch_IPGs([hit.subject for hit in hits])
+        rows = efetch_IPGs(
+            [hit.subject for hit in hits],
+            output_handle=ipg_file
+        )
         organisms = parse_IPG_table(rows, hits)
 
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))

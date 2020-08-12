@@ -1,6 +1,4 @@
-"""
-cblaster result formatters.
-"""
+"""cblaster result formatters."""
 
 
 from operator import attrgetter
@@ -70,6 +68,12 @@ def get_cell_values(queries, subjects, key=len, attr=None):
     return result
 
 
+def set_decimals(value, decimals=4):
+    if isinstance(value, int):
+        return str(value)
+    return f"{value:.{decimals}f}"
+
+
 def binary(
     session,
     hide_headers=False,
@@ -87,7 +91,7 @@ def binary(
             str(cluster[0].start),
             str(cluster[-1].end),
             *[
-                f"{value:.{decimals}g}"
+                set_decimals(value)
                 for value in get_cell_values(
                     session.queries,
                     cluster,
@@ -141,7 +145,7 @@ def summarise_organism(organism, hide_headers=True, delimiter=None, decimals=4):
         hide_headers=hide_headers,
         delimiter=delimiter,
         decimals=decimals,
-        separator="\n\n\n",
+        separator="\n\n",
     )
 
 
@@ -168,12 +172,10 @@ def summarise_subjects(subjects, decimals=4, hide_headers=True, delimiter=None):
         summary table
     """
     subjects.sort(key=attrgetter("start"))
-
     rows = []
     for subject in subjects:
         values = subject.values(decimals)
         rows.extend(values)
-
     if not hide_headers:
         hdrs = [
             "Query",
@@ -203,4 +205,30 @@ def summary(session, hide_headers=False, delimiter=None, decimals=4):
         delimiter=delimiter,
         decimals=decimals,
         header_symbol="=",
+        separator="\n\n\n",
+    )
+
+
+def summarise_gne(data, hide_headers=False, delimiter=None, decimals=4):
+    rows = []
+    hdrs = ["Gap", "Means", "Medians", "Clusters"]
+    if not hide_headers:
+        rows.append(hdrs)
+    for row in data:
+        values = [set_decimals(row.get(key.lower()), decimals) for key in hdrs]
+        rows.append(values)
+    if not delimiter:
+        delimiter = "  "
+        rows = humanise(rows)
+    return "\n".join(delimiter.join(row) for row in rows)
+
+
+def gne_summary(data, hide_headers=False, delimiter=None, decimals=4):
+    return _summarise(
+        data,
+        summarise_gne,
+        "cblaster gne",
+        hide_headers=hide_headers,
+        delimiter=delimiter,
+        decimals=decimals,
     )

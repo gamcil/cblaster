@@ -43,7 +43,7 @@ def start(
     nucl_penalty=None,
     gap_costs="11 1",
     matrix="BLOSUM62",
-    hitlist_size=500,
+    hitlist_size=5000,
     threshold=11,
     word_size=6,
     comp_based_stats=2,
@@ -163,7 +163,7 @@ def check(rid):
     raise ValueError("Search completed, but found no hits")
 
 
-def retrieve(rid, hitlist_size=500):
+def retrieve(rid, hitlist_size=5000):
     """Retrieve BLAST results corresponding to a given Request Identifier (RID).
 
     Arguments:
@@ -305,6 +305,7 @@ def search(
     min_identity=0.3,
     min_coverage=0.5,
     max_evalue=0.01,
+    blast_file=None,
     **kwargs,
 ):
     """Perform a remote BLAST search via the NCBI's BLAST API.
@@ -328,7 +329,7 @@ def search(
     if not rid:
         LOG.info("Launching new search")
 
-        # Start search, get request identifier (RID) and completion ETA (RTOE)
+        # Start search, get request identifier (RID) and execution ETA (RTOE)
         rid, rtoe = start(query_file=query_file, query_ids=query_ids, **kwargs)
 
         LOG.info("Request Identifier (RID): %s", rid)
@@ -342,6 +343,11 @@ def search(
 
     LOG.info("Retrieving results for search %s", rid)
     results = retrieve(rid)
+
+    if blast_file:
+        LOG.info("Writing BLAST hit table to %s", blast_file.name)
+        blast = "\n".join(results)
+        blast_file.write(blast)
 
     # Parse results for hits
     LOG.info("Parsing results...")
