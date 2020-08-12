@@ -1,6 +1,4 @@
-"""
-cblaster result formatters.
-"""
+"""cblaster result formatters."""
 
 
 from operator import attrgetter
@@ -147,7 +145,7 @@ def summarise_organism(organism, hide_headers=True, delimiter=None, decimals=4):
         hide_headers=hide_headers,
         delimiter=delimiter,
         decimals=decimals,
-        separator="\n\n\n",
+        separator="\n\n",
     )
 
 
@@ -207,6 +205,7 @@ def summary(session, hide_headers=False, delimiter=None, decimals=4):
         delimiter=delimiter,
         decimals=decimals,
         header_symbol="=",
+        separator="\n\n\n",
     )
 
 
