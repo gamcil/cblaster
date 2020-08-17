@@ -92,7 +92,8 @@ body {
 	flex-direction: column;
 	top: 1em;
 	right: 1em;
-	width: 200px;
+	width: 300px;
+	max-height: 95vh;
 	border: 1px solid black;
 	background-color: white;
 }
@@ -100,6 +101,8 @@ body {
 #div-summary {
 	display: block;
 	padding: 6px;
+	margin-bottom: 6px;
+	overflow-y: auto;
 }
 
 #div-summary p {
@@ -125,4 +128,8 @@ body {
 
 #div-summary button:last-child {
 	margin-bottom: 0;
+}
+
+#div-summary input {
+	width: 50px;
 }
