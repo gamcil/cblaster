@@ -6,6 +6,10 @@ const constants = {
 	"cellHeight": 27,
 	"cellWidth": 44,
 	"dendroWidth": 140,
+	"showScaffolds": true,
+	"showCounts": true,
+	"showCountBorders": true,
+	"xAxisOnTop": true,
 }
 
 if (typeof data === 'undefined') {
@@ -295,16 +299,6 @@ function plot(data) {
 	d3.select("#p-result-summary")
 		.html(summaryHTML)
 
-	// Set up cell hit count toggle button.
-	let showCounts = true;
-	d3.select("#btn-toggle-counts")
-		.on("click", () => {
-			showCounts = !showCounts
-			let result = showCounts ? "visible" : "hidden"
-			d3.selectAll(".heatmap-count")
-				.style("visibility", result)
-		})
-
 	// Populate tooltip with current cell data, and adjust position to match the
 	// cell in the heatmap (ignoring <g> transforms).
 	const cellEnter = (d, i, n) => {
@@ -411,7 +405,7 @@ function plot(data) {
 			.attr("width", x.bandwidth())
 			.attr("height", y.bandwidth())
 			.style("stroke-width", "thin")
-			.style("stroke", d => d.hits.length > 1 ? "red" : null)
+			.style("stroke", d => (constants.showCountBorders && d.hits.length > 1) ? "red" : null)
 
 		// Heatmap cell hit counts
 		cells.selectAll("text")
@@ -419,7 +413,9 @@ function plot(data) {
 			.attr("x", constants.cellWidth / 2)
 			.attr("y", constants.cellHeight / 2 + 4)
 			.attr("class", "heatmap-count")
+			.attr("opacity", (constants.showCounts ? 1 : 0))
 			.style("text-anchor", "middle")
+			.style("font-family", "sans-serif")
 			.style("fill", d => d.value < 60 ? colorScale(1) : colorScale(0))
 
 		// Calculate current heatmap width/height and transition the background.
@@ -431,15 +427,25 @@ function plot(data) {
 			.attr("height", heatHeight)
 
 		// Calculate new d3 axes for x-axis and call transition.
-		const axisTop = d3.axisTop(x)
-			.tickSize(6)
-			.tickPadding(6)
-		heatmapX.transition(t).call(axisTop)
+		if (constants.xAxisOnTop) {
+			let axisTop = d3.axisTop(x)
+				.tickSize(6)
+				.tickPadding(6)
+			heatmapX.transition(t).call(axisTop).attr("transform", "")
+		} else {
+			let axisBot = d3.axisBottom(x)
+				.tickSize(6)
+				.tickPadding(6)
+			heatmapX.transition(t)
+				.call(axisBot)
+				.attr("transform", `translate(0, ${heatHeight})`)
+		}
 
 		// Rotate query sequence labels and attach click delete behaviour.
 		heatmapX.selectAll("text")
-			.style("font-size", "12px")
-			.style("text-anchor", "start")
+			.style("font-size", "14px")
+			.style("text-anchor", (constants.xAxisOnTop) ? "start" : "end")
+			.attr("dy", (constants.xAxisOnTop) ? "" : ".6em")
 			.attr("transform", "rotate(-25)")
 			.on("click", (query) => {
 				let newData = {
@@ -458,27 +464,42 @@ function plot(data) {
 	
 		// Convert cluster IDs to multiline text labels with organism name and
 		// cluster scaffold coordinates, and attach click delete behaviour.
+		const labelScaffold = (t) => {
+			t.text("")
+			t.append("tspan")
+				.text(d => data.labels[d].name)
+				.attr("x", 10)
+				.attr("dy", "-0.1em")
+				.attr("text-anchor", "start")
+				.style("font-family", "sans-serif")
+				.style("font-style", "italic")
+				.style("font-size", "12px")
+			t.append("tspan")
+				.text(d => getScaffoldString(data.labels[d]))
+				.attr("x", 10)
+				.attr("dy", "1.3em")
+				.attr("text-anchor", "start")
+				.style("font-style", "normal")
+				.style("font-family", "sans-serif")
+				.style("font-size", "10px")
+				.style("fill", "grey");
+		}
+		const labelNoScaffold = (t) => {
+			t.text(d => data.labels[d].name)
+				.attr("x", 10)
+				.attr("text-anchor", "start")
+				.style("font-family", "sans-serif")
+				.style("font-style", "italic")
+				.style("font-size", "16px")
+		}
 		heatmapY.call(axisRight)
 			.selectAll("text")
 				.call(t => {
-					t.text("")
-					t.append("tspan")
-						.text(d => data.labels[d].name)
-						.attr("x", 10)
-						.attr("dy", "-0.1em")
-						.attr("text-anchor", "start")
-						.style("font-family", "sans-serif")
-						.style("font-style", "italic")
-						.style("font-size", "12px")
-					t.append("tspan")
-						.text(d => getScaffoldString(data.labels[d]))
-						.attr("x", 10)
-						.attr("dy", "1.3em")
-						.attr("text-anchor", "start")
-						.style("font-style", "normal")
-						.style("font-family", "sans-serif")
-						.style("font-size", "10px")
-						.style("fill", "grey");				
+					if (constants.showScaffolds) {
+						labelScaffold(t)
+					} else {
+						labelNoScaffold(t)
+					}	
 				})
 				.on("click", (label) => {
 					const newData = {
@@ -495,6 +516,46 @@ function plot(data) {
 
 		// Hide axes <path> elements
 		heatmap.selectAll("path").style("opacity", "0");
+
+		// Set up cell hit count toggle button.
+		d3.select("#btn-toggle-counts")
+			.on("click", () => {
+				constants.showCounts = !constants.showCounts
+				update(data)
+			})
+
+		// Hide/show genomic coordinates
+		d3.select("#btn-toggle-scaffolds")
+			.on("click", () => {
+				constants.showScaffolds = !constants.showScaffolds
+				update(data)
+			})
+
+		// Hide/show red borders for cells with multiple hits
+		d3.select("#btn-toggle-count-borders")
+			.on("click", () => {
+				constants.showCountBorders = !constants.showCountBorders
+				update(data)
+			})
+
+		// Hide/show red borders for cells with multiple hits
+		d3.select("#btn-toggle-x-axis")
+			.on("click", () => {
+				constants.xAxisOnTop = !constants.xAxisOnTop
+				update(data)
+			})
+
+		// Change width/height of heatmap cells
+		d3.select("#input-cell-width")
+			.on("change", function() {
+				constants.cellWidth = +this.value;
+				update(data)
+			})
+		d3.select("#input-cell-height")
+			.on("change", function() {
+				constants.cellHeight = +this.value;
+				update(data)
+			})
 
 		// Wait until transition has finished until re-organising groups 
 		setTimeout(() => {
