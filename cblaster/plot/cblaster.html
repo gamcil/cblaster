@@ -25,7 +25,40 @@
 					</p>
 					<button id="btn-save-svg">Save SVG</button>
 					<button id="btn-reset-filters">Reset filters</button>
-					<button id="btn-toggle-counts">Toggle hit counts</button>
+					<hr>
+					<p>Toggle visibility of plot elements:</p>
+					<button id="btn-toggle-counts">Hit counts</button>
+					<button id="btn-toggle-count-borders">Multi-hit cell borders</button>
+					<button id="btn-toggle-scaffolds">Genomic coordinates</button>
+					<hr>
+					<p>Toggle positions of plot elements:</p>
+					<button id="btn-toggle-x-axis">Query sequence names</button>
+					<hr>
+					<p>Adjust size of plot elements:</p>
+					<div>
+						<label for="input-cell-width">Cell width:</label>
+						<input
+							type="number"
+							id="input-cell-width"
+							name="cell-width"
+							min="20"
+							max="60"
+							value="44"
+							default="44"
+						>px
+					</div>
+					<div>
+						<label for="input-cell-height">Cell height:</label>
+						<input
+							type="number"
+							id="input-cell-height"
+							name="input-cell-height"
+							min="5"
+							max="40"
+							value="27"
+							default="27"
+						>px
+					</div>
 				</div>
 			</div>
 			<script>
