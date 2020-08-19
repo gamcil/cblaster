@@ -6,6 +6,7 @@ import shutil
 import logging
 
 from functools import partial
+from collections import defaultdict
 
 import scipy
 from scipy.cluster.hierarchy import linkage
@@ -73,9 +74,32 @@ def get_cell(query, cluster, cluster_id):
         "query": query,
         "cluster": cluster_id,
         "value": value,
-        "hits": hits
+        "hits": hits,
+        "flag": -1,
     }
     return cell
+
+
+def flag_duplicate_cells(cells):
+    """Finds cells that contain hits present in other cells."""
+    groups = defaultdict(list)
+    for index, cell in enumerate(cells):
+        for hit in cell["hits"]:
+            name = hit["name"]
+            groups[name].append(index)
+
+    # Assign numbers to each unique shared hit group.
+    # Sorts groups, then checks for index overlap. If none, iterate number.
+    group, number = set(), 0
+    for indices in sorted(groups.values(), key=min):
+        if len(indices) <= 1:
+            continue
+        if not group or not group.isdisjoint(indices):
+            group.update(indices)
+        else:
+            number += 1
+        for index in indices:
+            cells[index]["flag"] = number
 
 
 def get_data(session):
@@ -117,6 +141,9 @@ def get_data(session):
                     get_cell(query, cluster, cluster_id)
                     for query in session.queries
                 ]
+
+                # Flag cells which contain hits present in other cells
+                flag_duplicate_cells(cells)
                 matrix.append(cells)
                 cluster_id += 1
 
