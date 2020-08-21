@@ -6,6 +6,7 @@ import requests
 import logging
 
 from pathlib import Path
+from collections import OrderedDict
 
 
 LOG = logging.getLogger(__name__)
@@ -42,20 +43,29 @@ def form_command(parameters):
 def parse_fasta(handle):
     """Parse sequences in a FASTA file.
 
+    Sequence headers are trimmed after the first whitespace.
+
     Returns:
         Sequences in FASTA file keyed on their headers (i.e. > line)
     """
-    sequences = {}
+    sequences = OrderedDict()
+    skip = False
+
     for line in handle:
         try:
             line = line.decode().strip()
         except AttributeError:
             line = line.strip()
         if line.startswith(">"):
-            header = line[1:]
-            sequences[header] = ""
+            header = line[1:].split(" ", 1)[0]
+            skip = header in sequences
+            if skip:
+                LOG.warning("Skipping duplicate sequence: %s", header)
+            else:
+                sequences[header] = ""
         else:
-            sequences[header] += line
+            if not skip:
+                sequences[header] += line
     return sequences
 
 
@@ -107,13 +117,16 @@ def efetch_sequences(headers):
     """
     LOG.info("Querying NCBI for sequences of: %s", headers)
     response = efetch_sequences_request(headers)
-    sequences = {}
-    for key, value in parse_fasta(response.text.split("\n")).items():
-        for header in headers:
-            if header not in sequences and header in key:
-                sequences[header] = value
-                break
-    return sequences
+    results = response.text.split("\n")
+    return parse_fasta(results)
+
+
+def sequences_to_fasta(sequences):
+    """Formats sequence dictionary as FASTA."""
+    return "\n".join(
+        f">{header}\n{sequence}"
+        for header, sequence in sequences.items()
+    )
 
 
 def get_sequences(query_file=None, query_ids=None):
