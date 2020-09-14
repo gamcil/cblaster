@@ -275,9 +275,10 @@ class Subject(Serializer):
         strand (str): Strandedness of the sequence ('+' or '-').
     """
 
-    def __init__(self, hits=None, ipg=None, start=None, end=None, strand=None):
+    def __init__(self, hits=None, name=None, ipg=None, start=None, end=None, strand=None):
         self.hits = hits if hits else []
         self.ipg = ipg
+        self.name = name
         self.start = int(start) if start is not None else None
         self.end = int(end) if end is not None else None
         self.strand = strand
