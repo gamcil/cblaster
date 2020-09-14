@@ -220,6 +220,7 @@ def parse_IPG_table(results, hits):
             # Copy the original Hit object and add contextual information
             subject = Subject(
                 hits=[hit.copy(subject=entry.protein_id) for hit in hit_list],
+                name=entry.protein_id,
                 ipg=ipg,
                 end=int(entry.end),
                 start=int(entry.start),

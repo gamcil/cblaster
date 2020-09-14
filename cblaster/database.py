@@ -9,11 +9,41 @@ import subprocess
 from pathlib import Path
 
 import g2j
-from g2j import classes, genbank
+from g2j import genbank, gff3
 
 from cblaster import helpers
 
 LOG = logging.getLogger("cblaster")
+
+
+def parse_gff(gff_handle, fasta_handle=None):
+    """Parses a GFF file using genome2json.
+
+    Expects the given file to contain a ##FASTA directive, or a separate FASTA
+    file to be provided.
+    """
+    LOG.info(f"Parsing GFF file: {gff_handle.name}")
+    organism = gff3.parse(
+        gff_handle,
+        fasta_handle=fasta_handle,
+        feature_types=["CDS"],
+        save_scaffold_sequence=True,
+    )
+
+    # Collapse CDS features and generate translations
+    organism.collapse()
+    organism.translate()
+    organism.sort()
+
+    # Remove scaffold sequences after CDS features are translated
+    for scaffold in organism.scaffolds:
+        scaffold.sequence = ""
+
+    # Set the name of the organism from the ##species directive
+    # TODO: NCBI taxonomy lookups when ##species https://...
+    organism.name = organism.qualifiers.get("species", None)
+
+    return organism
 
 
 class Database:
@@ -59,11 +89,15 @@ class Database:
         for index, file in enumerate(files, 1):
             with open(file) as handle:
                 LOG.info("%i. %s", index, file)
-                organism = g2j.genbank.parse(
-                    handle,
-                    feature_types=["CDS"],
-                    save_scaffold_sequence=False
-                )
+                if any(key in handle.name for key in ["gb", "gbk", "genbank"]):
+                    organism = genbank.parse(handle, feature_types=["CDS"])
+                elif any(key in handle.name for key in ["gff", "gff3"]):
+                    organism = parse_gff(handle)
+                else:
+                    LOG.warning(
+                        "Expected GenBank (.gb, .gbk or .genbank) or"
+                        " GFF3 (.gff, .gff3) file extensions. Skipping..."
+                    )
                 organisms.append(organism)
         return cls(organisms)
 

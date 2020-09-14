@@ -13,7 +13,7 @@ def add_makedb_subparser(subparsers):
         help="Generate JSON/diamond databases from GenBank files"
     )
     makedb.add_argument(
-        "genbank",
+        "genbanks",
         help="Path/s to GenBank files to use when building JSON/diamond databases",
         nargs="+",
     )
