@@ -13,6 +13,7 @@ from cblaster import (
     local,
     remote,
     parsers,
+    extract,
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
@@ -173,7 +174,11 @@ def cblaster(
                     session.to_json(fp, indent=indent)
     else:
         session = Session(
-            query_ids if query_ids else [],
+            queries=query_ids if query_ids else [],
+            sequences=helpers.get_sequences(
+                query_file=query_file,
+                query_ids=query_ids,
+            ),
             params={
                 "mode": mode,
                 "database": database,
@@ -182,10 +187,11 @@ def cblaster(
                 "max_evalue": max_evalue,
             },
         )
+
         if query_file:
-            with open(query_file) as fp:
-                sequences = helpers.parse_fasta(fp)
-            session.queries = list(sequences)
+            # get_sequences() returns OrderedDict, so save keys to
+            # preserve query order
+            session.queries = list(session.sequences)
             session.params["query_file"] = query_file
 
         if json_db:
@@ -195,8 +201,7 @@ def cblaster(
             LOG.info("Starting cblaster in local mode")
             results = local.search(
                 database,
-                query_file=query_file,
-                query_ids=query_ids,
+                sequences=session.sequences,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
@@ -204,13 +209,10 @@ def cblaster(
             )
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
-
             if entrez_query:
                 session.params["entrez_query"] = entrez_query
-
             rid, results = remote.search(
-                query_file=query_file,
-                query_ids=query_ids,
+                sequences=session.sequences,
                 rid=rid,
                 database=database,
                 min_identity=min_identity,
@@ -278,7 +280,7 @@ def main():
         LOG.setLevel(logging.DEBUG)
 
     if args.subcommand == "makedb":
-        makedb(args.genbank, args.filename, args.indent)
+        makedb(args.genbanks, args.filename, args.indent)
 
     elif args.subcommand == "search":
         cblaster(
@@ -330,6 +332,18 @@ def main():
             hide_headers=args.hide_headers,
             decimals=args.decimals,
             plot=args.plot,
+        )
+
+    elif args.subcommand == "extract":
+        extract.extract(
+            args.session,
+            download=args.download,
+            output=args.output,
+            queries=args.queries,
+            organisms=args.organisms,
+            scaffolds=args.scaffolds,
+            name_only=args.name_only,
+            delimiter=args.delimiter,
         )
 
 

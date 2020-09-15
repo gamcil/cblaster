@@ -78,34 +78,23 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
     LOG.debug("Parameters: %s", command)
 
     results = subprocess.run(
-        command, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE, check=True
+        command,
+        stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        check=True
     )
 
     return results.stdout.decode().split("\n")
 
 
-def _search_file(fasta, database, **kwargs):
-    """Launcher function for `diamond` and `blastp` modes."""
-    LOG.info("Starting DIAMOND search")
-    return parse(diamond(fasta, database, **kwargs))
-
-
-def _search_ids(ids, database, **kwargs):
-    """Thin wrapper around _search_file to facilitate query IDs instead of FASTA.
-
-    Since _local_BLAST takes a file path as input, can pass it the name attribute of a
-    NamedTemporaryFile. So, first obtain the sequences for each ID from NCBI via
-    efetch_sequences, then write those to an NTF and pass to _local_BLAST.
-    """
-    with NTF("w") as fasta:
-        for header, sequence in helpers.efetch_sequences(ids).items():
-            fasta.write(f">{header}\n{sequence}\n")
-        fasta.seek(0)
-        results = _search_file(fasta.name, database, **kwargs)
-    return results
-
-
-def search(database, query_file=None, query_ids=None, blast_file=None, **kwargs):
+def search(
+    database,
+    sequences=None,
+    query_file=None,
+    query_ids=None,
+    blast_file=None,
+    **kwargs,
+):
     """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote).
 
     Arguments:
@@ -117,14 +106,23 @@ def search(database, query_file=None, query_ids=None, blast_file=None, **kwargs)
     Returns:
         list: Parsed rows with hits from DIAMOND results table
     """
-    if query_file and not query_ids:
-        results = _search_file(query_file, database, **kwargs)
-    elif query_ids:
-        results = _search_ids(query_ids, database, **kwargs)
-    else:
-        raise ValueError("Expected either 'query_ids' or 'query_file'")
+    if not sequences:
+        sequences = helpers.get_sequences(
+            query_file=query_file,
+            query_ids=query_ids
+        )
+
+    with NTF("w") as fasta:
+        text = helpers.sequences_to_fasta(sequences)
+        fasta.write(text)
+        fasta.seek(0)
+        table = diamond(fasta.name, database, **kwargs)
+
+    results = parse(table)
+
     if blast_file:
         LOG.info("Writing DIAMOND hit table to %s", blast_file.name)
         blast = "\n".join(results)
         blast_file.write(blast)
+
     return results

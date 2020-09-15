@@ -13,7 +13,7 @@ def add_makedb_subparser(subparsers):
         help="Generate JSON/diamond databases from GenBank files"
     )
     makedb.add_argument(
-        "genbank",
+        "genbanks",
         help="Path/s to GenBank files to use when building JSON/diamond databases",
         nargs="+",
     )
@@ -383,6 +383,47 @@ def add_gne_subparser(subparsers):
     add_gne_output_group(gne)
 
 
+def add_extract_subparser(subparsers):
+    parser = subparsers.add_parser(
+        "extract",
+        help="Extract hit sequences from session files",
+        description="Extract information from session files",
+        epilog="Example usage\n-------------\n"
+        "Extract names of sequences matching a specific query:\n"
+        "  $ cblaster extract session.json -q \"Query1\"\n\n"
+        "Extract, download from NCBI and write to file in FASTA format:\n"
+        "  $ cblaster extract session.json -q \"Query1\" -d -o output.fasta\n\n"
+        "Extract only from specific organisms (regular expressions):\n"
+        "  $ cblaster extract session.json -or \"Aspergillus.*\" \"Penicillium.*\"\n\n"
+        "Generate delimited table (CSV) of all hits in clusters:\n"
+        "  $ cblaster extract session.json -de \",\"\n\n"
+        "Cameron Gilchrist, 2020",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("session", help="cblaster session file")
+
+    fil = parser.add_argument_group("Filters")
+    fil.add_argument("-q", "--queries", help="IDs of query sequences", nargs="+")
+    fil.add_argument("-or", "--organisms", help="Organism names", nargs="+")
+    fil.add_argument("-sc", "--scaffolds", help="Scaffold names/ranges", nargs="+")
+
+    out = parser.add_argument_group("Output")
+    out.add_argument("-o", "--output", help="Output file name")
+    out.add_argument(
+        "-d",
+        "--download",
+        help="Fetch sequences from NCBI and write in FASTA format",
+        action="store_true",
+    )
+    out.add_argument(
+        "-no",
+        "--name_only",
+        help="Do not save sequence descriptions (i.e. no genomic coordinates)",
+        action="store_true",
+    )
+    out.add_argument("-de", "--delimiter", help="Sequence description delimiter")
+
+
 def get_parser():
     parser = argparse.ArgumentParser(
         "cblaster",
@@ -407,6 +448,7 @@ def get_parser():
     add_makedb_subparser(subparsers)
     add_search_subparser(subparsers)
     add_gne_subparser(subparsers)
+    add_extract_subparser(subparsers)
     return parser
 
 
@@ -418,7 +460,7 @@ def parse_args(args):
         parser.print_help()
         raise SystemExit
 
-    if arguments.subcommand in ("gui", "makedb", "gne"):
+    if arguments.subcommand in ("gui", "makedb", "gne", "extract"):
         return arguments
 
     if arguments.mode == "remote":
