@@ -357,6 +357,7 @@ def search(
     LOG.info("Parsing results...")
     results = parse(
         results,
+        sequences=sequences,
         query_file=query_file,
         query_ids=query_ids,
         max_evalue=max_evalue,
