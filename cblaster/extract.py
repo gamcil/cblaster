@@ -5,6 +5,7 @@ TODO: Download hit cluster genomic regions from NCBI
 
 
 import logging
+import re
 
 
 from cblaster.classes import Session
@@ -12,6 +13,22 @@ from cblaster.helpers import efetch_sequences
 
 
 LOG = logging.getLogger(__name__)
+
+
+def parse_organisms(organisms):
+    """Parses specified organisms and creates RegEx patterns."""
+    return [
+        re.compile(organism)
+        for organism in organisms
+    ]
+
+
+def organism_matches(organism, patterns):
+    """Tests organism filter RegEx patterns against a given organism name."""
+    for pattern in patterns:
+        if pattern.match(organism):
+            return True
+    return False
 
 
 def parse_scaffolds(scaffolds):
@@ -91,11 +108,13 @@ def extract_records(
     scaffolds=None,
 ):
     """Extracts subject sequence names from a session file."""
+    if organisms:
+        organisms = parse_organisms(organisms)
     if scaffolds:
         scaffolds = parse_scaffolds(scaffolds)
     records = []
     for organism in session.organisms:
-        if organisms and organism.name not in organisms:
+        if organisms and not organism_matches(organism.name, organisms):
             continue
         for accession, scaffold in organism.scaffolds.items():
             if scaffolds:
@@ -145,7 +164,7 @@ def extract(
         download (bool): Download hit sequences from NCBI
         output (str): Output file name
         queries (list): Query sequence names
-        organisms (list): Organism names
+        organisms (list): Organism filtering regular expressions
         scaffolds (list): Scaffold names and ranges
         delimiter (str): Sequence description delimiter character
         name_only (bool): Do not save sequence descriptions
