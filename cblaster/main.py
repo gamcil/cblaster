@@ -13,6 +13,7 @@ from cblaster import (
     local,
     remote,
     parsers,
+    extract,
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
@@ -331,6 +332,18 @@ def main():
             hide_headers=args.hide_headers,
             decimals=args.decimals,
             plot=args.plot,
+        )
+
+    elif args.subcommand == "extract":
+        extract.extract(
+            args.session,
+            download=args.download,
+            output=args.output,
+            queries=args.queries,
+            organisms=args.organisms,
+            scaffolds=args.scaffolds,
+            name_only=args.name_only,
+            delimiter=args.delimiter,
         )
 
 
