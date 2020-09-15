@@ -388,6 +388,17 @@ def add_extract_subparser(subparsers):
         "extract",
         help="Extract hit sequences from session files",
         description="Extract information from session files",
+        epilog="Example usage\n-------------\n"
+        "Extract names of sequences matching a specific query:\n"
+        "  $ cblaster extract session.json -q \"Query1\"\n\n"
+        "Extract, download from NCBI and write to file in FASTA format:\n"
+        "  $ cblaster extract session.json -q \"Query1\" -d -o output.fasta\n\n"
+        "Extract only from specific organisms (regular expressions):\n"
+        "  $ cblaster extract session.json -or \"Aspergillus.*\" \"Penicillium.*\"\n\n"
+        "Generate delimited table (CSV) of all hits in clusters:\n"
+        "  $ cblaster extract session.json -de \",\"\n\n"
+        "Cameron Gilchrist, 2020",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("session", help="cblaster session file")
 
