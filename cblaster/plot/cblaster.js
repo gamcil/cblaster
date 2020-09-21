@@ -6,6 +6,11 @@ const constants = {
 	"cellHeight": 27,
 	"cellWidth": 44,
 	"dendroWidth": 140,
+	"showScaffolds": true,
+	"multiLineLabels": true,
+	"showCounts": true,
+	"showCountBorders": true,
+	"xAxisOnTop": true,
 }
 
 if (typeof data === 'undefined') {
@@ -15,7 +20,6 @@ if (typeof data === 'undefined') {
 	plot(data);
 }
 
-// TODO: ignore zoom/drag transforms here
 function serialise(svg) {
 	/* Saves the figure to SVG in its current state.
 	 * Clones the provided SVG and sets the width/height of the clone to the
@@ -27,12 +31,20 @@ function serialise(svg) {
 	const xmlns = "http://www.w3.org/2000/xmlns/";
 	const xlinkns = "http://www.w3.org/1999/xlink";
 	const svgns = "http://www.w3.org/2000/node";
-	const bbox = node.getBBox();
+	const bbox = svg.select("g").node().getBBox()
+
 	node = node.cloneNode(true);
 	node.setAttribute("width", bbox.width);
 	node.setAttribute("height", bbox.height);
 	node.setAttributeNS(xmlns, "xmlns", svgns);
 	node.setAttributeNS(xmlns, "xmlns:xlink", xlinkns);
+
+	// Adjust x/y of <g> to account for axis/title position.
+	// Replaces the transform attribute, so drag/zoom is ignored.
+	d3.select(node)
+		.select("g")
+		.attr("transform", `translate(${Math.abs(bbox.x)}, ${Math.abs(bbox.y)})`)
+
 	const serializer = new window.XMLSerializer;
 	const string = serializer.serializeToString(node);
 	return new Blob([string], {type: "image/node+xml"});
@@ -220,7 +232,8 @@ function pruneHierarchy(node, label) {
 }
 
 function getScaffoldString(data) {
-	return data.scaffold + ":" + data.start + "-" + data.end
+	let scaffold = data.scaffold + ":" + data.start + "-" + data.end
+	return constants.cellHeight < 24 ? `    ${scaffold}` : scaffold
 }
 
 function plot(data) {
@@ -272,16 +285,17 @@ function plot(data) {
 	// cblaster chart skeleton to be populated in update()
 	const dendro = g.append("g")
 	const heatmap = g.append("g")
-	const heatmapBG = heatmap.append("rect")
-		.attr("class", "heatmap-bg")
-		.style("fill", "white")
-		.style("stroke", "black")
-		.style("stroke-width", "thin");
-	const cellGroup = heatmap.append("g")
 	const heatmapX = heatmap.append("g")
 		.attr("class", "g-heatmap-xaxis")
 	const heatmapY = heatmap.append("g")
 		.attr("class", "g-heatmap-yaxis")
+	const heatmapBG = heatmap.append("rect")
+		.attr("class", "heatmap-bg")
+		.attr("transform", "translate(-1, -1)")
+		.style("fill", "white")
+		.style("stroke", "#31363b")
+		.style("stroke-width", "thin");
+	const cellGroup = heatmap.append("g")
 
 	// Set up the save SVG button
 	d3.select("#btn-save-svg")
@@ -294,16 +308,6 @@ function plot(data) {
 	const summaryHTML = getSummaryHTML(data.counts)
 	d3.select("#p-result-summary")
 		.html(summaryHTML)
-
-	// Set up cell hit count toggle button.
-	let showCounts = true;
-	d3.select("#btn-toggle-counts")
-		.on("click", () => {
-			showCounts = !showCounts
-			let result = showCounts ? "visible" : "hidden"
-			d3.selectAll(".heatmap-count")
-				.style("visibility", result)
-		})
 
 	// Populate tooltip with current cell data, and adjust position to match the
 	// cell in the heatmap (ignoring <g> transforms).
@@ -386,115 +390,246 @@ function plot(data) {
 		// Expects data.matrix to be flattened, then draws each cell given its
 		// corresponding query/cluster number.
 		const translate = (d) => `translate(${x(d.query)}, ${y(d.cluster)})`
-		const cells = cellGroup
-			.selectAll("g")
+
+		// Generate the border colour scale for cells that contain shared hits
+		let groupMax = d3.max(data.matrix, d => d.flag)
+		let borderColors = d3.scaleSequential(d3.interpolateLab("orange", "red"))
+			.domain([0, groupMax])
+
+		// Function to update cell background/count text, since this
+		// should be called in both the enter and update selections
+		const updateCell = cell => {
+			cell.selectAll("rect")
+				.attr("width", x.bandwidth() - 1)
+				.attr("height", y.bandwidth() - 1)
+				.attr("fill", d => colorScale(d.value / 100))
+				.style("stroke", d => (constants.showCountBorders && d.flag >= 0) ? borderColors(d.flag) : null)
+			cell.selectAll("text")
+				.text(d => d.hits.length)
+				.attr("x", constants.cellWidth / 2)
+				.attr("y", constants.cellHeight / 2 + 4)
+				.attr("opacity", (constants.showCounts ? 1 : 0))
+				.style("font-size", `${0.5 * constants.cellHeight}px`)
+				.style("fill", d => d.value < 60 ? colorScale(1) : colorScale(0))
+		}
+
+		// Draw heatmap cells.
+		// Each cell contains a <rect> for the background, and <text>
+		// for the count label. Cells with no hits (count == 0) are not drawn.
+		cellGroup.selectAll("g.cell")
 			.data(data.matrix, d => `${d.query}-${d.cluster}`)
 			.join(
 				enter => {
-					enter = enter.append("g").attr("transform", translate)
+					enter = enter.append("g")
+						.filter(d => d.hits.length > 0)
+						.attr("transform", translate)
+						.attr("class", "cell")
 					enter.append("rect")
+						.attr("class", "heatmap-cell")
+						.style("stroke-width", "1.5px")
 					enter.append("text")
+						.attr("class", "heatmap-count")
+						.style("text-anchor", "middle")
+						.style("font-family", "sans-serif")
+					enter.call(updateCell)
 					return enter
 				},
 				update => update.call(
-					update => update.transition(t)
-						.attr("transform", translate)
+					update => {
+						update.transition(t)
+							.attr("transform", translate)
+							.call(updateCell)
+					}
 				)
 			)
-			.filter(d => d.hits.length > 0)
 			.on("mouseenter", cellEnter)
 			.on("mouseleave", tooltipLeave)
-
-		// Heatmap cell rectangles
-		cells.selectAll("rect")
-			.attr("fill", d => colorScale(d.value / 100))
-			.attr("width", x.bandwidth())
-			.attr("height", y.bandwidth())
-			.style("stroke-width", "thin")
-			.style("stroke", d => d.hits.length > 1 ? "red" : null)
-
-		// Heatmap cell hit counts
-		cells.selectAll("text")
-			.text(d => d.hits.length)
-			.attr("x", constants.cellWidth / 2)
-			.attr("y", constants.cellHeight / 2 + 4)
-			.attr("class", "heatmap-count")
-			.style("text-anchor", "middle")
-			.style("fill", d => d.value < 60 ? colorScale(1) : colorScale(0))
 
 		// Calculate current heatmap width/height and transition the background.
 		const heatWidth = data.queries.length * constants.cellWidth
 		const heatHeight = Object.keys(data.labels).length * constants.cellHeight
-
 		heatmapBG.transition(t)
-			.attr("width", heatWidth)
-			.attr("height", heatHeight)
+			.attr("width", heatWidth + 1)
+			.attr("height", heatHeight + 2)
 
 		// Calculate new d3 axes for x-axis and call transition.
-		const axisTop = d3.axisTop(x)
-			.tickSize(6)
-			.tickPadding(6)
-		heatmapX.transition(t).call(axisTop)
+		if (constants.xAxisOnTop) {
+			let axisTop = d3.axisTop(x)
+				.tickSize(6)
+				.tickPadding(6)
+			heatmapX.transition(t)
+				.call(axisTop)
+				.attr("transform", "translate(0, -1)")
+		} else {
+			let axisBot = d3.axisBottom(x)
+				.tickSize(6)
+				.tickPadding(6)
+			heatmapX.transition(t)
+				.call(axisBot)
+				.attr("transform", `translate(0, ${heatHeight})`)
+		}
 
 		// Rotate query sequence labels and attach click delete behaviour.
+		const clickRemoveX = query => {
+			let newData = {
+				...data,
+				"queries": data.queries.filter(q => q !== query),
+				"matrix": data.matrix.filter(cell => cell.query !== query)
+			}
+			update(newData)
+		}
 		heatmapX.selectAll("text")
-			.style("font-size", "12px")
-			.style("text-anchor", "start")
+			.style("font-size", `${Math.min(constants.cellWidth * 0.35, 14)}px`)
+			.style("text-anchor", (constants.xAxisOnTop) ? "start" : "end")
+			.attr("dy", (constants.xAxisOnTop) ? "" : ".6em")
 			.attr("transform", "rotate(-25)")
-			.on("click", (query) => {
-				let newData = {
-					...data,
-					"queries": data.queries.filter(q => q !== query),
-					"matrix": data.matrix.filter(cell => cell.query !== query)
-				}
-				update(newData)
-			})
+			.on("click", clickRemoveX)
 
-		// Calculate new d3 axes for y-axis, and transition based on new heatmap
-		// width (on query column deletion).
-		const axisRight = d3.axisRight(y)
-			.tickSize(6)
-		heatmapY.transition(t).attr("transform", `translate(${heatWidth}, 0)`)
-	
 		// Convert cluster IDs to multiline text labels with organism name and
 		// cluster scaffold coordinates, and attach click delete behaviour.
-		heatmapY.call(axisRight)
-			.selectAll("text")
-				.call(t => {
-					t.text("")
-					t.append("tspan")
-						.text(d => data.labels[d].name)
-						.attr("x", 10)
-						.attr("dy", "-0.1em")
-						.attr("text-anchor", "start")
-						.style("font-family", "sans-serif")
-						.style("font-style", "italic")
-						.style("font-size", "12px")
-					t.append("tspan")
-						.text(d => getScaffoldString(data.labels[d]))
-						.attr("x", 10)
-						.attr("dy", "1.3em")
-						.attr("text-anchor", "start")
-						.style("font-style", "normal")
-						.style("font-family", "sans-serif")
-						.style("font-size", "10px")
-						.style("fill", "grey");				
-				})
-				.on("click", (label) => {
-					const newData = {
-						...data,
-						"hierarchy": {
-							...data.hierarchy,
-							"children": pruneHierarchy(data.hierarchy.children, label)
-						},
-						"matrix": data.matrix.filter(cell => cell.cluster !== label)
-					}
-					delete newData.labels[label]
-					update(newData)
-				})
+		const labelScaffold = (g) => {
+			g.selectAll("text").remove()
+			let text = g.append("text")
+			text.append("tspan")
+				.text(d => data.labels[d].name)
+				.attr("x", 10)
+				.attr("dy", constants.multiLineLabels ? "-0.1em": ".3em")
+				.attr("text-anchor", "start")
+				.style("fill", "#31363b")
+				.style("font-family", "sans-serif")
+				.style("font-style", "italic")
+				.style(
+					"font-size",
+					constants.multiLineLabels
+					? `${Math.min(0.5 * constants.cellHeight, 12)}px`
+					: `${Math.min(0.7 * constants.cellHeight, 14)}px`
+				)
+			text.append("tspan")
+				.text(d => getScaffoldString(data.labels[d]))
+				.attr("x", constants.multiLineLabels ? 10 : null)
+				.attr("dy", constants.multiLineLabels ? "1.1em": null) 
+				.attr("text-anchor", "start")
+				.style("font-style", "normal")
+				.style("font-family", "sans-serif")
+				.style(
+					"font-size",
+					constants.multiLineLabels
+					? `${Math.min(0.4 * constants.cellHeight, 10)}px`
+					: `${Math.min(0.6 * constants.cellHeight, 12)}px`
+				)
+				.style("fill", "grey")
+		}
+		const labelNoScaffold = (g) => {
+			g.selectAll("text").remove()
+			g.append("text")
+				.text(d => data.labels[d].name)
+				.attr("x", 10)
+				.attr("dy", ".3em")
+				.attr("text-anchor", "start")
+				.style("fill", "#31363b")
+				.style("font-family", "sans-serif")
+				.style("font-style", "italic")
+				.style("font-size", `${0.7 * constants.cellHeight}px`)
+		}
+		const pickLabel = g => {
+			if (constants.showScaffolds) {
+				labelScaffold(g)
+			} else {
+				labelNoScaffold(g)
+			}
+		}
+
+		// Draw cluster labels and ticks.
+		// This is implemented with a separate join to more easily enable
+		// multi-line labels and toggles with transitions and click to remove behaviour.
+		let yAxisTranslate = d => `translate(${heatWidth}, ${y(d) + y.bandwidth() / 2})`
+		let clickRemoveY = label => {
+			const newData = {
+				...data,
+				"hierarchy": {
+					...data.hierarchy,
+					"children": pruneHierarchy(data.hierarchy.children, label)
+				},
+				"matrix": data.matrix.filter(cell => cell.cluster !== label)
+			}
+			delete newData.labels[label]
+			update(newData)
+		}
+		heatmapY.selectAll(".tickGroup")
+			.data(y.domain(), d => d)
+			.join(
+				enter => {
+					enter = enter.append("g")
+						.attr("transform", yAxisTranslate)
+						.attr("class", "tickGroup")
+					enter.append("line")
+						.attr("stroke", "#31363b")
+						.attr("x2", 6)
+					enter.append("g")
+						.attr("class", "tickTextGroup")
+						.call(pickLabel)
+					return enter
+				},
+				update => update.call(
+					update => {
+						update.selectAll("g.tickTextGroup")
+							.call(pickLabel)
+						return update.transition(t)
+							.attr("transform", yAxisTranslate)
+					}),
+				exit => exit.call(exit => exit.transition(100).remove())
+			)
+			.on("click", clickRemoveY)
 
 		// Hide axes <path> elements
 		heatmap.selectAll("path").style("opacity", "0");
+
+		// Set up cell hit count toggle button.
+		d3.select("#btn-toggle-counts")
+			.on("click", () => {
+				constants.showCounts = !constants.showCounts
+				update(data)
+			})
+
+		// Hide/show genomic coordinates
+		d3.select("#btn-toggle-scaffolds")
+			.on("click", () => {
+				constants.showScaffolds = !constants.showScaffolds
+				update(data)
+			})
+
+		// Hide/show red borders for cells with multiple hits
+		d3.select("#btn-toggle-count-borders")
+			.on("click", () => {
+				constants.showCountBorders = !constants.showCountBorders
+				update(data)
+			})
+
+		// Hide/show red borders for cells with multiple hits
+		d3.select("#btn-toggle-x-axis")
+			.on("click", () => {
+				constants.xAxisOnTop = !constants.xAxisOnTop
+				update(data)
+			})
+
+		// Hide/show red borders for cells with multiple hits
+		d3.select("#btn-toggle-multiline")
+			.on("click", () => {
+				constants.multiLineLabels = !constants.multiLineLabels
+				update(data)
+			})
+
+		// Change width/height of heatmap cells
+		d3.select("#input-cell-width")
+			.on("change", function() {
+				constants.cellWidth = +this.value;
+				update(data)
+			})
+		d3.select("#input-cell-height")
+			.on("change", function() {
+				constants.cellHeight = +this.value;
+				update(data)
+			})
 
 		// Wait until transition has finished until re-organising groups 
 		setTimeout(() => {

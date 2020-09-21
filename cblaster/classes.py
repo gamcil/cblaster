@@ -70,10 +70,11 @@ class Session(Serializer):
         organisms (list): Organism objects created in a search.
     """
 
-    def __init__(self, queries, params, organisms=None):
-        self.queries = queries
-        self.params = params
+    def __init__(self, queries=None, sequences=None, params=None, organisms=None):
+        self.queries = queries if queries else []
+        self.params = params if params else {}
         self.organisms = organisms if organisms else []
+        self.sequences = sequences if sequences else {}
 
     def __add__(self, other):
         if not isinstance(other, Session):
@@ -82,6 +83,7 @@ class Session(Serializer):
             raise ValueError("Query sequences do not match")
         return Session(
             queries=self.queries,
+            sequences=self.sequences,
             params=self.params,
             organisms=self.organisms + other.organisms
         )
@@ -89,6 +91,7 @@ class Session(Serializer):
     def to_dict(self):
         return {
             "queries": self.queries,
+            "sequences": self.sequences,
             "params": self.params,
             "organisms": [o.to_dict() for o in self.organisms],
         }
@@ -112,9 +115,10 @@ class Session(Serializer):
     @classmethod
     def from_dict(cls, d):
         return cls(
-            d["queries"],
-            d["params"],
-            organisms=[Organism.from_dict(o) for o in d["organisms"]],
+            queries=d.get("queries", None),
+            sequences=d.get("sequences", None),
+            params=d.get("params", None),
+            organisms=[Organism.from_dict(o) for o in d.get("organisms", [])],
         )
 
     def format(self, form, fp=None, **kwargs):
@@ -271,9 +275,10 @@ class Subject(Serializer):
         strand (str): Strandedness of the sequence ('+' or '-').
     """
 
-    def __init__(self, hits=None, ipg=None, start=None, end=None, strand=None):
+    def __init__(self, hits=None, name=None, ipg=None, start=None, end=None, strand=None):
         self.hits = hits if hits else []
         self.ipg = ipg
+        self.name = name
         self.start = int(start) if start is not None else None
         self.end = int(end) if end is not None else None
         self.strand = strand
@@ -292,6 +297,7 @@ class Subject(Serializer):
     def to_dict(self):
         return {
             "hits": [hit.to_dict() for hit in self.hits],
+            "name": self.name,
             "ipg": self.ipg,
             "start": self.start,
             "end": self.end,
@@ -314,10 +320,11 @@ class Subject(Serializer):
     def from_dict(cls, d):
         return cls(
             hits=[Hit.from_dict(h) for h in d["hits"]],
-            ipg=d["ipg"],
-            start=d["start"],
-            end=d["end"],
-            strand=d["strand"]
+            name=d.get("name"),
+            ipg=d.get("ipg"),
+            start=d.get("start"),
+            end=d.get("end"),
+            strand=d.get("strand"),
         )
 
 
