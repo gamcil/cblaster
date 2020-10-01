@@ -344,8 +344,8 @@ def search(
         # Wait the RTOE (sec) before bothering to poll
         time.sleep(rtoe)
 
-        LOG.info("Polling NCBI for completion status")
-        poll(rid)
+    LOG.info("Polling NCBI for completion status")
+    poll(rid)
 
     LOG.info("Retrieving results for search %s", rid)
     results = retrieve(rid)
