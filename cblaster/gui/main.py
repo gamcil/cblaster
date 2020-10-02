@@ -6,8 +6,8 @@ import builtins
 import PySimpleGUI as sg
 
 from cblaster import __version__
-from cblaster import main
-from cblaster.gui import search, makedb, citation, gne
+from cblaster import main, extract as cb_extract
+from cblaster.gui import search, makedb, citation, gne, extract
 
 
 sg.theme("Lightgrey1")
@@ -111,8 +111,21 @@ def run_cblaster(values):
             samples=int(values["samples"]),
             scale=values["scale"],
         )
+
+    elif values["cblaster_tabs"] == "Extract":
+        cb_extract.extract(
+            values["extract_session"],
+            in_cluster=values["in_cluster"],
+            delimiter=values["delimiter"],
+            name_only=values["name_only"],
+            download=values["download"],
+            output=values["extract_output"],
+            queries=values["queries"],
+            organisms=values["organisms"],
+            scaffolds=values["scaffolds"],
+        )
     else:
-        raise ValueError("Expected 'Search' or 'Makedb'")
+        raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood' or 'Extract'")
 
 
 def cblaster_gui():
@@ -124,6 +137,7 @@ def cblaster_gui():
             [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
             [sg.Tab("Neighbourhood", [[Column(gne.layout)]])],
             [sg.Tab("Makedb", [[Column(makedb.layout)]])],
+            [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
             [sg.Tab("Citation", [[Column(citation.layout)]])],
         ], enable_events=True, key="cblaster_tabs"
         )],
