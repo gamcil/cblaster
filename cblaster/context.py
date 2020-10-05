@@ -514,7 +514,7 @@ def calculate_gne(session):
     )
 
 
-def estimate_neighbourhood(session, max_gap=1000000, samples=1000, scale="log"):
+def estimate_neighbourhood(session, max_gap=100000, samples=100, scale="linear"):
     """Estimate gene neighbourhood of a cblaster session."""
     if scale == "linear":
         space = np.linspace(0, max_gap, num=samples)
