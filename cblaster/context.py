@@ -315,6 +315,7 @@ def query_local_DB(hits, database):
 
         # Save genomic location on the Hit instance
         subject = Subject(
+            name=identifier,
             hits=hits,
             start=protein.location.min(),
             end=protein.location.max(),
