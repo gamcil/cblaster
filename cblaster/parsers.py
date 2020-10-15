@@ -66,6 +66,12 @@ def add_input_group(search):
         nargs="+",
         help="A collection of valid NCBI sequence identifiers to be searched",
     )
+    group.add_argument(
+        "-qp",
+        "--query_profiles",
+        nargs="+",
+        help="A collection of Pfam-A profile accession numbers to be searched",
+    )
 
 
 def add_output_arguments(group):
