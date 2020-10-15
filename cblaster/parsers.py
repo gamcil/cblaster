@@ -50,7 +50,12 @@ def add_gui_subparser(subparsers):
 
 
 def add_hmm_subparser(subparsers):
-    pass
+    hmm = subparsers.add_parser("hmm", help="preform hmmfetch and hmmsearch")
+    hmm.add_argument(
+        "-pq",
+        help="A collection of Pfamm profile identifiers to be searched ",
+        nargs="+",
+    )
 
 
 def add_input_group(search):
