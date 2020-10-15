@@ -49,6 +49,10 @@ def add_gui_subparser(subparsers):
     subparsers.add_parser("gui", help="Launch cblaster GUI")
 
 
+def add_hmm_subparser(subparsers):
+    pass
+
+
 def add_input_group(search):
     group = (
         search
@@ -65,12 +69,6 @@ def add_input_group(search):
         "--query_ids",
         nargs="+",
         help="A collection of valid NCBI sequence identifiers to be searched",
-    )
-    group.add_argument(
-        "-qp",
-        "--query_profiles",
-        nargs="+",
-        help="A collection of Pfam-A profile accession numbers to be searched",
     )
 
 
@@ -479,6 +477,7 @@ def get_parser():
     )
     subparsers = parser.add_subparsers(dest="subcommand")
     add_gui_subparser(subparsers)
+    add_hmm_subparser(subparsers)
     add_makedb_subparser(subparsers)
     add_search_subparser(subparsers)
     add_gne_subparser(subparsers)
