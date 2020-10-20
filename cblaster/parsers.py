@@ -53,16 +53,12 @@ def add_hmm_subparser(subparsers):
     hmm = subparsers.add_parser("hmm", help="preform hmmfetch and hmmsearch")
     hmm.add_argument(
         "-qp",
-        help="A collection of Pfamm profile identifiers to be searched ",
+        help="A collection of Pfam profile identifiers to be searched ",
         nargs="+",
     )
     hmm.add_argument(
-        "-pf",
-        help="Path to file with Pfamm profile accession numbers",
-    )
-    hmm.add_argument(
         "-db",
-        help="Path to Pfamm database, if not present it will save db there",
+        help="Path to Pfam database, if not present it will save db there",
     )
 
 
@@ -490,8 +486,8 @@ def get_parser():
     )
     subparsers = parser.add_subparsers(dest="subcommand")
     add_gui_subparser(subparsers)
-    add_hmm_subparser(subparsers)
     add_makedb_subparser(subparsers)
+    add_hmm_subparser(subparsers)
     add_search_subparser(subparsers)
     add_gne_subparser(subparsers)
     add_extract_subparser(subparsers)
@@ -506,7 +502,7 @@ def parse_args(args):
         parser.print_help()
         raise SystemExit
 
-    if arguments.subcommand in ("gui", "makedb", "gne", "extract"):
+    if arguments.subcommand in ("gui", "makedb", "gne", "extract", "hmm"):
         return arguments
 
     if arguments.mode == "remote":

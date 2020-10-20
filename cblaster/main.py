@@ -262,6 +262,8 @@ def cblaster(
     LOG.info("Done.")
     return session
 
+def run_hmm():
+    print("parse is correct!")
 
 def main():
     """cblaster entry point."""
@@ -342,6 +344,9 @@ def main():
             name_only=args.name_only,
             delimiter=args.delimiter,
         )
+
+    elif args.subcommand == "hmm":
+        run_hmm()
 
 
 if __name__ == "__main__":
