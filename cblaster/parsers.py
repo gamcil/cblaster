@@ -52,13 +52,13 @@ def add_gui_subparser(subparsers):
 def add_hmm_subparser(subparsers):
     hmm = subparsers.add_parser("hmm", help="preform hmmfetch and hmmsearch")
     hmm.add_argument(
+        "-db",
+        help="Path to Pfam database, if not present it will save db there",
+    )
+    hmm.add_argument(
         "-qp",
         help="A collection of Pfam profile identifiers to be searched ",
         nargs="+",
-    )
-    hmm.add_argument(
-        "-db",
-        help="Path to Pfam database, if not present it will save db there",
     )
 
 
