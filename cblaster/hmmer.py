@@ -5,9 +5,11 @@ import os
 import gzip
 import urllib.request
 import urllib.error
+import logging
 
 from Bio import SearchIO
 
+LOG = logging.getLogger(__name__)
 
 def check_pfam_db(path, file_names):
     """Check f Pfam-A db exists else download
@@ -17,18 +19,19 @@ def check_pfam_db(path, file_names):
     """
     url_ls = ["ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam33.1/Pfam-A.hmm.gz",
               "ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam33.1/Pfam-A.hmm.dat.gz"]
-    if os.path.exists(path + "Pfam-A.hmm.gz"):
-        print("Pfam database found")
+    if os.path.exists(path + "Pfam-A.hmm.gz") and os.path.exists(path +
+                                                    "Pfam-A.hmm.dat.gz" ):
+        LOG.info("Pfam database found")
     else:
-        print("Fetching database from Pfam release: 33.1 ")
+        LOG.info("Fetching database from Pfam release: 33.1 ")
         counter = 0
         for url in url_ls:
             try:
                 urllib.request.urlretrieve(url, path + file_names[counter])
             except FileNotFoundError:
-                print("Error: Path or file does not exists")
+                LOG.exception("Error: Path or file does not exists")
             except urllib.error.URLError or urllib.error.HTTPError:
-                print("Error: Internet connection problem")
+                LOG.exception("Error: Internet connection problem")
             counter += 1
 
 
@@ -63,10 +66,10 @@ def fetch_profiles(keys, db_folder):
     :param db_folder: String, path where db are stored
     :return ls_keys: List, strings with acc-numbers
     """
-    print("Fetching profiles from Pfam-A file")
+    LOG.info("Fetching profiles from Pfam-A file")
     ls_keys = get_full_accession_number(keys, db_folder)
     if not ls_keys:
-        print("No profiles could be selected from Pfam-A")
+        LOG.warning("No profiles could be selected from Pfam-A")
     else:
         for key in ls_keys:
             command_fetch_profile = "hmmfetch -o {} {} {}".format(db_folder +
@@ -83,9 +86,8 @@ def run_hmmsearch(profile_names, path, db_name="UP000008308_263358.fasta.gz"):
     :param db_name: String, Name of used database, needs to be in fasta.gz
                     format
     """
-    print("\nPreforming hmmsearch")
+    LOG.info("Preforming hmmsearch")
     for prof in profile_names:
-        print(prof + ".hmm")
         command_run_hmmsearch = "hmmsearch -o {} {} {} ".format(prof +
                             "_results.txt", path + prof + ".hmm", path + db_name)
         os.subprocess.run(command_run_hmmsearch, shell=True)
