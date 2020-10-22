@@ -19,6 +19,7 @@ from cblaster import (
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
+import hmmer
 
 
 logging.basicConfig(
@@ -262,8 +263,15 @@ def cblaster(
     LOG.info("Done.")
     return session
 
-def run_hmm():
-    print("parse is correct!")
+
+def search_hmm(
+        path_pfam = None,
+        path_db = None,
+        acc_profile = None
+):
+    print(path_pfam, path_db, acc_profile)
+    hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
+
 
 def main():
     """cblaster entry point."""
@@ -346,7 +354,10 @@ def main():
         )
 
     elif args.subcommand == "hmm":
-        run_hmm()
+        search_hmm(path_pfam=args.db,
+                path_db=args.dbf,
+                acc_profile=args.qp
+        )
 
 
 if __name__ == "__main__":
