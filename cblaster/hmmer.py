@@ -8,19 +8,20 @@ import urllib.error
 import logging
 
 from Bio import SearchIO
+from shutil import which
 
 LOG = logging.getLogger(__name__)
 
-def check_pfam_db(path, file_names):
+def check_pfam_db(path):
     """Check f Pfam-A db exists else download
 
     :param path: String, path where to check
     :param file_names: list of strings, names of file in a list
     """
+    file_names = ["Pfam-A.hmm.gz", "Pfam-A.hmm.dat.gz"]
     url_ls = ["ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam33.1/Pfam-A.hmm.gz",
               "ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam33.1/Pfam-A.hmm.dat.gz"]
-    if os.path.exists(path + "Pfam-A.hmm.gz") and os.path.exists(path +
-                                                    "Pfam-A.hmm.dat.gz" ):
+    if os.path.exists(path + file_names[0]) and os.path.exists(path + file_names[1]):
         LOG.info("Pfam database found")
     else:
         LOG.info("Fetching database from Pfam release: 33.1 ")
@@ -35,17 +36,14 @@ def check_pfam_db(path, file_names):
             counter += 1
 
 
-def get_full_accession_number(keys_file, db_path):
+def get_full_accession_number(db_path, keys):
     """Get full accession number of Pfam profiles
 
-    :param keys_file: String, Path to file with acc-nr
+    :param keys: List, Strings of accession profiles numbers
     :param db_path: String, Path to dat.gz file with the full acc-nr
     :return: key_lines: List, string of full acc-number
     """
-    # Read the file with incomplete acc-numbers
-    file = open(keys_file, 'r')
-    key_lines = file.readlines()
-    file.close()
+    LOG.info("Getting full pfam accession numbers")
     # Read dat.gz file with complete acc-numbers
     dat_gz_file = gzip.open(db_path + 'Pfam-A.hmm.dat.gz', 'r')
     content = str(dat_gz_file.read()).split("\\n")
@@ -53,17 +51,17 @@ def get_full_accession_number(keys_file, db_path):
     # Only appends to list when it is found in dat.gz file
     profile_ls = []
     for text in content:
-        for key in key_lines:
+        for key in keys:
             if key.strip() in text:
                 profile_ls.append(text.split(" ")[-1])
     return profile_ls
 
 
-def fetch_profiles(keys, db_folder):
+def fetch_profiles(db_path, keys_ls):
     """Fetch hmm profiles from db and save in a file
 
-    :param keys: String, Path to file with acc-nr
-    :param db_folder: String, path where db are stored
+    :param db_path: String, path where db are stored
+    :param keys_ls: String, Path to file with acc-nr
     :return ls_keys: List, strings with acc-numbers
     """
     LOG.info("Fetching profiles from Pfam-A file")
@@ -78,7 +76,7 @@ def fetch_profiles(keys, db_folder):
     return ls_keys
 
 
-def run_hmmsearch(profile_names, path, db_name="UP000008308_263358.fasta.gz"):
+def run_hmmsearch(profile_names, path, db_name=""):
     """Run the hmmsearch command
 
     :param profile_names: List, String of names of used profiles
@@ -93,14 +91,14 @@ def run_hmmsearch(profile_names, path, db_name="UP000008308_263358.fasta.gz"):
         os.subprocess.run(command_run_hmmsearch, shell=True)
 
 
-def parse_hmmer_output():
+def parse_hmmer_output(file=""):
     """Parse hmmsearch output
 
     :return: hit_info: Nested list, information about the hit results
                         - Hit_id, hit description, evalue, bit-score
     """
     hit_info = []
-    for record in SearchIO.parse("PF00491.22_results.txt", 'hmmer3-text'):
+    for record in SearchIO.parse(file, 'hmmer3-text'):
         query_id = record.id
         hits = record.hits
         num_hits = len(hits)
@@ -110,6 +108,32 @@ def parse_hmmer_output():
                 hit_description = hit.description  # hit sequence description
                 current_evalue = hit.evalue  # hit-level e-value
                 current_bitscore = hit.bitscore # hit-level score
-                #print(hit_id,hit_description, current_bitscore, current_evalue)
-                hit_info.append([hit_id, hit_description, current_evalue, current_bitscore])
+                hit_info.append([query_id, hit_id, hit_description,
+                                 current_evalue, current_bitscore])
+
+    print(hit_info)
     return hit_info
+
+
+def preform_hmmer(path_pfam=None,
+                  path_db=None,
+                  acc_profile=None):
+    #1. Check if program exist else give error message and stop program
+    if which("hmmfetch") is None or which("hmmsearch") is None:
+        LOG.error("Hmmer could not be found in PATH")
+        raise SystemExit
+
+    LOG.info("Starting hmmer search")
+    #2. run check_pfam_db
+    check_pfam_db(path_pfam)
+
+    #3. run get_full_acc_number
+    full_keys = get_full_accession_number(path_db, acc_profile)
+
+
+    #4. run hmmsearch
+
+    #5. Parse hmm output, needs to be the same as blast output
+    # - query_id
+    # - Subject id
+    # - ide
