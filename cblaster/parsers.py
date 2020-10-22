@@ -56,6 +56,10 @@ def add_hmm_subparser(subparsers):
         help="Path to Pfam database, if not present it will save db there",
     )
     hmm.add_argument(
+        "-dbf",
+        help="Path to Fasta, genbank or EMBL protein sequences file"
+    )
+    hmm.add_argument(
         "-qp",
         help="A collection of Pfam profile identifiers to be searched ",
         nargs="+",
