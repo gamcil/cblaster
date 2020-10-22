@@ -3,6 +3,7 @@ Hmmfetch and hmmsearch implementation
 """
 import os
 import gzip
+import subprocess
 import urllib.request
 import urllib.error
 import logging
@@ -43,7 +44,6 @@ def get_full_accession_number(db_path, keys):
     :param db_path: String, Path to dat.gz file with the full acc-nr
     :return: key_lines: List, string of full acc-number
     """
-    LOG.info("Getting full pfam accession numbers")
     # Read dat.gz file with complete acc-numbers
     dat_gz_file = gzip.open(db_path + 'Pfam-A.hmm.dat.gz', 'r')
     content = str(dat_gz_file.read()).split("\\n")
@@ -65,14 +65,16 @@ def fetch_profiles(db_path, keys_ls):
     :return ls_keys: List, strings with acc-numbers
     """
     LOG.info("Fetching profiles from Pfam-A file")
-    ls_keys = get_full_accession_number(keys, db_folder)
+    ls_keys = get_full_accession_number(db_path, keys_ls)
     if not ls_keys:
-        LOG.warning("No profiles could be selected from Pfam-A")
+        LOG.error("No valid profiles could be selected")
     else:
         for key in ls_keys:
-            command_fetch_profile = "hmmfetch -o {} {} {}".format(db_folder +
-                              key + ".hmm", db_folder + "Pfam-A.hmm.gz", key)
-            os.subprocess.run(command_fetch_profile, shell=True)
+            command_fetch_profile = "hmmfetch -o {} {} {}".format(db_path +
+                              key + ".hmm", db_path + "Pfam-A.hmm.gz", key)
+            subprocess.run(command_fetch_profile, stdout=subprocess.PIPE,
+                           shell=True)
+    LOG.info("Profiles found: %s", ls_keys)
     return ls_keys
 
 
@@ -127,8 +129,8 @@ def preform_hmmer(path_pfam=None,
     #2. run check_pfam_db
     check_pfam_db(path_pfam)
 
-    #3. run get_full_acc_number
-    full_keys = get_full_accession_number(path_db, acc_profile)
+    #3. get_full_acc_number and run hmmfetch
+    fetch_profiles(path_pfam, acc_profile)
 
 
     #4. run hmmsearch
