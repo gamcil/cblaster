@@ -78,19 +78,25 @@ def fetch_profiles(db_path, keys_ls):
     return ls_keys
 
 
-def run_hmmsearch(profile_names, path, db_name=""):
+def run_hmmsearch(path_pfam, path_db, ls_keys):
     """Run the hmmsearch command
 
     :param profile_names: List, String of names of used profiles
     :param path: String, Path to folder where all db and profiles are
     :param db_name: String, Name of used database, needs to be in fasta.gz
                     format
+
+    path_pfam, path_db, ls_keys
     """
     LOG.info("Preforming hmmsearch")
-    for prof in profile_names:
+    temp_res = []
+    for prof in ls_keys:
         command_run_hmmsearch = "hmmsearch -o {} {} {} ".format(prof +
-                            "_results.txt", path + prof + ".hmm", path + db_name)
-        os.subprocess.run(command_run_hmmsearch, shell=True)
+                            "_results.txt", path_pfam + prof + ".hmm", path_db)
+        subprocess.run(command_run_hmmsearch, stdout=subprocess.PIPE,
+                       shell=True)
+        temp_res.append(prof +"_results.txt")
+    return temp_res
 
 
 def parse_hmmer_output(file=""):
@@ -101,19 +107,19 @@ def parse_hmmer_output(file=""):
     """
     hit_info = []
     for record in SearchIO.parse(file, 'hmmer3-text'):
-        query_id = record.id
+        query_id = record.accession  # Pfam ID number
         hits = record.hits
         num_hits = len(hits)
         if num_hits > 0:
             for hit in hits:
-                hit_id = hit.id  # hit sequence ID
+                hit_id = hit.id  # hit sequence ID: NCBI ID
                 hit_description = hit.description  # hit sequence description
                 current_evalue = hit.evalue  # hit-level e-value
                 current_bitscore = hit.bitscore # hit-level score
                 hit_info.append([query_id, hit_id, hit_description,
                                  current_evalue, current_bitscore])
-
-    print(hit_info)
+    for i in hit_info:
+        print(i)
     return hit_info
 
 
@@ -123,19 +129,17 @@ def preform_hmmer(path_pfam=None,
     #1. Check if program exist else give error message and stop program
     if which("hmmfetch") is None or which("hmmsearch") is None:
         LOG.error("Hmmer could not be found in PATH")
-        raise SystemExit
 
     LOG.info("Starting hmmer search")
     #2. run check_pfam_db
-    check_pfam_db(path_pfam)
+    #check_pfam_db(path_pfam)
 
     #3. get_full_acc_number and run hmmfetch
-    fetch_profiles(path_pfam, acc_profile)
-
+    #ls_keys = fetch_profiles(path_pfam, acc_profile)
 
     #4. run hmmsearch
+    #ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
 
     #5. Parse hmm output, needs to be the same as blast output
-    # - query_id
-    # - Subject id
-    # - ide
+    # List of hits with: QueryID, Subject, Identity, Coverage, Evalue, bitscore
+    parse_hmmer_output("PF00491.22_results.txt")
