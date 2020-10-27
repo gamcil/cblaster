@@ -459,8 +459,8 @@ class Hit(Serializer):
         ## Made id & Coverage a None type, hmmer does not have those values
         self.subject = subject
         self.bitscore = float(bitscore)
-        self.identity = None
-        self.coverage = None
+        self.identity = identity
+        self.coverage = coverage
         self.evalue = float(evalue)
 
     def __str__(self):
