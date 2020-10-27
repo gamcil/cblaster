@@ -10,6 +10,7 @@ import logging
 
 from Bio import SearchIO
 from shutil import which
+from cblaster.classes import Hit
 
 LOG = logging.getLogger(__name__)
 
@@ -31,9 +32,9 @@ def check_pfam_db(path):
             try:
                 urllib.request.urlretrieve(url, path + file_names[counter])
             except FileNotFoundError:
-                LOG.exception("Error: Path or file does not exists")
+                LOG.error("Error: Path or file does not exists")
             except urllib.error.URLError or urllib.error.HTTPError:
-                LOG.exception("Error: Internet connection problem")
+                LOG.error("Error: Internet connection problem")
             counter += 1
 
 
@@ -47,7 +48,6 @@ def get_full_accession_number(db_path, keys):
     # Read dat.gz file with complete acc-numbers
     dat_gz_file = gzip.open(db_path + 'Pfam-A.hmm.dat.gz', 'r')
     content = str(dat_gz_file.read()).split("\\n")
-    # Select the incomplete ones from the dat.gz info
     # Only appends to list when it is found in dat.gz file
     profile_ls = []
     for text in content:
@@ -112,14 +112,23 @@ def parse_hmmer_output(file=""):
         num_hits = len(hits)
         if num_hits > 0:
             for hit in hits:
-                hit_id = hit.id  # hit sequence ID: NCBI ID
-                hit_description = hit.description  # hit sequence description
-                current_evalue = hit.evalue  # hit-level e-value
-                current_bitscore = hit.bitscore # hit-level score
-                hit_info.append([query_id, hit_id, hit_description,
-                                 current_evalue, current_bitscore])
-    for i in hit_info:
-        print(i)
+                ## TO DO: Parse correct ID from Results
+                #if hit.id.startswith():
+
+
+                hit_class = Hit(
+                    query=record.accession,
+                    subject=hit.id,
+                    identity=None,
+                    coverage=None,
+                    evalue=hit.evalue,
+                    bitscore=hit.bitscore,
+                )
+                hit_info.append(hit_class)
+
+    if len(hit_info) == 0:
+        LOG.error("No hits have been found")
+    
     return hit_info
 
 
@@ -142,4 +151,4 @@ def preform_hmmer(path_pfam=None,
 
     #5. Parse hmm output, needs to be the same as blast output
     # List of hits with: QueryID, Subject, Identity, Coverage, Evalue, bitscore
-    parse_hmmer_output("PF00491.22_results.txt")
+    parse_hmmer_output("PF05593.15_results.txt")
