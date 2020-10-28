@@ -265,12 +265,11 @@ def cblaster(
 
 
 def search_hmm(
-        path_pfam = None,
-        path_db = None,
-        acc_profile = None
+        path_pfam=None,
+        path_db=None,
+        acc_profile=None
 ):
-    print(path_pfam, path_db, acc_profile)
-    hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
+    hits = hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
 
 
 def main():
@@ -355,8 +354,8 @@ def main():
 
     elif args.subcommand == "hmm":
         search_hmm(path_pfam=args.db,
-                path_db=args.dbf,
-                acc_profile=args.qp
+                   path_db=args.dbf,
+                   acc_profile=args.qp,
         )
 
 
