@@ -18,7 +18,6 @@ def check_pfam_db(path):
     """Check f Pfam-A db exists else download
 
     :param path: String, path where to check
-    :param file_names: list of strings, names of file in a list
     """
     file_names = ["Pfam-A.hmm.gz", "Pfam-A.hmm.dat.gz"]
     url_ls = ["ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam33.1/Pfam-A.hmm.gz",
@@ -81,12 +80,10 @@ def fetch_profiles(db_path, keys_ls):
 def run_hmmsearch(path_pfam, path_db, ls_keys):
     """Run the hmmsearch command
 
-    :param profile_names: List, String of names of used profiles
-    :param path: String, Path to folder where all db and profiles are
-    :param db_name: String, Name of used database, needs to be in fasta.gz
-                    format
-
-    path_pfam, path_db, ls_keys
+    :param path_pfam: String, Path to the pfam database
+    :param path_db: String, Path to db that will be searched for profiles
+    :param ls_keys: List, string of pfam profile names
+    :return: temp_res: List, String of result file names
     """
     LOG.info("Preforming hmmsearch")
     temp_res = []
@@ -99,36 +96,30 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
     return temp_res
 
 
-def parse_hmmer_output(file=""):
+def parse_hmmer_output(file):
     """Parse hmmsearch output
-
+    :param file: String, file name of results that need parsing
     :return: hit_info: Nested list, information about the hit results
                         - Hit_id, hit description, evalue, bit-score
     """
     hit_info = []
     for record in SearchIO.parse(file, 'hmmer3-text'):
-        query_id = record.accession  # Pfam ID number
         hits = record.hits
         num_hits = len(hits)
         if num_hits > 0:
             for hit in hits:
                 ## TO DO: Parse correct ID from Results
-                #if hit.id.startswith():
-
-
                 hit_class = Hit(
-                    query=record.accession,
-                    subject=hit.id,
-                    identity=None,
-                    coverage=None,
-                    evalue=hit.evalue,
-                    bitscore=hit.bitscore,
+                    query=record.accession,  # Pfam id
+                    subject=hit.id,  # Hit id
+                    identity=None,  # Not present
+                    coverage=None,  # Not present
+                    evalue=hit.evalue,  # E-value of hit
+                    bitscore=hit.bitscore,  # Bitscore of hit
                 )
                 hit_info.append(hit_class)
-
     if len(hit_info) == 0:
         LOG.error("No hits have been found")
-    
     return hit_info
 
 
@@ -141,14 +132,16 @@ def preform_hmmer(path_pfam=None,
 
     LOG.info("Starting hmmer search")
     #2. run check_pfam_db
-    #check_pfam_db(path_pfam)
+    check_pfam_db(path_pfam)
 
     #3. get_full_acc_number and run hmmfetch
-    #ls_keys = fetch_profiles(path_pfam, acc_profile)
+    ls_keys = fetch_profiles(path_pfam, acc_profile)
 
     #4. run hmmsearch
-    #ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
+    ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
 
     #5. Parse hmm output, needs to be the same as blast output
-    # List of hits with: QueryID, Subject, Identity, Coverage, Evalue, bitscore
-    parse_hmmer_output("PF05593.15_results.txt")
+    ls_hits = []
+    for res in ls_res:
+        ls_hits.append(parse_hmmer_output(res))
+    return ls_hits
