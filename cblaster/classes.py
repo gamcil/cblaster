@@ -184,7 +184,7 @@ class Organism(Serializer):
         return summarise_organism(
             self,
             decimals=decimals,
-            hide_headers=headers,
+            hide_headers=hide_headers,
             delimiter=delimiter,
         )
 
@@ -193,9 +193,11 @@ class Organism(Serializer):
         """The full name (including strain) of the organism.
         Note: if strain found in name, returns just name.
         """
-        if not self.strain or self.strain in self.name:
-            return f"{self.name}"
-        return f"{self.name} {self.strain}"
+        if not self.name:
+            name = "No organism"
+            return f"{name} {self.strain}" if self.strain else name
+        else:
+            return f"{self.name} {self.strain}" if self.strain else self.name
 
     def to_dict(self):
         return {
