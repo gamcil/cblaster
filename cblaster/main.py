@@ -6,7 +6,7 @@ import sys
 
 from pathlib import Path
 
-
+import hmmer
 from cblaster import (
     context,
     database,
@@ -19,7 +19,7 @@ from cblaster import (
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
-import hmmer
+
 
 
 logging.basicConfig(
@@ -210,7 +210,6 @@ def cblaster(
             )
             sqlite_db = None
             session.params["rid"] = rid
-
         if sqlite_db:
             session.params["sqlite_db"] = sqlite_db
 
@@ -265,12 +264,28 @@ def cblaster(
 
 
 def search_hmm(
-        path_pfam=None,
-        path_db=None,
-        acc_profile=None
+    path_pfam=None,
+    path_db=None,
+    acc_profile=None,
+    require=None,
+    json_db=None,
+    ipg_file=None,
+    output=None,
 ):
-    hits = hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
+    results = hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
+    organisms = context.search(
+        results,
+        unique=2,
+        min_hits=2,
+        gap=20000,
+        require=require,
+        json_db=json_db,
+        ipg_file=ipg_file,
+    )
 
+    LOG.info("Writing summary to %s",
+             "stdout" if output == sys.stdout else output)
+    ## TODO function that formats output correct
 
 def main():
     """cblaster entry point."""
