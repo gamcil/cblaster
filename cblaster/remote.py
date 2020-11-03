@@ -285,8 +285,8 @@ def parse(
         )
 
         if (
-            hit.identity > min_identity
-            and hit.coverage > min_coverage
+            float(hit.identity) > min_identity
+            and float(hit.coverage) > min_coverage
             and hit.evalue < max_evalue
         ):
             hits.append(hit)
