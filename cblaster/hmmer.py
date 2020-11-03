@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Hmmfetch and hmmsearch implementation
 """
@@ -87,6 +89,7 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
     """
     LOG.info("Preforming hmmsearch")
     temp_res = []
+    # TODO save results in a temp folder, delete when done
     for prof in ls_keys:
         command_run_hmmsearch = "hmmsearch -o {} {} {} ".format(prof +
                             "_results.txt", path_pfam + prof + ".hmm", path_db)
@@ -108,7 +111,7 @@ def parse_hmmer_output(file):
         num_hits = len(hits)
         if num_hits > 0:
             for hit in hits:
-                ## TO DO: Parse correct ID from Results
+                ## TODO Parse correct ID from Results
                 hit_class = Hit(
                     query=record.accession,  # Pfam id
                     subject=hit.id,  # Hit id
