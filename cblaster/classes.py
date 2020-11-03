@@ -464,8 +464,7 @@ class Hit(Serializer):
         self.evalue = float(evalue)
 
     def __str__(self):
-        ## TO DO: Build if statement that formats the identity and coverage
-        ## when the types are floats and not None
+        ## TODO: Build if statement that formats the identity and coverage if present
         return (
             f"Hit: {self.query} - {self.subject}:"
             f" {self.identity}/{self.coverage:}"
