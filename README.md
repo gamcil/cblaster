@@ -11,7 +11,7 @@
 `cblaster` is a tool for finding clusters of co-located homologous sequences
 in BLAST searches.
 
-<img src="docs/source/_static/workflow.png" alt="cblaster search workflow" width=400>
+<img src="docs/source/_static/workflow.png" alt="cblaster search workflow" width=600>
 
 Given a collection of protein sequences, `cblaster` can search sequence databases
 remotely (via NCBI BLAST API) or locally (via `DIAMOND`). Search results are parsed
@@ -20,7 +20,7 @@ coordinates of remaining hits are obtained from the NCBI's Identical Protein
 Group (IPG) database (or a local database in local searches). Finally,
 `cblaster` scans for instances of collocation and generates visualisations:
 
-<img src="docs/source/_static/results.png" alt="cblaster search results" width=500>
+<img src="docs/source/_static/results.png" alt="cblaster search results" width=700>
 
 ## Installation
 `cblaster` can be installed via pip:
