@@ -12,6 +12,7 @@ import logging
 
 from Bio import SearchIO
 from shutil import which
+from shutil import rmtree
 from cblaster.classes import Hit
 
 LOG = logging.getLogger(__name__)
@@ -19,7 +20,8 @@ LOG = logging.getLogger(__name__)
 def check_pfam_db(path):
     """Check f Pfam-A db exists else download
 
-    :param path: String, path where to check
+    Args:
+        path: String, path where to check
     """
     file_names = ["Pfam-A.hmm.gz", "Pfam-A.hmm.dat.gz"]
     url_ls = ["ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam33.1/Pfam-A.hmm.gz",
@@ -42,9 +44,11 @@ def check_pfam_db(path):
 def get_full_accession_number(db_path, keys):
     """Get full accession number of Pfam profiles
 
-    :param keys: List, Strings of accession profiles numbers
-    :param db_path: String, Path to dat.gz file with the full acc-nr
-    :return: key_lines: List, string of full acc-number
+    Args:
+        keys: List, Strings of accession profiles numbers
+        db_path: String, Path to dat.gz file with the full acc-nr
+    Return:
+        key_lines: List, string of full acc-number
     """
     # Read dat.gz file with complete acc-numbers
     dat_gz_file = gzip.open(db_path + 'Pfam-A.hmm.dat.gz', 'r')
@@ -61,9 +65,11 @@ def get_full_accession_number(db_path, keys):
 def fetch_profiles(db_path, keys_ls):
     """Fetch hmm profiles from db and save in a file
 
-    :param db_path: String, path where db are stored
-    :param keys_ls: String, Path to file with acc-nr
-    :return ls_keys: List, strings with acc-numbers
+    Args:
+        db_path: String, path where db are stored
+        keys_ls: String, Path to file with acc-nr
+    Return:
+        ls_keys: List, strings with acc-numbers
     """
     LOG.info("Fetching profiles from Pfam-A file")
     ls_keys = get_full_accession_number(db_path, keys_ls)
@@ -71,6 +77,7 @@ def fetch_profiles(db_path, keys_ls):
         LOG.error("No valid profiles could be selected")
     else:
         for key in ls_keys:
+            # TODO save results in a temp folder, delete when done
             command_fetch_profile = "hmmfetch -o {} {} {}".format(db_path +
                               key + ".hmm", db_path + "Pfam-A.hmm.gz", key)
             subprocess.run(command_fetch_profile, stdout=subprocess.PIPE,
@@ -82,10 +89,12 @@ def fetch_profiles(db_path, keys_ls):
 def run_hmmsearch(path_pfam, path_db, ls_keys):
     """Run the hmmsearch command
 
-    :param path_pfam: String, Path to the pfam database
-    :param path_db: String, Path to db that will be searched for profiles
-    :param ls_keys: List, string of pfam profile names
-    :return: temp_res: List, String of result file names
+    Args:
+        path_pfam: String, Path to the pfam database
+        path_db: String, Path to db that will be searched for profiles
+        ls_keys: List, string of pfam profile names
+    Return:
+        temp_res: List, String of result file names
     """
     LOG.info("Preforming hmmsearch")
     temp_res = []
@@ -99,6 +108,13 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
     return temp_res
 
 def parse_ID(id):
+    """Parsing of id to only contain the NCBI identifier
+
+    Args:
+        id: String, hit id
+    Returns:
+        id: String, parsed hit id
+    """
     if "|" in id:
         return id.rstrip("|").split("|")[-1]
     else:
@@ -107,9 +123,12 @@ def parse_ID(id):
 
 def parse_hmmer_output(file_list):
     """Parse hmmsearch output
-    :param file: String, file name of results that need parsing
-    :return: hit_info: Nested list, information about the hit results
-                        - Hit_id, hit description, evalue, bit-score
+
+    Args:
+        file: List, string of file name of results that need parsing
+    Return:
+        hit_info: list of class objects, with information
+                 - query, subject, identity, coverage, e-value, bit score
     """
     hit_info = []
     for file in file_list:
@@ -125,7 +144,7 @@ def parse_hmmer_output(file_list):
                         identity=None,  # Not present
                         coverage=None,  # Not present
                         evalue=hit.evalue,  # E-value of hit
-                        bitscore=hit.bitscore,  # Bitscore of hit
+                        bitscore=hit.bitscore,  # Bit score of hit
                     )
                     hit_info.append(hit_class)
         if len(hit_info) == 0:
@@ -136,6 +155,16 @@ def parse_hmmer_output(file_list):
 def preform_hmmer(path_pfam=None,
                   path_db=None,
                   acc_profile=None):
+    """Main of running a hmmer search
+
+    Args:
+        path_pfam: String, Path to pfam db
+        path_db: String, Path to seqeunce db, in fasta or gbk format
+        acc_profile: List, Pfam profiles needed to be searched
+    Returns:
+        hit_res: List of class objects with the hits 
+
+    """
     #1. Check if program exist else give error message and stop program
     if which("hmmfetch") is None or which("hmmsearch") is None:
         LOG.error("Hmmer could not be found in PATH")
@@ -153,5 +182,4 @@ def preform_hmmer(path_pfam=None,
     #5. Parse hmm output, needs to be the same as blast output
     ls_res = ["PF00491.22_results.txt", "PF05593.15_results.txt"]
     hit_res = parse_hmmer_output(ls_res)
-    print(hit_res)
     return hit_res
