@@ -98,31 +98,38 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
         temp_res.append(prof +"_results.txt")
     return temp_res
 
+def parse_ID(id):
+    if "|" in id:
+        return id.rstrip("|").split("|")[-1]
+    else:
+        return id
 
-def parse_hmmer_output(file):
+
+def parse_hmmer_output(file_list):
     """Parse hmmsearch output
     :param file: String, file name of results that need parsing
     :return: hit_info: Nested list, information about the hit results
                         - Hit_id, hit description, evalue, bit-score
     """
     hit_info = []
-    for record in SearchIO.parse(file, 'hmmer3-text'):
-        hits = record.hits
-        num_hits = len(hits)
-        if num_hits > 0:
-            for hit in hits:
-                ## TODO Parse correct ID from Results
-                hit_class = Hit(
-                    query=record.accession,  # Pfam id
-                    subject=hit.id,  # Hit id
-                    identity=None,  # Not present
-                    coverage=None,  # Not present
-                    evalue=hit.evalue,  # E-value of hit
-                    bitscore=hit.bitscore,  # Bitscore of hit
-                )
-                hit_info.append(hit_class)
-    if len(hit_info) == 0:
-        LOG.error("No hits have been found")
+    for file in file_list:
+        for record in SearchIO.parse(file, 'hmmer3-text'):
+            hits = record.hits
+            num_hits = len(hits)
+            if num_hits > 0:
+                for hit in hits:
+                    hit_id = parse_ID(hit.id)
+                    hit_class = Hit(
+                        query=record.accession,  # Pfam id
+                        subject=hit_id,  # Hit id
+                        identity=None,  # Not present
+                        coverage=None,  # Not present
+                        evalue=hit.evalue,  # E-value of hit
+                        bitscore=hit.bitscore,  # Bitscore of hit
+                    )
+                    hit_info.append(hit_class)
+        if len(hit_info) == 0:
+            LOG.error("No hits have been found")
     return hit_info
 
 
@@ -135,16 +142,16 @@ def preform_hmmer(path_pfam=None,
 
     LOG.info("Starting hmmer search")
     #2. run check_pfam_db
-    check_pfam_db(path_pfam)
+    #check_pfam_db(path_pfam)
 
     #3. get_full_acc_number and run hmmfetch
-    ls_keys = fetch_profiles(path_pfam, acc_profile)
+    #ls_keys = fetch_profiles(path_pfam, acc_profile)
 
     #4. run hmmsearch
-    ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
+    #ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
 
     #5. Parse hmm output, needs to be the same as blast output
-    ls_hits = []
-    for res in ls_res:
-        ls_hits.append(parse_hmmer_output(res))
-    return ls_hits
+    ls_res = ["PF00491.22_results.txt", "PF05593.15_results.txt"]
+    hit_res = parse_hmmer_output(ls_res)
+    print(hit_res)
+    return hit_res
