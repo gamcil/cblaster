@@ -121,7 +121,7 @@ For further usage examples and API documentation, please refer to the
 If you found this tool useful, please cite:
 
 ```
-Gilchrist, C.L.M., Booth, T.J., Chooi, Y.-H.H., 2020. cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters. bioRxiv 2020.11.08.370601. https://doi.org/10.1101/2020.11.08.370601
+Gilchrist, C.L.M., Booth, T.J., Chooi, Y.-H., 2020. cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters. bioRxiv 2020.11.08.370601. https://doi.org/10.1101/2020.11.08.370601
 ```
 
 `cblaster` makes use of the following tools:
