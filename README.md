@@ -121,7 +121,12 @@ For further usage examples and API documentation, please refer to the
 If you found this tool useful, please cite:
 
 ```
-1. <pending>
-2. Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
-3. Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
+Gilchrist, C.L.M., Booth, T.J., Chooi, Y.-H.H., 2020. cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters. bioRxiv 2020.11.08.370601. https://doi.org/10.1101/2020.11.08.370601
+```
+
+`cblaster` makes use of the following tools:
+```
+Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
+
+Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
 ```
