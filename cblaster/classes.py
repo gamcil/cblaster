@@ -127,8 +127,6 @@ class Session(Serializer):
         Args:
             form (str): Type of table to generate ('summary' or 'binary').
             fp (file handle): File handle to write to.
-            human (bool): Use human-readable format.
-            headers (bool): Show table headers.
         Raises:
             ValueError: `form` not 'binary' or 'summary'
         Returns:
@@ -223,7 +221,7 @@ class Scaffold(Serializer):
 
     Attributes:
         accession (str): Name of this scaffold, typically NCBI accession.
-        hits (list): Hit objects located on this scaffold.
+        subjects (list): Subject objects located on this scaffold.
         clusters (list): Clusters of hits identified on this scaffold.
     """
 
@@ -344,9 +342,6 @@ class Hit(Serializer):
         coverage (float): Query coverage (%) of hit.
         evalue (float): E-value of hit.
         bitscore (float): Bitscore of hit.
-        start (int): Start of subject sequence on corresponding scaffold.
-        end (int): End of subject sequence on corresponding scaffold
-        strand (str): Orientation of subject sequence ('+' or '-').
     """
 
     def __init__(
