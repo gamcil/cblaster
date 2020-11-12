@@ -83,7 +83,6 @@ def binary(
     decimals=4
 ):
     """Generates a binary summary table from a Session object."""
-    value_fn = lambda q, c: get_cell_values(q, c, key=identity, attr=attr)
     rows = [
         [
             organism.full_name,
