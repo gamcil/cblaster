@@ -75,7 +75,7 @@ def efetch_IPGs(ids, output_handle=None):
 
         if response.status_code != 200:
             raise requests.HTTPError(
-                "Error fetching sequences from NCBI [code {response.status_code}]."
+                f"Error fetching sequences from NCBI [code {response.status_code}]."
             )
 
         table += response.text
