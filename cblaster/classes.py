@@ -241,7 +241,7 @@ class Scaffold(Serializer):
         return summarise_scaffold(
             self,
             decimals=decimals,
-            hide_headers=headers,
+            hide_headers=hide_headers,
             delimiter=delimiter,
         )
 
