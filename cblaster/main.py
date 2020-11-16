@@ -6,6 +6,9 @@ import sys
 
 from pathlib import Path
 
+# for testing purposes
+sys.path.insert(0, "..")
+
 from cblaster import (
     context,
     database,
@@ -275,7 +278,7 @@ def cblaster(
 def main():
     """cblaster entry point."""
     args = parsers.parse_args(sys.argv[1:])
-
+    print(args)
     if args.debug:
         LOG.setLevel(logging.DEBUG)
 

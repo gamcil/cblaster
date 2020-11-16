@@ -8,6 +8,7 @@ import logging
 from functools import partial
 from collections import defaultdict
 
+import scipy
 from scipy.cluster.hierarchy import linkage
 
 from cblaster.classes import Session
@@ -280,7 +281,7 @@ def plot_gne(data, output=None):
         serve_html(data, chart="gne")
 
 
-def plot_session_file(path):
+def plot_session_file(path, serve=True, html=None):
     with open(path) as fp:
-        session = Session.from_json(fp)
+        session = Session.from_json(fp, serve=True, html=None)
     plot_session(session)
