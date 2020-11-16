@@ -6,7 +6,6 @@ import subprocess
 import os
 
 from tempfile import NamedTemporaryFile as NTF
-from pathlib import Path
 
 from cblaster import helpers
 from cblaster.classes import Hit
@@ -101,8 +100,10 @@ def search(
 
     Arguments:
         database (str): Path to DIAMOND database
+        sequences (dict): Query sequences
         query_file (str): Path to FASTA file containing query sequences
         query_ids (list): NCBI sequence accessions
+        blast_file (TextIOWrapper): file blast results are written to
     Raises:
         ValueError: No value given for query_file or query_ids
     Returns:

@@ -83,7 +83,6 @@ def binary(
     decimals=4
 ):
     """Generates a binary summary table from a Session object."""
-    value_fn = lambda q, c: get_cell_values(q, c, key=identity, attr=attr)
     rows = [
         [
             organism.full_name,
@@ -164,10 +163,10 @@ def summarise_subjects(subjects, decimals=4, hide_headers=True, delimiter=None):
     """Generates a summary table for a hit cluster.
 
     Args:
-        hits (list): collection of Hit objects
+        subjects (list): collection of Subject objects
         decimals (int): number of decimal points to show
-        show_headers (bool): show column headers in output
-        human (bool): use human-readable format
+        hide_headers (bool): hide column headers in output
+        delimiter (str): delimiting string between the subjects
     Returns:
         summary table
     """

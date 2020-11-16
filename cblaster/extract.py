@@ -161,6 +161,7 @@ def extract(
 
     Parameters:
         session (Session): cblaster Session object
+        in_cluster: (bool): Only sequences in clusters are extracted
         download (bool): Download hit sequences from NCBI
         output (str): Output file name
         queries (list): Query sequence names

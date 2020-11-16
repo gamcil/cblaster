@@ -324,6 +324,7 @@ def search(
         min_identity (float): Minimum percent identity
         min_coverage (float): Minimum percent query coverage
         max_evalue (float): Maximum e-value
+        blast_file (TextIOWrapper): file blast results are written to
     Returns:
         list: Hit objects corresponding to criteria passing BLAST hits
     """
