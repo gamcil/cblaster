@@ -281,7 +281,7 @@ def plot_gne(data, output=None):
         serve_html(data, chart="gne")
 
 
-def plot_session_file(path, serve=True, html=None):
+def plot_session_file(path, output=None):
     with open(path) as fp:
-        session = Session.from_json(fp, serve=True, html=None)
-    plot_session(session)
+        session = Session.from_json(fp)
+    plot_session(session, output=output)

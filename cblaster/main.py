@@ -6,8 +6,6 @@ import sys
 
 from pathlib import Path
 
-# for testing purposes
-sys.path.insert(0, "..")
 
 from cblaster import (
     context,
