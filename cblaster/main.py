@@ -266,26 +266,34 @@ def cblaster(
 def search_hmm(
     path_pfam=None,
     path_db=None,
+    gap=20000,
+    min_hits=2,
+    unique=3,
     acc_profile=None,
     require=None,
     json_db=None,
     ipg_file=None,
     output=None,
 ):
-    results = hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
+    hit_results = hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
+    print(hit_results)
+
+    LOG.info("Found %i hits meeting score thresholds", len(hit_results))
+    LOG.info("Fetching genomic context of hits")
     organisms = context.search(
-        results,
-        unique=2,
-        min_hits=2,
-        gap=20000,
+        hit_results,
+        unique=unique,
+        min_hits=min_hits,
+        gap=gap,
         require=require,
         json_db=json_db,
         ipg_file=ipg_file,
     )
+    print(organisms)
 
     LOG.info("Writing summary to %s",
              "stdout" if output == sys.stdout else output)
-    ## TODO function that formats output correct
+
 
 def main():
     """cblaster entry point."""
