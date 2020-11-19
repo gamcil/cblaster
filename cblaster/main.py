@@ -276,7 +276,6 @@ def cblaster(
 def main():
     """cblaster entry point."""
     args = parsers.parse_args(sys.argv[1:])
-    print(args)
     if args.debug:
         LOG.setLevel(logging.DEBUG)
 

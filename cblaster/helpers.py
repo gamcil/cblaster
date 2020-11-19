@@ -5,6 +5,9 @@ import shutil
 import requests
 import logging
 
+import g2j
+from g2j import genbank
+
 from pathlib import Path
 from collections import OrderedDict
 
@@ -66,6 +69,43 @@ def parse_fasta(handle):
         else:
             if not skip:
                 sequences[header] += line
+    return sequences
+
+
+def parse_genbank(handle):
+    """Parse sequences in a GENBANK file.
+
+    A translation qualifier has to be present in order to subtract the sequence
+
+    Parameters:
+        handle (TextIOWrapper): opened genbank file
+    Returns:
+        Sequences in GENBANK file keyed on the following qualifiers of the
+        CDS feature 'protein_id', 'db_xref', 'locus_tag', 'gene' if none of
+        these are available a name is auto generated in the form protein _ count
+    """
+    sequences = OrderedDict()
+    organism = genbank.parse(handle, feature_types=["CDS"])
+    count = 1
+    for scaffold in organism.scaffolds:
+        for cds_feature in scaffold.features:
+            name = None
+            for qual in ["protein_id", "db_xref", "locus_tag", "gene"]:
+                if qual in cds_feature.qualifiers:
+                    name = cds_feature.qualifiers[qual].split(" ")[0]
+                    break
+            if "translation" not in cds_feature.qualifiers:
+                LOG.warning(f"Skipping '{name if name else 'no name provided'}'"
+                            f", no translation provided. Make sure a /translation"
+                            f" feature is present.")
+                continue
+            if not name:
+                name = f"protein_{count}"
+                count += 1
+            if name in sequences:
+                LOG.warning(f"Skipping duplicate sequence: {name}")
+            else:
+                sequences[name] = cds_feature.qualifiers["translation"]
     return sequences
 
 
@@ -142,7 +182,12 @@ def get_sequences(query_file=None, query_ids=None):
     """
     if query_file and not query_ids:
         with open(query_file) as query:
-            sequences = parse_fasta(query)
+            if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
+                sequences = parse_genbank(query)
+            elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
+                pass
+            else:
+                sequences = parse_fasta(query)
     elif query_ids:
         sequences = efetch_sequences(query_ids)
     else:
