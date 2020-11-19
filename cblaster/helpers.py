@@ -5,6 +5,11 @@ import shutil
 import requests
 import logging
 
+import g2j
+from g2j import genbank
+
+from cblaster import embl
+
 from pathlib import Path
 from collections import OrderedDict
 
@@ -69,6 +74,35 @@ def parse_fasta(handle):
     return sequences
 
 
+<<<<<<< HEAD
+=======
+def _extract_sequences_from_organism(organism):
+    sequences = OrderedDict()
+
+    count = 1
+    for scaffold in organism.scaffolds:
+        for cds_feature in scaffold.features:
+            name = None
+            for qual in ["protein_id", "db_xref", "locus_tag", "gene"]:
+                if qual in cds_feature.qualifiers:
+                    name = cds_feature.qualifiers[qual].split(" ")[0]
+                    break
+            if "translation" not in cds_feature.qualifiers:
+                LOG.warning(f"Skipping '{name if name else 'no name provided'}'"
+                            f", no translation provided. Make sure a /translation"
+                            f" feature is present.")
+                continue
+            if not name:
+                name = f"protein_{count}"
+                count += 1
+            if name in sequences:
+                LOG.warning(f"Skipping duplicate sequence: {name}")
+            else:
+                sequences[name] = cds_feature.qualifiers["translation"]
+    return sequences
+
+
+>>>>>>> d611d1b (added function to the helper class to allow genbank and embl files to be translated into a sequence dictionary)
 def parse_fasta_file(path):
     with open(path) as fp:
         sequences = parse_fasta(fp)
@@ -142,7 +176,14 @@ def get_sequences(query_file=None, query_ids=None):
     """
     if query_file and not query_ids:
         with open(query_file) as query:
-            sequences = parse_fasta(query)
+            if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
+                organism = genbank.parse(query, feature_types=["CDS"])
+                sequences = _extract_sequences_from_organism(organism)
+            elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
+                organism = embl.parse(query, feature_types=["CDS"])
+                sequences = _extract_sequences_from_organism(organism)
+            else:
+                sequences = parse_fasta(query)
     elif query_ids:
         sequences = efetch_sequences(query_ids)
     else:
