@@ -8,6 +8,8 @@ import logging
 import g2j
 from g2j import genbank
 
+from cblaster import embl
+
 from pathlib import Path
 from collections import OrderedDict
 
@@ -72,20 +74,9 @@ def parse_fasta(handle):
     return sequences
 
 
-def parse_genbank(handle):
-    """Parse sequences in a GENBANK file.
-
-    A translation qualifier has to be present in order to subtract the sequence
-
-    Parameters:
-        handle (TextIOWrapper): opened genbank file
-    Returns:
-        Sequences in GENBANK file keyed on the following qualifiers of the
-        CDS feature 'protein_id', 'db_xref', 'locus_tag', 'gene' if none of
-        these are available a name is auto generated in the form protein _ count
-    """
+def _extract_sequences_from_organism(organism):
     sequences = OrderedDict()
-    organism = genbank.parse(handle, feature_types=["CDS"])
+
     count = 1
     for scaffold in organism.scaffolds:
         for cds_feature in scaffold.features:
@@ -183,9 +174,11 @@ def get_sequences(query_file=None, query_ids=None):
     if query_file and not query_ids:
         with open(query_file) as query:
             if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
-                sequences = parse_genbank(query)
+                organism = genbank.parse(query, feature_types=["CDS"])
+                sequences = _extract_sequences_from_organism(organism)
             elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
-                pass
+                organism = embl.parse(query, feature_types=["CDS"])
+                sequences = _extract_sequences_from_organism(organism)
             else:
                 sequences = parse_fasta(query)
     elif query_ids:
