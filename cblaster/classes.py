@@ -263,7 +263,7 @@ class Scaffold(Serializer):
         clusters = [None for _ in range(len(d["clusters"]))]
         for index, cluster in enumerate(d["clusters"]):
             cluster_subjects = [subjects[ix] for ix in cluster["indices"]]
-            clusters[index] = Cluster.from_dict(cluster, cluster_subjects)
+            clusters[index] = Cluster.from_dict(cluster, *cluster_subjects)
         return cls(accession=d["accession"], subjects=subjects, clusters=clusters)
 
 
