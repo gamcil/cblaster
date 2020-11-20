@@ -75,13 +75,26 @@ def parse_fasta(handle):
 
 
 def _extract_sequences_from_organism(organism):
+    """Extract sequences from an Organism and write them into a fasta format
+
+    The name of the fasta lines are based on qualifiers associated with the CDS
+    feature. Names are extracted from the following qualifiers in that order:
+    "protein_id", "db_xref", "locus_tag", "gene", "ID". If none of the qualifiers
+    are present a name is auto generated in the form protein _ count.
+
+    Parameters:
+        organism (g2j.classes.Organism): organism object created from EMBL
+        or genbank file using g2j
+    Returns:
+        sequences (dict): Dictionary of query sequences keyed on accession.
+    """
     sequences = OrderedDict()
 
     count = 1
     for scaffold in organism.scaffolds:
         for cds_feature in scaffold.features:
             name = None
-            for qual in ["protein_id", "db_xref", "locus_tag", "gene"]:
+            for qual in ["protein_id", "db_xref", "locus_tag", "gene", "ID"]:
                 if qual in cds_feature.qualifiers:
                     name = cds_feature.qualifiers[qual].split(" ")[0]
                     break
@@ -164,7 +177,8 @@ def get_sequences(query_file=None, query_ids=None):
     """Convenience function to get dictionary of query sequences from file or IDs.
 
     Parameters:
-        query_file (str): Path to FASTA file containing query protein sequences.
+        query_file (str): Path to FASTA genbank or EMBL file containing query
+        protein sequences.
         query_ids (list): NCBI sequence accessions.
     Raises:
         ValueError: Did not receive values for query_file or query_ids.
@@ -177,7 +191,7 @@ def get_sequences(query_file=None, query_ids=None):
                 organism = genbank.parse(query, feature_types=["CDS"])
                 sequences = _extract_sequences_from_organism(organism)
             elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
-                organism = embl.parse(query, feature_types=["CDS"])
+                organism = embl.parse(query_file, feature_types=["CDS"])
                 sequences = _extract_sequences_from_organism(organism)
             else:
                 sequences = parse_fasta(query)
