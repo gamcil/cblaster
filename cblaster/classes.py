@@ -236,6 +236,14 @@ class Scaffold(Serializer):
         )
 
     def add_clusters(self, subject_lists):
+        """Add clusters to this scaffold
+
+        After clusters are added they are sorted based on score
+
+        Args:
+            subject_lists (list): a list of lists Subject objects that
+            form clusters
+        """
         for s_list in subject_lists:
             indices = [self.subjects.index(subject) for subject in s_list]
             self.clusters.append(Cluster(indices, s_list))
@@ -268,6 +276,18 @@ class Scaffold(Serializer):
 
 
 class Cluster(Serializer):
+    """A cluster of subjects on the same scaffold
+
+    Attributes:
+        indices (list): indexes of the subjects in the list of subjects
+        of the parent scaffold
+        subjects (list): Subject objects that are in this cluster. Note:
+        These are not serialised for this cluster
+        score (float): a value that scores how well a cluster resembles the query
+        start (int): The start coordinate of the cluster on the parent scaffold
+        end (int): The end coordinate of the cluster on the parent scaffold
+    """
+
     def __init__(self, indices=None, subjects=None, score=None, start=None, end=None):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
@@ -282,6 +302,14 @@ class Cluster(Serializer):
         return len(self.subjects)
 
     def __calculate_score(self):
+        """Calculate the score of the current cluster
+
+        The score is based on accumulated blastbitscore total
+        amount of hits against the query
+
+        Returns:
+            a float
+        """
         accumulated_bit_score = 0
         for subject in self.subjects:
             accumulated_bit_score += max(hit.bitscore for hit in subject.hits)
