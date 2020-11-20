@@ -17,7 +17,7 @@ PATTERNS = {
     "organism": re.compile(r"OS\s+?(?P<organism>\w.+?)[\n\r]"),
     "strain": re.compile(r'/strain=\"(?P<strain>[\w .-]+?)\"'),
     "features": re.compile(
-        r"Key {13}Location/Qualifiers(.+?)(?:SQ {3}Sequence)", re.DOTALL
+        r"Key {13}Location/Qualifiers(.+?)(?:XX.+SQ {3}Sequence)", re.DOTALL
     ),
     "sequence": re.compile(r"SQ {3}Sequence[\w; ]+\s{6}(.*)", re.DOTALL),
     "identifier": re.compile(r'(protein_id|locus_tag|gene|ID)=\"([\w.:-]+?)\"'),
