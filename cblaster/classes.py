@@ -235,6 +235,13 @@ class Scaffold(Serializer):
             self.accession, len(self.subjects), len(self.clusters)
         )
 
+    def add_clusters(self, subject_lists):
+        for s_list in subject_lists:
+            indices = [self.subjects.index(subject) for subject in s_list]
+            self.clusters.append(Cluster(indices, s_list))
+
+        self.clusters.sort(key=lambda x: x.score, reverse=True)
+
     def summary(self, hide_headers=False, delimiter=None, decimals=4):
         return summarise_scaffold(
             self,
@@ -247,17 +254,54 @@ class Scaffold(Serializer):
         return {
             "accession": self.accession,
             "subjects": [subject.to_dict() for subject in self.subjects],
-            "clusters": [
-                [self.subjects.index(subject) for subject in cluster]
-                for cluster in self.clusters
-            ],
+            "clusters": [cluster.to_dict() for cluster in self.clusters],
         }
 
     @classmethod
     def from_dict(cls, d):
         subjects = [Subject.from_dict(subject) for subject in d["subjects"]]
-        clusters = [[subjects[ix] for ix in cluster] for cluster in d["clusters"]]
+        clusters = [None for _ in range(len(d["clusters"]))]
+        for index, cluster in enumerate(d["clusters"]):
+            cluster_subjects = [subjects[ix] for ix in cluster["indices"]]
+            clusters[index] = Cluster.from_dict(cluster, cluster_subjects)
         return cls(accession=d["accession"], subjects=subjects, clusters=clusters)
+
+
+class Cluster(Serializer):
+    def __init__(self, indices=None, subjects=None, score=None, start=None, end=None):
+        self.indices = indices if indices else []
+        self.subjects = subjects if subjects else []
+        self.score = score if score else self.__calculate_score()
+        self.start = start if start else self.subjects[0].start
+        self.end = end if end else self.subjects[-1].end
+
+    def __iter__(self):
+        return iter(self.subjects)
+
+    def __len__(self):
+        return len(self.subjects)
+
+    def __calculate_score(self):
+        accumulated_bit_score = 0
+        for subject in self.subjects:
+            accumulated_bit_score += max(hit.bitscore for hit in subject.hits)
+        # make sure to reduce the accumulated bit score or it will dominate the score
+        accumulated_bit_score /= 10_000
+        number_of_hits = len(self.subjects)
+        return accumulated_bit_score + number_of_hits
+
+    def to_dict(self):
+        return {
+            "indices": self.indices,
+            "score": self.score,
+            "start": self.start,
+            "end": self.end
+        }
+
+    @classmethod
+    def from_dict(cls, d, *subjects):
+        return cls(indices=d["indices"], subjects=subjects,
+                   score=d["score"], start=d["start"], end=d["end"])
 
 
 class Subject(Serializer):
