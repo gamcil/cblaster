@@ -151,7 +151,7 @@ def summarise_organism(organism, hide_headers=True, delimiter=None, decimals=4):
 def summarise_scaffold(scaffold, hide_headers=True, delimiter=None, decimals=4):
     return _summarise(
         scaffold.clusters,
-        summarise_subjects,
+        summarise_cluster,
         scaffold.accession,
         hide_headers=hide_headers,
         delimiter=delimiter,
@@ -159,20 +159,23 @@ def summarise_scaffold(scaffold, hide_headers=True, delimiter=None, decimals=4):
     )
 
 
-def summarise_subjects(subjects, decimals=4, hide_headers=True, delimiter=None):
+def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
     """Generates a summary table for a hit cluster.
 
     Args:
-        subjects (list): collection of Subject objects
+        cluster (Cluster): collection of Subject objects
         decimals (int): number of decimal points to show
         hide_headers (bool): hide column headers in output
         delimiter (str): delimiting string between the subjects
     Returns:
         summary table
     """
-    subjects.sort(key=attrgetter("start"))
+
     rows = []
-    for subject in subjects:
+
+    general_information = f"Cluster with score {cluster.score:.3f}:\n"
+
+    for subject in cluster:
         values = subject.values(decimals)
         rows.extend(values)
     if not hide_headers:
@@ -191,7 +194,7 @@ def summarise_subjects(subjects, decimals=4, hide_headers=True, delimiter=None):
     if not delimiter:
         delimiter = "  "
         rows = humanise(rows)
-    return "\n".join(delimiter.join(hit) for hit in rows)
+    return general_information + "\n".join(delimiter.join(hit) for hit in rows)
 
 
 def summary(session, hide_headers=False, delimiter=None, decimals=4):

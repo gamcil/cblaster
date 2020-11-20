@@ -419,7 +419,7 @@ def deduplicate(organism):
     """
     remove = defaultdict(list)
     for scafA, scafB in combinations(organism.scaffolds.values(), 2):
-        for one, two in product(scafA.clusters, scafB.clusters):
+        for one, two in product(scafA.s, scafB.clusters):
             if clusters_are_identical(one, two):
                 remove[scafB.accession].append(two)
     for accession, clusters in remove.items():
@@ -437,7 +437,7 @@ def find_clusters_in_organism(
 ):
     """Runs find_clusters() on all scaffolds in an organism."""
     for scaffold in organism.scaffolds.values():
-        scaffold.clusters = list(
+        scaffold.add_clusters(
             find_clusters(
                 scaffold.subjects,
                 unique=unique,
@@ -501,7 +501,7 @@ def calculate_gne(session):
     Median gn size
     """
     clusters = [
-        cluster[-1].end - cluster[0].start
+        cluster.end - cluster.start
         for organism in session.organisms
         for accession, scaffold in organism.scaffolds.items()
         for cluster in scaffold.clusters
