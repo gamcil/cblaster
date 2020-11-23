@@ -79,14 +79,15 @@ def _extract_sequences_from_organism(organism):
 
     The name of the fasta lines are based on qualifiers associated with the CDS
     feature. Names are extracted from the following qualifiers in that order:
-    "protein_id", "db_xref", "locus_tag", "gene", "ID". If none of the qualifiers
-    are present a name is auto generated in the form protein _ count.
+    "protein_id", "locus_tag", "gene", "ID". If none of the qualifiers are present
+    a name is auto generated in the form protein _ count.
 
     Parameters:
         organism (g2j.classes.Organism): organism object created from EMBL
         or genbank file using g2j
     Returns:
-        sequences (dict): Dictionary of query sequences keyed on accession.
+        sequences (OrderedDict): Dictionary of query sequences keyed on accession
+        sorted by location.
     """
     sequences = OrderedDict()
 
@@ -94,7 +95,7 @@ def _extract_sequences_from_organism(organism):
     for scaffold in organism.scaffolds:
         for cds_feature in scaffold.features:
             name = None
-            for qual in ["protein_id", "db_xref", "locus_tag", "gene", "ID"]:
+            for qual in ["protein_id", "locus_tag", "gene", "ID"]:
                 if qual in cds_feature.qualifiers:
                     name = cds_feature.qualifiers[qual].split(" ")[0]
                     break
@@ -108,9 +109,16 @@ def _extract_sequences_from_organism(organism):
                 count += 1
             if name in sequences:
                 LOG.warning(f"Skipping duplicate sequence: {name}")
+            elif len(cds_feature.location.intervals) != 1:
+                LOG.warning(f"Skipping sequence {name} because the location is segmented or no location was found")
             else:
-                sequences[name] = cds_feature.qualifiers["translation"]
-    return sequences
+                sequences[name] = [cds_feature.qualifiers["translation"], cds_feature.location.intervals[0]]
+    # make sure that the sequences are sorted
+    ordered_sequences = OrderedDict(sorted(sequences.items(), key=lambda x: (x[1][1].start, x[1][1].end)))
+    # remove the location tags used for sorting
+    for name, val in ordered_sequences.items():
+        ordered_sequences[name] = val[0]
+    return ordered_sequences
 
 
 def parse_fasta_file(path):
