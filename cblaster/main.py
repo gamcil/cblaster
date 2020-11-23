@@ -227,6 +227,10 @@ def cblaster(
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
         LOG.info("Fetching genomic context of hits")
+
+        query_sequence_order = list(session.sequences.keys()) \
+            if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff", ".embl", ".emb"))\
+            else None
         session.organisms = context.search(
             results,
             unique=unique,
@@ -235,6 +239,7 @@ def cblaster(
             require=require,
             json_db=json_db,
             ipg_file=ipg_file,
+            query_sequence_order=query_sequence_order
         )
 
         if session_file:
