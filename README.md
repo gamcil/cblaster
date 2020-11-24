@@ -6,18 +6,21 @@
 [![Documentation Status](https://readthedocs.org/projects/cblaster/badge/?version=latest)](https://cblaster.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3660769.svg)](https://doi.org/10.5281/zenodo.3660769)
 
+## Outline
 
 `cblaster` is a tool for finding clusters of co-located homologous sequences
 in BLAST searches.
 
-## Outline
-1. Performs BLAST search, remotely (via BLAST API) or locally (via `diamond`)
-2. Parses results, saving hits meeting user-defined thresholds for identity, coverage and
-   e-value
-3. Queries the NCBI's Identical Protein Group (IPG) resource to fetch the position of each hit on
-   their respective genomic scaffolds
-4. Looks for clusters of co-located hits meeting thresholds for intergenic distance and
-   minimum number of conserved sequences
+<img src="docs/source/_static/workflow.png" alt="cblaster search workflow" width=600>
+
+Given a collection of protein sequences, `cblaster` can search sequence databases
+remotely (via NCBI BLAST API) or locally (via `DIAMOND`). Search results are parsed
+and filtered based on user thresholds for identity, coverage and e-value. The genomic
+coordinates of remaining hits are obtained from the NCBI's Identical Protein
+Group (IPG) database (or a local database in local searches). Finally,
+`cblaster` scans for instances of collocation and generates visualisations:
+
+<img src="docs/source/_static/results.png" alt="cblaster search results" width=700>
 
 ## Installation
 `cblaster` can be installed via pip:
@@ -118,7 +121,12 @@ For further usage examples and API documentation, please refer to the
 If you found this tool useful, please cite:
 
 ```
-1. <pending>
-2. Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
-3. Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
+Gilchrist, C.L.M., Booth, T.J., Chooi, Y.-H., 2020. cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters. bioRxiv 2020.11.08.370601. https://doi.org/10.1101/2020.11.08.370601
+```
+
+`cblaster` makes use of the following tools:
+```
+Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
+
+Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
 ```
