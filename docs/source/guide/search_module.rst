@@ -1,7 +1,5 @@
-.. _local:
-
-Search against local databases
-==============================
+Running a ``cblaster`` search using the ``search`` module
+=========================================================
 
 cblaster can also perform fully local searches, forgoing the need for any interaction
 with NCBI whatsoever.
