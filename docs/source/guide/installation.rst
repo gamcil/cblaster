@@ -10,7 +10,7 @@ This will initiate the download of the Python installer (python-x.x.x.exe).
 
 
 Locate the installer in your downloads folder, run the program and follow the wizard.
-*Make sure you tick the box `Add Python x.x to PATH'*
+**Make sure you tick the box `Add Python x.x to PATH'.**
 This ensures that ``cblaster`` is available for you to use directly from the terminal.
 It is not selected by default and you will have to do this step manually if you do not check the box here.
 
@@ -79,7 +79,7 @@ Search sessions can be saved for later re-use using the ``-s`` or ``--session`` 
 	
 Note: a session is saved as a JavaScript Object Notation (JSON) format file.
 This is essentially just a dump of all the code objects, as well as search parameters, used during a ``cblaster`` search.
-If you provide a pre-existing session file, ``cblaster`` will attempt to load it *instead* of performing a new search.
+If you provide a pre-existing session file, ``cblaster`` will attempt to load it **instead** of performing a new search.
 
 That is all you need to know about the basic usage of ``cblaster``.
 However, there are many more ways to tweak and run the program to suit your needs which are further explored in the following sections.
