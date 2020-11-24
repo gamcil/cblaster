@@ -1,57 +1,68 @@
+Retrieving hit sequences with the ``extract`` module
+====================================================
 
+After a search has been performed, it can be useful to retrieve sequences matching a certain query for further analyses (e.g. sequence comparisons for phylogenies).
+This is easily accomplished using ``cblaster``'s ``extract`` module.
 
-Remotely search NCBI BLAST databases
-====================================
-
-At a minimum, a search could look like one of the following:
-
-::
-
-  $ cblaster search --query_file query.fasta 
-  $ cblaster search --query_ids QBE85649.1 QBE85648.1 QBE85647.1 QBE85646.1 ...
- 
-This will launch a remote search against the non-redundant (nr) protein database,
-retrieve and parse the results, then report any blocks of hits.
-If you wanted to search against a different NCBI database, you can provide one using the
-``--database`` argument, like so:
+This module takes a ``cblaster`` session file as input, then extracts sequences matching any filters you have specified.
+If no filters are specified, ALL hit sequences will be extracted.
+However, that's probably not too useful, so instead we could extract all hit sequences matching a query sequence:
 
 ::
 
-  $ cblaster search -qf query.fasta -db refseq_protein
+        $ cblaster extract session.json -q "Query1"
 
-Note that the short forms of ``--query_file`` (``-qf``) and ``--database`` (``-db``)
-have been used here. Most commands in cblaster have a short form, which can be found
-in the help menus (``cblaster search -h``).
-
-By default, hits are only reported if they are above 30% identity and 50% query
-coverage, and have an e-value below 0.01.
-If we wanted to be stricter, we could change those values with their corresponding
-arguments, for example:
+By default, only sequence names are extracted.
+This is because ``cblaster`` stores no actual sequence data for hit sequences during it's normal search workflow, only their coordinates.
+However, sequences can automatically be retrieved from the NCBI by specifying the ``-d/--download`` argument.
+``cblaster`` will then write them, in FASTA format, to either the command line or a file.
+For example, we can do the same command as above, but retrieve the sequences and write them to ``output.fasta`` like so:
 
 ::
 
-  $ cblaster search -qf query.fasta --min_identity 70 --min_coverage 90 --evalue 0.001
+        $ cblaster extract session.json -q "Query1" -d -o output.fasta
 
-You can also pass in NCBI search queries using `-eq / --entrez_query` to pre-filter
-the target database, which can result in vastly reduced run-times and more
-specific results. For example, to only search against *Aspergillus* sequences:
+Note that the ``-o/--output`` argument has been used here; this will write any results from the ``extract`` module to the specified file.
 
-::
-
-  $ cblaster search -qf query.fasta --entrez_query "Aspergillus"[ORGN]
-
-Look here_ for a full description of Entrez search terms.
-
-.. _here: https://www.ncbi.nlm.nih.gov/books/NBK49540/
-
-Another useful feature of cblaster is the ability to retrieve results of a previous
-remote BLAST search. Every search started on NCBI is automatically assigned a unique
-request identifier (RID) which remains valid for up to 24 hours after the completion of
-that search. cblaster is able to take an RID using the ``--rid`` argument, like so:
+You can also provide multiple names of query sequences:
 
 ::
 
-  $ cblaster search -qf query.fasta --rid WHS0UGYJ015
+        $ cblaster extract session.json -q Query1 Query2 Query3 ...
 
-This will lookup the RID, retrieve the results if it is valid, and resume the rest of
-the cblaster pipeline from there. 
+Note, however, that all extracted sequences will be written to the same file.
+
+The ``extract`` module can also filter based on the organism or scaffold that each hit sequence is on.
+The organism filter uses regular expression patterns based on organism names.
+Multiple patterns can be provided, and are additive (i.e. any organism matching any of the patterns will be saved).
+For example, you could filter a search session of all fungal organisms on NCBI for only those sequences from *Aspergillus* or *Penicillium* species like so:
+
+::
+
+        $ cblaster extract fungi.json -or "Aspergillus.*" "Penicillium.*"
+
+Note that patterns should be enclosed in quotation marks in order to be read in correctly.
+
+The scaffold filter is less flexible, capable of matching exact scaffolds or scaffold ranges.
+For example, to extract hit sequences on a scaffold, ``scaffold_1``, from position 10000 to 23000:
+
+::
+
+        $ cblaster extract session.json -sc "scaffold_1:10000-23000"
+
+Like the organism filter, multiple scaffolds and/or scaffold ranges can be provided and they are additive.
+
+By default, source information is added to each sequence name, for example:
+
+::
+
+        sequence [organism=Source organism] [scaffold=scaffold_1:123-456]
+
+This can be turned off using the ``-no/--names_only`` argument.
+
+Finally, the `extract` module can also generate delimited table files, for easy importing into spreadsheet programs.
+For example, to generate a comma-delimited table (CSV file), simple provide the ``-de/--delimiter`` argument:
+
+::
+
+        $ cblaster extract session.json ... -de ","
