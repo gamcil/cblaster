@@ -1,4 +1,4 @@
-.. _remote:
+
 
 Remotely search NCBI BLAST databases
 ====================================
