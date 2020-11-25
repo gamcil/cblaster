@@ -30,7 +30,6 @@ User guide
 ==========
 
 .. toctree::
-        :maxdepth: 2
         
         guide/index
 
@@ -41,7 +40,6 @@ API Documentation
 Comprehensive documentation for all public API exposed by `cblaster`:
 
 .. toctree::
-        :maxdepth: 2
 
         api/index
 

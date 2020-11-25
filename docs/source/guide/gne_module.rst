@@ -1,3 +1,5 @@
+.. _gne_module:
+
 Estimating genomic neighbourhood with the ``gne`` module
 ========================================================
 

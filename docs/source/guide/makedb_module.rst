@@ -1,3 +1,5 @@
+.. _makedb_module:
+
 Creating local sequence databases with the ``makedb`` module
 ============================================================
 

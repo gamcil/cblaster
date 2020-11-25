@@ -11,13 +11,11 @@ If you have any questions, would like to report a bug, or have any suggestion on
 * thomas.booth@uwa.edu.au
 * yitheng.chooi@uwa.edu.au
 
- Table of Contents
-------------------
+Table of Contents
+-----------------
 
 .. toctree::
-	:maxdepth: 1
-	:glob:
-		
+
 	what_is_cblaster
 	installation
 	search_module
@@ -26,5 +24,3 @@ If you have any questions, would like to report a bug, or have any suggestion on
 	extract_module
 	gui
 	misc_functions
-		
-		
