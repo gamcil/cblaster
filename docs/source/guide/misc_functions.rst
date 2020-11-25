@@ -5,7 +5,7 @@ Accessing help dialogues
 ------------------------
 
 Every module in the ``cblaster`` command line interface has a useful help dialogue which details the arguments you may specify.
-To do this, simply type \texttt{-h/--help} as the sole argument after any command.
+To do this, simply type ``-h/--help`` as the sole argument after any command.
 For example:
 
 ::
@@ -40,12 +40,14 @@ So, this will **not** work:
 But **this will**:
 	
 ::
-	  $ cblaster -i 2 search -qf query.fasta -s session.json
+
+        $ cblaster -i 2 search -qf query.fasta -s session.json
 
 This will set the indentation level of a given session to 2, meaning that for every new line in the file, 2 spaces will be drawn per indentation level.
 For example, a session file with no indent (truncated) looks like this:
 
 ::
+
 	{"queries": ["BuaB", "BuaC", "BuaD", "QBE85644.1", "BuaE", "BuaF", "BuaG",
 	"QBE85648.1", "BuaA"], "params": {"mode": "remote", "database": "nr",
 	"min_identity": 30, "min_coverage": 50, "max_evalue": 0.01, "query_file":
@@ -55,6 +57,7 @@ For example, a session file with no indent (truncated) looks like this:
 The session with indent 2 will look like this:
 
 ::
+
 	{
 	  "queries": [
 	    "BuaB",
@@ -83,7 +86,5 @@ The session with indent 2 will look like this:
     		"scaffolds": [{ ... }]
     		...
 	
-	Much more readable!
-	Note though that, particularly in sessions with lots of results, this comes with a significant increase in file size.
-	
-
+Much more readable!
+Note though that, particularly in sessions with lots of results, this comes with a significant increase in file size.

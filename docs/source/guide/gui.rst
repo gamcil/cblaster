@@ -10,5 +10,9 @@ To access the GUI, simply open a terminal and type:
 	$ cblaster gui
 
 The GUI should then pop up in a new window.
-From there, you can run ``cblaster`` searches exactly as you would from the command line.
-	
+From there, you can run ``cblaster`` searches exactly as you would from the command line.	
+
+.. image:: ../_static/gui.png
+        :width: 600px
+        :align: center
+        :alt: cblaster GUI
