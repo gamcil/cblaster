@@ -1,6 +1,6 @@
 
-What is cblaster
-============
+What is ``cblaster``
+====================
 
 ``cblaster`` is a tool for finding clusters of co-located sequences using BLAST searches.
 
@@ -17,5 +17,5 @@ It can, of course, be used to search for any group of clustered genes.
 	* ``cblaster gne`` can be used to analyse the effect of varying the intergenic distances on the search output. This can be used to evaluate the robustness of outputs and gain insights into the distribution of gene cluster sizes.
 	* ``cblaster extract`` allows the user to quickly produce FASTA files containing the protein sequences of homologues of interest for downstream analysis.
 
-Detailed information on how to install `cblaster` and use the above modules can be found in this guide.
+Detailed information on how to install ``cblaster`` and use the above modules can be found in this guide.
 

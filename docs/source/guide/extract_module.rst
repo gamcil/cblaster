@@ -14,7 +14,7 @@ However, that's probably not too useful, so instead we could extract all hit seq
 
 By default, only sequence names are extracted.
 This is because ``cblaster`` stores no actual sequence data for hit sequences during it's normal search workflow, only their coordinates.
-However, sequences can automatically be retrieved from the NCBI by specifying the ``-d/--download`` argument.
+However, sequences can automatically be retrieved from the NCBI by specifying the ``-d`` or ``--download`` argument.
 ``cblaster`` will then write them, in FASTA format, to either the command line or a file.
 For example, we can do the same command as above, but retrieve the sequences and write them to ``output.fasta`` like so:
 
@@ -22,7 +22,7 @@ For example, we can do the same command as above, but retrieve the sequences and
 
         $ cblaster extract session.json -q "Query1" -d -o output.fasta
 
-Note that the ``-o/--output`` argument has been used here; this will write any results from the ``extract`` module to the specified file.
+Note that the ``-o`` or ``--output`` argument has been used here; this will write any results from the ``extract`` module to the specified file.
 
 You can also provide multiple names of query sequences:
 
@@ -58,10 +58,10 @@ By default, source information is added to each sequence name, for example:
 
         sequence [organism=Source organism] [scaffold=scaffold_1:123-456]
 
-This can be turned off using the ``-no/--names_only`` argument.
+This can be turned off using the ``-no`` or ``--names_only`` argument.
 
 Finally, the `extract` module can also generate delimited table files, for easy importing into spreadsheet programs.
-For example, to generate a comma-delimited table (CSV file), simple provide the ``-de/--delimiter`` argument:
+For example, to generate a comma-delimited table (CSV file), simple provide the ``-de`` or ``--delimiter`` argument:
 
 ::
 
