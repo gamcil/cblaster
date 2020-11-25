@@ -5,19 +5,19 @@ Installing Python for Windows
 -----------------------------
 
 In order to use ``cblaster`` you will first need to install Python on your computer.
-Go to python.org/downloads/ and download the latest version of Python (3.8.5 at the time of writing).
+Go to `python.org/downloads/ <python.org/downloads/>`_ and download the latest version of Python (3.8.5 at the time of writing).
 This will initiate the download of the Python installer (python-x.x.x.exe).
 
 
 Locate the installer in your downloads folder, run the program and follow the wizard.
-**Make sure you tick the box `Add Python x.x to PATH'.**
+**Make sure you tick the box 'Add Python x.x to PATH'.**
 This ensures that ``cblaster`` is available for you to use directly from the terminal.
 It is not selected by default and you will have to do this step manually if you do not check the box here.
 
 
 Once the installer has finished, you can try to run Python in PowerShell to verify that it has been installed correctly.
-To open PowerShell in Windows, open a folder, Shift+Right click and select the option `Open PowerShell window here...'.
-With PowerShell open, type \texttt{python} and press enter.
+To open PowerShell in Windows, open a folder, Shift+Right click and select the option 'Open PowerShell window here...'.
+With PowerShell open, type ``python`` and press enter.
 If python has installed correctly, the interactive shell should be launched, and the version number should be displayed in the console like so:
 
 ::
@@ -27,13 +27,19 @@ If python has installed correctly, the interactive shell should be launched, and
 	>>> 
 	
 The Python package installer tool, ``pip`` is installed alongside Python.
-This is necessary to install ``cblaster``, so verify that it is installed by typing ``pip`` in PowerShell as above.
+This is necessary to install ``cblaster``, so verify that it is installed by typing ``pip --version`` in PowerShell as above.
+This should print the version information as well as the Python version and the location like so:
+
+::
+
+	pip 19.2.3 from c:\...\pip (python 3.8)
 
 Installing DIAMOND
 ------------------
 
 ``cblaster`` uses ``DIAMOND`` to perform local searches.
-This can be freely obtained from \href{http://www.diamondsearch.org/index.php}{diamondsearch.org}.
+This can be freely obtained from `http://www.diamondsearch.org/index.php <http://www.diamondsearch.org/index.php>`_.
+Make sure to download and install DIAMOND prior to installing cblaster.
 
 Installing, uninstalling and updating cblaster
 ----------------------------------------------
@@ -52,7 +58,7 @@ Should you decide to uninstall cblaster, this can also be done using pip:
 
 	pip uninstall cblaster
 
-Note: If a new version of cblaster is available, you can simply uninstall and reinstall the module as above to access the newer version.
+**Note**: If a new version of cblaster is available, you can simply uninstall and reinstall the module as above to access the newer version.
 
 Running your first search
 -------------------------
@@ -68,7 +74,7 @@ Visualisations can be generated using the ``-p`` or ``--plot`` argument:
 
 	  cblaster search -qf query.fasta -p plot.html
 
-Note: if no file name is provided, the plot will be dynamically served using Python's built in HTTP server.
+**Note**: if no file name is provided, the plot will be dynamically served using Python's built in HTTP server.
 The plot will be exactly the same, but it will not generate a static HTML file that can be shared around.
 
 Search sessions can be saved for later re-use using the ``-s`` or ``--session`` argument:
