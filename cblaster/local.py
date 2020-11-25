@@ -115,6 +115,7 @@ def search(
             sequences = helpers.get_sequences(query_ids=query_ids)
 
         # delete=False since you cannot open tempfiles twice in Windows
+        # see: https://stackoverflow.com/questions/46497842/passing-namedtemporaryfile-to-a-subprocess-on-windows
         fasta = NTF("w", delete=False)
         text = helpers.sequences_to_fasta(sequences)
         try:
