@@ -74,8 +74,6 @@ def parse_fasta(handle):
     return sequences
 
 
-<<<<<<< HEAD
-=======
 def _extract_sequences_from_organism(organism):
     """Extract sequences from an Organism and write them into a fasta format
 
