@@ -132,8 +132,8 @@ def get_data(session):
                     "id": cluster_id,
                     "name": organism.full_name,
                     "scaffold": accession,
-                    "start": cluster[0].start,
-                    "end": cluster[-1].end,
+                    "start": cluster.start,
+                    "end": cluster.end,
                 }
 
                 # Generate all cells for the heatmap
