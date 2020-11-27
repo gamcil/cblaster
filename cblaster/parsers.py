@@ -424,6 +424,39 @@ def add_extract_subparser(subparsers):
     out.add_argument("-de", "--delimiter", help="Sequence description delimiter")
 
 
+def add_extract_clusters_subparser(subparsers):
+    parser = subparsers.add_parser(
+        "extract_clusters",
+        help="Extract clusters from a session file in genbank or fasta format",
+        description="Extract clusters found with 'search'",
+        epilog="Example usage\n-------------\n"
+        "Extract all clusters (carfull this can take a while):\n"
+        "  $ cblaster extract_clusters session.json -o plot.html\n\n"
+        "Extract cluster 1 trough 10 and cluster 25 (these numbers can be\n"
+        "found in the summary file of the 'search' command):\n"
+        "  $ cblaster extract_clusters session.json -c 1-10 25 -o plot.html\n\n"
+        "Extract only from a specific organisms (regular expressions):\n"
+        "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
+        "Cameron Gilchrist, 2020",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("session", help="cblaster session file")
+
+    fil = parser.add_argument_group("Filters")
+    fil.add_argument("-c", "--clusters", help="Cluster numbers/ ranges provided by the summary file of the"
+                                              " 'search' command.", nargs="+")
+    fil.add_argument("-st", "--score_threshold", help="Minimum score of a cluster to be included", type=float)
+    fil.add_argument("-or", "--organisms", help="Organism names", nargs="+")
+    fil.add_argument("-sc", "--scaffolds", help="Scaffold names/ranges", nargs="+")
+
+    output = parser.add_argument_group("Output options")
+    output.add_argument("-o", "--output", help="Output directory for the clusters", required=True)
+    output.add_argument("-f", "--format", help="The format of the output files, 'fasta' or 'genbank'",
+                        choices=("fasta", "genbank"), default="genbank")
+    output.add_argument("-pf", "--prefix", help="Start of the name for each cluster file, the base name is"
+                                                "cluster'clutser.number'", default="")
+
+
 def get_parser():
     parser = argparse.ArgumentParser(
         "cblaster",
@@ -449,6 +482,7 @@ def get_parser():
     add_search_subparser(subparsers)
     add_gne_subparser(subparsers)
     add_extract_subparser(subparsers)
+    add_extract_clusters_subparser()
     return parser
 
 
@@ -460,7 +494,7 @@ def parse_args(args):
         parser.print_help()
         raise SystemExit
 
-    if arguments.subcommand in ("gui", "makedb", "gne", "extract"):
+    if arguments.subcommand in ("gui", "makedb", "gne", "extract", "extract_clusters"):
         return arguments
 
     if arguments.mode == "remote":
