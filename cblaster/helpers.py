@@ -90,38 +90,27 @@ def _extract_sequences_from_organism(organism):
         sorted by location.
     """
     sequences = OrderedDict()
-
+    identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
     count = 1
     for scaffold in organism.scaffolds:
-        for cds_feature in scaffold.features:
+        for feature in sorted(scaffold.features, key=lambda f: f.location.min()):
             name = None
-            for qual in ["protein_id", "locus_tag", "gene", "ID"]:
-                if qual in cds_feature.qualifiers:
-                    name = cds_feature.qualifiers[qual].split(" ")[0]
+            for identifier in identifiers:
+                if identifier in feature.qualifiers:
+                    name = feature.qualifiers[identifier].split(" ")[0]
                     break
-            if "translation" not in cds_feature.qualifiers:
-                LOG.warning(f"Skipping '{name if name else 'no name provided'}'"
-                            f", no translation provided. Make sure a /translation"
-                            f" feature is present.")
-                continue
             if not name:
                 name = f"protein_{count}"
                 count += 1
-            if name in sequences:
-                LOG.warning(f"Skipping duplicate sequence: {name}")
-            elif len(cds_feature.location.intervals) != 1:
-                LOG.warning(f"Skipping sequence {name} because the location is segmented or no location was found")
+            if "translation" not in feature.qualifiers:
+                LOG.warning("Skipping '%s', has no translation", name)
+            elif name in sequences:
+                LOG.warning("Skipping %s, duplicate sequence", name)
             else:
-                sequences[name] = [cds_feature.qualifiers["translation"], cds_feature.location.intervals[0]]
-    # make sure that the sequences are sorted
-    ordered_sequences = OrderedDict(sorted(sequences.items(), key=lambda x: (x[1][1].start, x[1][1].end)))
-    # remove the location tags used for sorting
-    for name, val in ordered_sequences.items():
-        ordered_sequences[name] = val[0]
-    return ordered_sequences
+                sequences[name] = feature.qualifiers["translation"]
+    return sequences
 
 
->>>>>>> d611d1b (added function to the helper class to allow genbank and embl files to be translated into a sequence dictionary)
 def parse_fasta_file(path):
     with open(path) as fp:
         sequences = parse_fasta(fp)
