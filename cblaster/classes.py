@@ -85,7 +85,7 @@ class Session(Serializer):
             queries=self.queries,
             sequences=self.sequences,
             params=self.params,
-            organisms=self.organisms + other.organisms
+            organisms=self.organisms + other.organisms,
         )
 
     def to_dict(self):
@@ -180,10 +180,7 @@ class Organism(Serializer):
 
     def summary(self, decimals=4, hide_headers=True, delimiter=None):
         return summarise_organism(
-            self,
-            decimals=decimals,
-            hide_headers=hide_headers,
-            delimiter=delimiter,
+            self, decimals=decimals, hide_headers=hide_headers, delimiter=delimiter,
         )
 
     @property
@@ -248,16 +245,15 @@ class Scaffold(Serializer):
         """
         for subjects in subject_lists:
             indices = [self.subjects.index(subject) for subject in subjects]
-            cluster = Cluster(indices, subjects, query_sequence_order=query_sequence_order)
+            cluster = Cluster(
+                indices, subjects, query_sequence_order=query_sequence_order
+            )
             self.clusters.append(cluster)
         self.clusters.sort(key=lambda x: x.score, reverse=True)
 
     def summary(self, hide_headers=False, delimiter=None, decimals=4):
         return summarise_scaffold(
-            self,
-            decimals=decimals,
-            hide_headers=hide_headers,
-            delimiter=delimiter,
+            self, decimals=decimals, hide_headers=hide_headers, delimiter=delimiter,
         )
 
     def to_dict(self):
@@ -322,17 +318,15 @@ class Cluster(Serializer):
         for index, position in enumerate(positions[:-1]):
             query, subject = position
             next_query, next_subject = positions[index + 1]
-            if (
-                abs(query - next_query) < 2
-                and abs(query - next_query) == abs(subject - next_subject)
+            if abs(query - next_query) < 2 and abs(query - next_query) == abs(
+                subject - next_subject
             ):
                 score += 1
         return score
 
     def __calculate_bitscore(self):
         return sum(
-            max(hit.bitscore for hit in subject.hits)
-            for subject in self.subjects
+            max(hit.bitscore for hit in subject.hits) for subject in self.subjects
         )
 
     def calculate_score(self, query_sequence_order=None):
@@ -357,7 +351,7 @@ class Cluster(Serializer):
             "indices": self.indices,
             "score": self.score,
             "start": self.start,
-            "end": self.end
+            "end": self.end,
         }
 
     @classmethod
@@ -367,7 +361,7 @@ class Cluster(Serializer):
             subjects=subjects,
             score=d["score"],
             start=d["start"],
-            end=d["end"]
+            end=d["end"],
         )
 
 
@@ -386,7 +380,9 @@ class Subject(Serializer):
         strand (str): Strandedness of the sequence ('+' or '-').
     """
 
-    def __init__(self, hits=None, name=None, ipg=None, start=None, end=None, strand=None):
+    def __init__(
+        self, hits=None, name=None, ipg=None, start=None, end=None, strand=None
+    ):
         self.hits = hits if hits else []
         self.ipg = ipg
         self.name = name
@@ -412,7 +408,7 @@ class Subject(Serializer):
             "ipg": self.ipg,
             "start": self.start,
             "end": self.end,
-            "strand": self.strand
+            "strand": self.strand,
         }
 
     def values(self, decimals=4):
@@ -455,15 +451,7 @@ class Hit(Serializer):
         bitscore (float): Bitscore of hit.
     """
 
-    def __init__(
-        self,
-        query,
-        subject,
-        identity,
-        coverage,
-        evalue,
-        bitscore
-    ):
+    def __init__(self, query, subject, identity, coverage, evalue, bitscore):
         self.query = query
 
         if "gb" in subject or "ref" in subject:
@@ -482,13 +470,7 @@ class Hit(Serializer):
         )
 
     def __key(self):
-        return (
-            self.query,
-            self.bitscore,
-            self.identity,
-            self.coverage,
-            self.evalue
-        )
+        return (self.query, self.bitscore, self.identity, self.coverage, self.evalue)
 
     def __hash__(self):
         return hash(self.__key())
