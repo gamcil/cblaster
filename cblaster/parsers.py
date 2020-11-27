@@ -457,6 +457,65 @@ def add_extract_clusters_subparser(subparsers):
                                                 "cluster'clutser.number'", default="")
 
 
+def add_plot_clusters_subparser(subparsers):
+    parser = subparsers.add_parser(
+        "plot_clusters",
+        help="Plot clusters in genbank files using clinker",
+        description="Plot clusters in genbank files",
+        epilog="Example usage\n-------------\n"
+        "Plot all the clusters:\n"
+        " $ cblaster plot_clusters -s session.json -o plot.html\n\n"
+        "Plot cluster 1 trough 10 and cluster 25 (these numbers can be\n"
+        "found in the summary file of the 'search' command):\n"
+        " $ cblaster plot_clusters -s session.json -c 1-10 25 -o plot.html\n\n"
+        "Plot clusters located in genabnk files:\n"
+        " $ cblaster plot_clusters -cf ..\\genbank_directory genbank_file.gb -c 1-10 25 -o plot.html\n\n"
+        "Plot only from specific organisms (regular expressions):\n"
+        " $ cblaster plot_clusters -s session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
+        "Plot and allign clusters (carefull alligning a lot of clusters can take a while):\n"
+        " $ cblaster plot_clusters -s session.json -a -o plot.html\n\n"
+        "Cameron Gilchrist, 2020",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    main_input_group = parser.add_argument_group("Required arguments(mutualy exclusive)")
+    main_arguments = main_input_group.add_mutually_exclusive_group(required=True)
+    main_arguments.add_argument("-s", "--session", help="cblaster session file")
+    main_arguments.add_argument("-f", "--files", help="Genbank files and/or directories", nargs="+")
+
+    fil = parser.add_argument_group("Filters")
+    fil.add_argument("-c", "--clusters", help="Cluster numbers/ ranges provided by the summary file of the"
+                                              " 'search' command.", nargs="+")
+    fil.add_argument("-st", "--score_threshold", help="Minimum score of a cluster to be included", type=float)
+    fil.add_argument("-or", "--organisms", help="Organism names", nargs="+")
+    fil.add_argument("-sc", "--scaffolds", help="Scaffold names/ranges", nargs="+")
+
+    # arguments of clinker
+    alignment = parser.add_argument_group("Alignment options")
+    alignment.add_argument(
+        "-a",
+        "--align",
+        help="Allign clusters",
+        action="store_false",
+    )
+    alignment.add_argument(
+        "-i",
+        "--identity",
+        help="Minimum alignment sequence identity",
+        type=float,
+        default=0.3
+    )
+
+    output = parser.add_argument_group("Output options")
+    output.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        help="Location were to store the plot file."
+    )
+    output.add_argument("-ao", "--allignment_out", help="Save alignments to file")
+
+
 def get_parser():
     parser = argparse.ArgumentParser(
         "cblaster",
@@ -494,7 +553,7 @@ def parse_args(args):
         parser.print_help()
         raise SystemExit
 
-    if arguments.subcommand in ("gui", "makedb", "gne", "extract", "extract_clusters"):
+    if arguments.subcommand in ("gui", "makedb", "gne", "extract", "extract_clusters", "plot_clusters"):
         return arguments
 
     if arguments.mode == "remote":
