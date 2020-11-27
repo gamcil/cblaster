@@ -6,7 +6,7 @@ import sys
 
 from pathlib import Path
 
-import hmm_search
+
 from cblaster import (
     context,
     database,
@@ -15,11 +15,11 @@ from cblaster import (
     remote,
     parsers,
     extract,
+    extract_clusters,
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
-
 
 
 logging.basicConfig(
@@ -71,10 +71,8 @@ def gne(
 def cblaster(
     query_file=None,
     query_ids=None,
-    query_profiles=None,
     mode=None,
     database=None,
-    database_pfam=None,
     gap=20000,
     unique=3,
     min_hits=3,
@@ -110,11 +108,8 @@ def cblaster(
     Arguments:
         query_file (str): Path to FASTA format query file
         query_ids (list): NCBI protein sequence identifiers
-        query_profiles(list): Pfam profile identifiers
         mode (str): Search mode ('local' or 'remote')
-        json_db (str): JSON database created with cblaster makedb
-        database (list): Search database (NCBI if remote, DIAMOND & hmm if local)
-        database_pfam (str): Path to pfam db or where to download it
+        database (str): Search database (NCBI if remote, DIAMOND if local)
         gap (int): Maximum gap (kilobase) between cluster hits
         unique (int): Minimum number of query sequences with hits in clusters
         min_hits (int): Minimum number of hits in clusters
@@ -141,6 +136,7 @@ def cblaster(
     Returns:
         Session: cblaster search Session object
     """
+
     if session_file and all(Path(sf).exists() for sf in session_file):
         LOG.info("Loading session(s) %s", session_file)
         session = Session.from_files(session_file)
@@ -167,7 +163,6 @@ def cblaster(
             sequences=helpers.get_sequences(
                 query_file=query_file,
                 query_ids=query_ids,
-                query_profiles=query_profiles,
             ),
             params={
                 "mode": mode,
@@ -184,17 +179,14 @@ def cblaster(
             session.queries = list(session.sequences)
             session.params["query_file"] = query_file
 
-        sqlite_db = None
-        session.params["rid"] = rid
-
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
-            sqlite_db = Path(database[0]).with_suffix(".sqlite3")
+            sqlite_db = Path(database).with_suffix(".sqlite3")
             if not sqlite_db.exists():
                 LOG.error("Could not find matching SQlite3 database, exiting")
                 raise SystemExit
             results = local.search(
-                database[0],
+                database,
                 sequences=session.sequences,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
@@ -208,7 +200,7 @@ def cblaster(
             rid, results = remote.search(
                 sequences=session.sequences,
                 rid=rid,
-                database=database[0],
+                database=database,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
@@ -216,50 +208,8 @@ def cblaster(
                 blast_file=blast_file,
                 hitlist_size=hitlist_size,
             )
-
-        elif mode == "hmm":
-            results = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-        elif mode == "combi_local":
-            results_hmm = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-            results_blast = local.search(
-                database[1],
-                sequences=session.sequences,
-                min_identity=min_identity,
-                min_coverage=min_coverage,
-                max_evalue=max_evalue,
-                blast_file=blast_file,
-            )
-            results = results_blast + results_hmm
-
-        elif mode == "combi_remote":
-            results_hmm = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-
-            if entrez_query:
-                session.params["entrez_query"] = entrez_query
-            rid, results_blast = remote.search(
-                sequences=session.sequences,
-                rid=rid,
-                database=database[1],
-                min_identity=min_identity,
-                min_coverage=min_coverage,
-                max_evalue=max_evalue,
-                entrez_query=entrez_query,
-                blast_file=blast_file,
-                hitlist_size=hitlist_size,
-            )
-            results = results_blast + results_hmm
+            sqlite_db = None
+            session.params["rid"] = rid
 
         if sqlite_db:
             session.params["sqlite_db"] = sqlite_db
@@ -334,10 +284,8 @@ def main():
         cblaster(
             query_file=args.query_file,
             query_ids=args.query_ids,
-            query_profiles=args.query_profiles,
             mode=args.mode,
             database=args.database,
-            database_pfam=args.database_pfam,
             gap=args.gap,
             unique=args.unique,
             min_hits=args.min_hits,
@@ -395,6 +343,19 @@ def main():
             name_only=args.name_only,
             delimiter=args.delimiter,
         )
+
+    elif args.subcommand == "extract_clusters":
+        extract_clusters.extract_clusters(
+            args.session,
+            args.output,
+            file_format=args.format,
+            prefix=args.prefix,
+            cluster_numbers=args.clusters,
+            score_threshold=args.score_threshold,
+            organisms=args.organisms,
+            scaffolds=args.scaffolds,
+        )
+
 
 if __name__ == "__main__":
     main()
