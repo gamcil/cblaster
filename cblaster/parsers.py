@@ -443,18 +443,51 @@ def add_extract_clusters_subparser(subparsers):
     parser.add_argument("session", help="cblaster session file")
 
     fil = parser.add_argument_group("Filters")
-    fil.add_argument("-c", "--clusters", help="Cluster numbers/ ranges provided by the summary file of the"
-                                              " 'search' command.", nargs="+")
-    fil.add_argument("-st", "--score_threshold", help="Minimum score of a cluster to be included", type=float)
-    fil.add_argument("-or", "--organisms", help="Organism names", nargs="+")
-    fil.add_argument("-sc", "--scaffolds", help="Scaffold names/ranges", nargs="+")
+    fil.add_argument(
+        "-c",
+        "--clusters",
+        help="Cluster numbers/ ranges provided by the summary file of the 'search' command.",
+        nargs="+"
+    )
+    fil.add_argument(
+        "-st",
+        "--score_threshold",
+        help="Minimum score of a cluster to be included",
+        type=float
+    )
+    fil.add_argument(
+        "-or",
+        "--organisms",
+        help="Organism names",
+        nargs="+"
+    )
+    fil.add_argument(
+        "-sc",
+        "--scaffolds",
+        help="Scaffold names/ranges",
+        nargs="+"
+    )
 
     output = parser.add_argument_group("Output options")
-    output.add_argument("-o", "--output", help="Output directory for the clusters", required=True)
-    output.add_argument("-f", "--format", help="The format of the output files, 'fasta' or 'genbank'",
-                        choices=("fasta", "genbank"), default="genbank")
-    output.add_argument("-pf", "--prefix", help="Start of the name for each cluster file, the base name is"
-                                                "cluster'clutser.number'", default="")
+    output.add_argument(
+        "-o",
+        "--output",
+        help="Output directory for the clusters",
+        required=True
+    )
+    output.add_argument(
+        "-f",
+        "--format",
+        help="The format of the output files, 'fasta' or 'genbank'",
+        choices=("fasta", "genbank"),
+        default="genbank"
+    )
+    output.add_argument(
+        "-pf",
+        "--prefix",
+        help="Start of the name for each cluster file, the base name is cluster'clutser.number'",
+        default=""
+    )
 
 
 def add_plot_clusters_subparser(subparsers):
@@ -483,12 +516,31 @@ def add_plot_clusters_subparser(subparsers):
     main_arguments.add_argument("-s", "--session", help="cblaster session file")
     main_arguments.add_argument("-f", "--files", help="Genbank files and/or directories", nargs="+")
 
-    fil = parser.add_argument_group("Filters")
-    fil.add_argument("-c", "--clusters", help="Cluster numbers/ ranges provided by the summary file of the"
-                                              " 'search' command.", nargs="+")
-    fil.add_argument("-st", "--score_threshold", help="Minimum score of a cluster to be included", type=float)
-    fil.add_argument("-or", "--organisms", help="Organism names", nargs="+")
-    fil.add_argument("-sc", "--scaffolds", help="Scaffold names/ranges", nargs="+")
+    fil = parser.add_argument_group("Filters when using --session")
+    fil.add_argument(
+        "-c",
+        "--clusters",
+        help="Cluster numbers/ ranges provided by the summary file of the 'search' command.",
+        nargs="+"
+    )
+    fil.add_argument(
+        "-st",
+        "--score_threshold",
+        help="Minimum score of a cluster to be included",
+        type=float
+    )
+    fil.add_argument(
+        "-or",
+        "--organisms",
+        help="Organism names",
+        nargs="+"
+    )
+    fil.add_argument(
+        "-sc",
+        "--scaffolds",
+        help="Scaffold names/ranges",
+        nargs="+"
+    )
 
     # arguments of clinker
     alignment = parser.add_argument_group("Alignment options")
@@ -506,14 +558,31 @@ def add_plot_clusters_subparser(subparsers):
         default=0.3
     )
 
-    output = parser.add_argument_group("Output options")
+    output = parser.add_argument_group("General output options")
     output.add_argument(
         "-o",
         "--output",
         required=True,
         help="Location were to store the plot file."
     )
-    output.add_argument("-ao", "--allignment_out", help="Save alignments to file")
+    output.add_argument(
+        "-ao",
+        "--allignment_out",
+        help="Save alignments to file"
+    )
+
+    extract_output = parser.add_argument_group("Extra output parameters when using --session")
+    extract_output.add_argument(
+        "-co",
+        "--cluster_out",
+        help="Output directory for the clusters, otherwise the files are deleted afterwards."
+    )
+    output.add_argument(
+        "-pf",
+        "--prefix",
+        help="Start of the name for each cluster file, the base name is cluster+clutser.number",
+        default=""
+    )
 
 
 def get_parser():
