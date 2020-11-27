@@ -419,7 +419,7 @@ def deduplicate(organism):
     """
     remove = defaultdict(list)
     for scafA, scafB in combinations(organism.scaffolds.values(), 2):
-        for one, two in product(scafA.s, scafB.clusters):
+        for one, two in product(scafA.clusters, scafB.clusters):
             if clusters_are_identical(one, two):
                 remove[scafB.accession].append(two)
     for accession, clusters in remove.items():
@@ -438,16 +438,14 @@ def find_clusters_in_organism(
 ):
     """Runs find_clusters() on all scaffolds in an organism."""
     for scaffold in organism.scaffolds.values():
-        scaffold.add_clusters(
-            find_clusters(
-                scaffold.subjects,
-                unique=unique,
-                min_hits=min_hits,
-                gap=gap,
-                require=require,
-            ),
-            query_sequence_order=query_sequence_order
+        clusters = find_clusters(
+            scaffold.subjects,
+            unique=unique,
+            min_hits=min_hits,
+            gap=gap,
+            require=require,
         )
+        scaffold.add_clusters(clusters, query_sequence_order=query_sequence_order)
         LOG.debug(
             "Organism: %s, Scaffold: %s, Clusters: %i",
             organism.full_name,

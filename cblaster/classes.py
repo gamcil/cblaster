@@ -246,10 +246,10 @@ class Scaffold(Serializer):
             query_sequence_order (list): list of sequences of the order in the query file, is
             only provided if the query has a meningfull order (gbk, embl files).
         """
-        for s_list in subject_lists:
-            indices = [self.subjects.index(subject) for subject in s_list]
-            self.clusters.append(Cluster(indices, s_list, query_sequence_order=query_sequence_order))
-
+        for subjects in subject_lists:
+            indices = [self.subjects.index(subject) for subject in subjects]
+            cluster = Cluster(indices, subjects, query_sequence_order=query_sequence_order)
+            self.clusters.append(cluster)
         self.clusters.sort(key=lambda x: x.score, reverse=True)
 
     def summary(self, hide_headers=False, delimiter=None, decimals=4):
@@ -270,7 +270,7 @@ class Scaffold(Serializer):
     @classmethod
     def from_dict(cls, d):
         subjects = [Subject.from_dict(subject) for subject in d["subjects"]]
-        clusters = [None for _ in range(len(d["clusters"]))]
+        clusters = [None] * len(d["clusters"])
         for index, cluster in enumerate(d["clusters"]):
             cluster_subjects = [subjects[ix] for ix in cluster["indices"]]
             clusters[index] = Cluster.from_dict(cluster, *cluster_subjects)
