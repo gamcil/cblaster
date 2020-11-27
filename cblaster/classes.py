@@ -289,7 +289,15 @@ class Cluster(Serializer):
         end (int): The end coordinate of the cluster on the parent scaffold
     """
 
-    def __init__(self, indices=None, subjects=None, query_sequence_order=None, score=None, start=None, end=None):
+    def __init__(
+        self,
+        indices=None,
+        subjects=None,
+        query_sequence_order=None,
+        score=None,
+        start=None,
+        end=None,
+    ):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
         self.score = score if score else self.calculate_score(query_sequence_order)
