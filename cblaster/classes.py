@@ -292,7 +292,7 @@ class Cluster(Serializer):
     def __init__(self, indices=None, subjects=None, query_sequence_order=None, score=None, start=None, end=None):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
-        self.score = score if score else self.__calculate_score(query_sequence_order)
+        self.score = score if score else self.calculate_score(query_sequence_order)
         self.start = start if start else self.subjects[0].start
         self.end = end if end else self.subjects[-1].end
 
@@ -302,7 +302,32 @@ class Cluster(Serializer):
     def __len__(self):
         return len(self.subjects)
 
-    def __calculate_score(self, query_sequence_order):
+    def __calculate_synteny_score(self, query_sequence_order):
+        if not query_sequence_order:
+            return 0
+        positions = []
+        for index, subject in enumerate(self.subjects):
+            best_hit = max(subject.hits, key=lambda h: h.bitscore)
+            pair = (query_sequence_order.index(best_hit.query), index)
+            positions.append(pair)
+        score = 0
+        for index, position in enumerate(positions[:-1]):
+            query, subject = position
+            next_query, next_subject = positions[index + 1]
+            if (
+                abs(query - next_query) < 2
+                and abs(query - next_query) == abs(subject - next_subject)
+            ):
+                score += 1
+        return score
+
+    def __calculate_bitscore(self):
+        return sum(
+            max(hit.bitscore for hit in subject.hits)
+            for subject in self.subjects
+        )
+
+    def calculate_score(self, query_sequence_order=None):
         """Calculate the score of the current cluster
 
         The score is based on accumulated blastbitscore, total amount of hits against the
@@ -315,26 +340,9 @@ class Cluster(Serializer):
         Returns:
             a float
         """
-        # if an order of the query sequence is provided calculate a synteny score
-        synteny_score = 0
-        if query_sequence_order is not None:
-            hit_positions = []
-            for s_index, subject in enumerate(self.subjects):
-                best_hit = max(subject.hits, key=lambda x: x.bitscore)
-                hit_positions.append((query_sequence_order.index(best_hit.query), s_index))
-
-            for index, pos in enumerate(hit_positions[:-1]):
-                query, subject = pos
-                next_query, next_subject = hit_positions[index + 1]
-                if (abs(query - next_query) < 2) and abs(query - next_query) == abs(subject - next_subject):
-                    synteny_score += 1
-        accumulated_bit_score = 0
-        for subject in self.subjects:
-            accumulated_bit_score += max(hit.bitscore for hit in subject.hits)
-        # make sure to reduce the accumulated bit score or it will dominate the score
-        accumulated_bit_score /= 10_000
-        number_of_hits = len(self.subjects)
-        return accumulated_bit_score + number_of_hits + synteny_score
+        synteny_score = self.__calculate_synteny_score(query_sequence_order)
+        bitscore = self.__calculate_bitscore()
+        return bitscore / 10000 + len(self.subjects) + synteny_score
 
     def to_dict(self):
         return {
