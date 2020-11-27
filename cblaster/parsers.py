@@ -541,7 +541,8 @@ def get_parser():
     add_search_subparser(subparsers)
     add_gne_subparser(subparsers)
     add_extract_subparser(subparsers)
-    add_extract_clusters_subparser()
+    add_extract_clusters_subparser(subparsers)
+    add_plot_clusters_subparser(subparsers)
     return parser
 
 
