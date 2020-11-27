@@ -15,6 +15,7 @@ from cblaster import (
     remote,
     parsers,
     extract,
+    extract_clusters,
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
@@ -341,6 +342,18 @@ def main():
             scaffolds=args.scaffolds,
             name_only=args.name_only,
             delimiter=args.delimiter,
+        )
+
+    elif args.subcommand == "extract_clusters":
+        extract_clusters.extract_clusters(
+            args.session,
+            args.output,
+            file_format=args.format,
+            prefix=args.prefix,
+            cluster_numbers=args.clusters,
+            score_threshold=args.score_threshold,
+            organisms=args.organisms,
+            scaffolds=args.scaffolds,
         )
 
 
