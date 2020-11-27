@@ -354,8 +354,13 @@ class Cluster(Serializer):
 
     @classmethod
     def from_dict(cls, d, *subjects):
-        return cls(indices=d["indices"], subjects=subjects,
-                   score=d["score"], start=d["start"], end=d["end"])
+        return cls(
+            indices=d["indices"],
+            subjects=subjects,
+            score=d["score"],
+            start=d["start"],
+            end=d["end"]
+        )
 
 
 class Subject(Serializer):
