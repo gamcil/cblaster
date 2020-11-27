@@ -342,3 +342,5 @@ def extract_clusters(
     create_files_from_clusters(session, selected_clusters, output_dir, prefix, file_format)
 
     LOG.info(f"All clusters have been written to files. Output can be found at {output_dir}")
+    LOG.info("Done!")
+

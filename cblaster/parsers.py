@@ -548,7 +548,7 @@ def add_plot_clusters_subparser(subparsers):
         "-a",
         "--align",
         help="Allign clusters",
-        action="store_false",
+        action="store_true",
     )
     alignment.add_argument(
         "-i",
