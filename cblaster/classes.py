@@ -6,6 +6,7 @@ This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 
 import re
 import json
+import itertools
 
 from cblaster.formatters import (
     binary,
@@ -284,6 +285,7 @@ class Cluster(Serializer):
         start (int): The start coordinate of the cluster on the parent scaffold
         end (int): The end coordinate of the cluster on the parent scaffold
     """
+    NUMBER = itertools.count(1, 1)
 
     def __init__(
         self,
@@ -293,12 +295,14 @@ class Cluster(Serializer):
         score=None,
         start=None,
         end=None,
+        number=None,
     ):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
         self.score = score if score else self.calculate_score(query_sequence_order)
         self.start = start if start else self.subjects[0].start
         self.end = end if end else self.subjects[-1].end
+        self.number = number if number is not None else next(self.NUMBER)
 
     def __iter__(self):
         return iter(self.subjects)
@@ -352,6 +356,7 @@ class Cluster(Serializer):
             "score": self.score,
             "start": self.start,
             "end": self.end,
+            "number": self.number,
         }
 
     @classmethod
@@ -362,6 +367,7 @@ class Cluster(Serializer):
             score=d["score"],
             start=d["start"],
             end=d["end"],
+            number=d["number"],
         )
 
 
