@@ -433,19 +433,19 @@ def find_clusters_in_organism(
     min_hits=3,
     gap=20000,
     require=None,
-    remote=True
+    remote=True,
+    query_sequence_order=None
 ):
     """Runs find_clusters() on all scaffolds in an organism."""
     for scaffold in organism.scaffolds.values():
-        scaffold.clusters = list(
-            find_clusters(
-                scaffold.subjects,
-                unique=unique,
-                min_hits=min_hits,
-                gap=gap,
-                require=require,
-            )
+        clusters = find_clusters(
+            scaffold.subjects,
+            unique=unique,
+            min_hits=min_hits,
+            gap=gap,
+            require=require,
         )
+        scaffold.add_clusters(clusters, query_sequence_order=query_sequence_order)
         LOG.debug(
             "Organism: %s, Scaffold: %s, Clusters: %i",
             organism.full_name,
@@ -482,15 +482,15 @@ def filter_session(
                         and hit.evalue < max_evalue
                     )
                 ]
-            scaffold.clusters = list(
-                find_clusters(
-                    scaffold.subjects,
-                    gap=gap,
-                    min_hits=min_hits,
-                    require=require,
-                    unique=unique,
-                )
+            clusters = find_clusters(
+                scaffold.subjects,
+                gap=gap,
+                min_hits=min_hits,
+                require=require,
+                unique=unique,
             )
+            scaffold.clusters = []
+            scaffold.add_clusters(clusters, query_sequence_order=session.queries)
         deduplicate(organism)
 
 
@@ -501,7 +501,7 @@ def calculate_gne(session):
     Median gn size
     """
     clusters = [
-        cluster[-1].end - cluster[0].start
+        cluster.end - cluster.start
         for organism in session.organisms
         for accession, scaffold in organism.scaffolds.items()
         for cluster in scaffold.clusters
@@ -545,7 +545,8 @@ def search(
     gap=20000,
     require=None,
     json_db=None,
-    ipg_file=None
+    ipg_file=None,
+    query_sequence_order=None
 ):
     """Gets the genomic context for a collection of Hit objects.
 
@@ -568,6 +569,8 @@ def search(
         min_hits (int): Minimum number of hits in a hit cluster.
         gap (int): Maximum intergenic distance (bp) between any two hits in a cluster.
         json_db (str): Path to a JSON database created with cblaster makedb.
+        query_sequence_order (list): list of sequences of the order in the query file, is
+        only provided if the query has a meningfull order (gbk, embl files).
     Returns:
         Dictionary of Organism objects keyed on species name.
     """
@@ -591,6 +594,7 @@ def search(
             gap=gap,
             require=require,
             remote=json_db is None,
+            query_sequence_order=query_sequence_order
         )
 
     return organisms

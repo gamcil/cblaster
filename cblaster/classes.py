@@ -85,7 +85,7 @@ class Session(Serializer):
             queries=self.queries,
             sequences=self.sequences,
             params=self.params,
-            organisms=self.organisms + other.organisms
+            organisms=self.organisms + other.organisms,
         )
 
     def to_dict(self):
@@ -180,10 +180,7 @@ class Organism(Serializer):
 
     def summary(self, decimals=4, hide_headers=True, delimiter=None):
         return summarise_organism(
-            self,
-            decimals=decimals,
-            hide_headers=hide_headers,
-            delimiter=delimiter,
+            self, decimals=decimals, hide_headers=hide_headers, delimiter=delimiter,
         )
 
     @property
@@ -235,29 +232,137 @@ class Scaffold(Serializer):
             self.accession, len(self.subjects), len(self.clusters)
         )
 
+    def add_clusters(self, subject_lists, query_sequence_order=None):
+        """Add clusters to this scaffold
+
+        After clusters are added they are sorted based on score
+
+        Args:
+            subject_lists (list): a list of lists Subject objects that
+            form clusters
+            query_sequence_order (list): list of sequences of the order in the query file, is
+            only provided if the query has a meningfull order (gbk, embl files).
+        """
+        for subjects in subject_lists:
+            indices = [self.subjects.index(subject) for subject in subjects]
+            cluster = Cluster(
+                indices, subjects, query_sequence_order=query_sequence_order
+            )
+            self.clusters.append(cluster)
+        self.clusters.sort(key=lambda x: x.score, reverse=True)
+
     def summary(self, hide_headers=False, delimiter=None, decimals=4):
         return summarise_scaffold(
-            self,
-            decimals=decimals,
-            hide_headers=hide_headers,
-            delimiter=delimiter,
+            self, decimals=decimals, hide_headers=hide_headers, delimiter=delimiter,
         )
 
     def to_dict(self):
         return {
             "accession": self.accession,
             "subjects": [subject.to_dict() for subject in self.subjects],
-            "clusters": [
-                [self.subjects.index(subject) for subject in cluster]
-                for cluster in self.clusters
-            ],
+            "clusters": [cluster.to_dict() for cluster in self.clusters],
         }
 
     @classmethod
     def from_dict(cls, d):
         subjects = [Subject.from_dict(subject) for subject in d["subjects"]]
-        clusters = [[subjects[ix] for ix in cluster] for cluster in d["clusters"]]
+        clusters = [None] * len(d["clusters"])
+        for index, cluster in enumerate(d["clusters"]):
+            cluster_subjects = [subjects[ix] for ix in cluster["indices"]]
+            clusters[index] = Cluster.from_dict(cluster, *cluster_subjects)
         return cls(accession=d["accession"], subjects=subjects, clusters=clusters)
+
+
+class Cluster(Serializer):
+    """A cluster of subjects on the same scaffold
+
+    Attributes:
+        indices (list): indexes of the subjects in the list of subjects
+        of the parent scaffold
+        subjects (list): Subject objects that are in this cluster. Note:
+        These are not serialised for this cluster
+        start (int): The start coordinate of the cluster on the parent scaffold
+        end (int): The end coordinate of the cluster on the parent scaffold
+    """
+
+    def __init__(
+        self,
+        indices=None,
+        subjects=None,
+        query_sequence_order=None,
+        score=None,
+        start=None,
+        end=None,
+    ):
+        self.indices = indices if indices else []
+        self.subjects = subjects if subjects else []
+        self.score = score if score else self.calculate_score(query_sequence_order)
+        self.start = start if start else self.subjects[0].start
+        self.end = end if end else self.subjects[-1].end
+
+    def __iter__(self):
+        return iter(self.subjects)
+
+    def __len__(self):
+        return len(self.subjects)
+
+    def __calculate_synteny_score(self, query_sequence_order):
+        if not query_sequence_order:
+            return 0
+        positions = []
+        for index, subject in enumerate(self.subjects):
+            best_hit = max(subject.hits, key=lambda h: h.bitscore)
+            pair = (query_sequence_order.index(best_hit.query), index)
+            positions.append(pair)
+        score = 0
+        for index, position in enumerate(positions[:-1]):
+            query, subject = position
+            next_query, next_subject = positions[index + 1]
+            if abs(query - next_query) < 2 and abs(query - next_query) == abs(
+                subject - next_subject
+            ):
+                score += 1
+        return score
+
+    def __calculate_bitscore(self):
+        return sum(
+            max(hit.bitscore for hit in subject.hits) for subject in self.subjects
+        )
+
+    def calculate_score(self, query_sequence_order=None):
+        """Calculate the score of the current cluster
+
+        The score is based on accumulated blastbitscore, total amount of hits against the
+        query and a synteny score if query sequence order is provided. If there are multiple
+        hits in a subject the hit with the top bitscore is selected for the caclulation.
+
+        Args:
+            query_sequence_order (list): list of sequences of the order in the query file, is
+            only provided if the query has a meningfull order (gbk, embl files).
+        Returns:
+            a float
+        """
+        synteny_score = self.__calculate_synteny_score(query_sequence_order)
+        bitscore = self.__calculate_bitscore()
+        return bitscore / 10000 + len(self.subjects) + synteny_score
+
+    def to_dict(self):
+        return {
+            "indices": self.indices,
+            "score": self.score,
+            "start": self.start,
+            "end": self.end,
+        }
+
+    @classmethod
+    def from_dict(cls, d, *subjects):
+        return cls(
+            indices=d["indices"],
+            subjects=subjects,
+            score=d["score"],
+            start=d["start"],
+            end=d["end"],
+        )
 
 
 class Subject(Serializer):
@@ -275,7 +380,9 @@ class Subject(Serializer):
         strand (str): Strandedness of the sequence ('+' or '-').
     """
 
-    def __init__(self, hits=None, name=None, ipg=None, start=None, end=None, strand=None):
+    def __init__(
+        self, hits=None, name=None, ipg=None, start=None, end=None, strand=None
+    ):
         self.hits = hits if hits else []
         self.ipg = ipg
         self.name = name
@@ -301,7 +408,7 @@ class Subject(Serializer):
             "ipg": self.ipg,
             "start": self.start,
             "end": self.end,
-            "strand": self.strand
+            "strand": self.strand,
         }
 
     def values(self, decimals=4):
@@ -344,15 +451,7 @@ class Hit(Serializer):
         bitscore (float): Bitscore of hit.
     """
 
-    def __init__(
-        self,
-        query,
-        subject,
-        identity,
-        coverage,
-        evalue,
-        bitscore
-    ):
+    def __init__(self, query, subject, identity, coverage, evalue, bitscore):
         self.query = query
 
         if "gb" in subject or "ref" in subject:
@@ -371,13 +470,7 @@ class Hit(Serializer):
         )
 
     def __key(self):
-        return (
-            self.query,
-            self.bitscore,
-            self.identity,
-            self.coverage,
-            self.evalue
-        )
+        return (self.query, self.bitscore, self.identity, self.coverage, self.evalue)
 
     def __hash__(self):
         return hash(self.__key())

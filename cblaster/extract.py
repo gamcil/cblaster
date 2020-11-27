@@ -127,7 +127,7 @@ def extract_records(
                 start = None
                 end = None
             if in_cluster:
-                subjects = flatten(cluster for cluster in scaffold.clusters)
+                subjects = flatten(cluster.subjects for cluster in scaffold.clusters)
             else:
                 subjects = scaffold.subjects
             for subject in subjects:

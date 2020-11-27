@@ -5,6 +5,11 @@ import shutil
 import requests
 import logging
 
+import g2j
+from g2j import genbank
+
+from cblaster import embl
+
 from pathlib import Path
 from collections import OrderedDict
 
@@ -66,6 +71,43 @@ def parse_fasta(handle):
         else:
             if not skip:
                 sequences[header] += line
+    return sequences
+
+
+def _extract_sequences_from_organism(organism):
+    """Extract sequences from an Organism and write them into a fasta format
+
+    The name of the fasta lines are based on qualifiers associated with the CDS
+    feature. Names are extracted from the following qualifiers in that order:
+    "protein_id", "locus_tag", "gene", "ID". If none of the qualifiers are present
+    a name is auto generated in the form protein _ count.
+
+    Parameters:
+        organism (g2j.classes.Organism): organism object created from EMBL
+        or genbank file using g2j
+    Returns:
+        sequences (OrderedDict): Dictionary of query sequences keyed on accession
+        sorted by location.
+    """
+    sequences = OrderedDict()
+    identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
+    count = 1
+    for scaffold in organism.scaffolds:
+        for feature in sorted(scaffold.features, key=lambda f: f.location.min()):
+            name = None
+            for identifier in identifiers:
+                if identifier in feature.qualifiers:
+                    name = feature.qualifiers[identifier].split(" ")[0]
+                    break
+            if not name:
+                name = f"protein_{count}"
+                count += 1
+            if "translation" not in feature.qualifiers:
+                LOG.warning("Skipping '%s', has no translation", name)
+            elif name in sequences:
+                LOG.warning("Skipping %s, duplicate sequence", name)
+            else:
+                sequences[name] = feature.qualifiers["translation"]
     return sequences
 
 
@@ -133,7 +175,8 @@ def get_sequences(query_file=None, query_ids=None):
     """Convenience function to get dictionary of query sequences from file or IDs.
 
     Parameters:
-        query_file (str): Path to FASTA file containing query protein sequences.
+        query_file (str): Path to FASTA genbank or EMBL file containing query
+        protein sequences.
         query_ids (list): NCBI sequence accessions.
     Raises:
         ValueError: Did not receive values for query_file or query_ids.
@@ -142,7 +185,14 @@ def get_sequences(query_file=None, query_ids=None):
     """
     if query_file and not query_ids:
         with open(query_file) as query:
-            sequences = parse_fasta(query)
+            if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
+                organism = genbank.parse(query, feature_types=["CDS"])
+                sequences = _extract_sequences_from_organism(organism)
+            elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
+                organism = embl.parse(query_file, feature_types=["CDS"])
+                sequences = _extract_sequences_from_organism(organism)
+            else:
+                sequences = parse_fasta(query)
     elif query_ids:
         sequences = efetch_sequences(query_ids)
     else:
