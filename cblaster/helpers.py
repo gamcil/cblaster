@@ -139,7 +139,7 @@ def efetch_sequences_request(headers):
     if response.status_code != 200:
         raise requests.HTTPError(
             f"Error fetching sequences from NCBI [code {response.status_code}]."
-            " Bad query IDs?"
+            " Bad query IDs? Or the NCBI servers are down?"
         )
 
     return response
