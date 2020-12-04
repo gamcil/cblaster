@@ -7,6 +7,8 @@ import logging
 import os
 import time
 import requests
+import json
+from g2j.classes import Organism
 
 
 from cblaster.classes import Session
@@ -26,7 +28,21 @@ FEATURE_SPACE_LENGTH = 21
 NUCLEOTIDE_LINE_LENGTH = 60
 
 
-def extract_cluster_numbers(
+def parse_numbers(cluster_numbers):
+    chosen_cluster_numbers = set()
+    for number in cluster_numbers:
+        try:
+            if "-" in number:
+                start, stop = number.split("-")
+                chosen_cluster_numbers.update(range(int(start), int(stop) + 1))
+            else:
+                chosen_cluster_numbers.add(int(number))
+        except ValueError:
+            LOG.warning(f"Cannot extract cluster '{number}' the given number is not a valid integer")
+    return chosen_cluster_numbers
+
+
+def extract_cluster_hierarchies(
     session,
     cluster_numbers,
     score_threshold,
@@ -44,100 +60,125 @@ def extract_cluster_numbers(
         Set of cluster names e.g. posive integers
     """
     # no filter options return all clusters
+    selected_clusters = set()
     if not cluster_numbers and not score_threshold and not organisms and not scaffolds:
-        return set(cluster.number for organism in session.organisms for cluster in organism.clusters)
+        for organism in session.organisms:
+            selected_clusters.update(get_organism_clusters(organism))
+        return selected_clusters
 
     # prepare the filters defined by the user
-    chosen_cluster_numbers = set()
+
     if cluster_numbers:
-        for number in cluster_numbers:
-            try:
-                if "-" in number:
-                    start, stop = number.split("-")
-                    chosen_cluster_numbers.update(range(int(start), int(stop) + 1))
-                else:
-                    chosen_cluster_numbers.add(int(number))
-            except ValueError:
-                LOG.warning(f"Cannot extract cluster '{number}' the given number is not a valid integer")
+        cluster_numbers = parse_numbers(cluster_numbers)
     if organisms:
         organisms = parse_organisms(organisms)
     if scaffolds:
+        # TODO add the same kind of filterign as in the extract module based on range
         scaffolds = set(scaffolds)
 
     # actually filter out the clusters
-    selected_clusters = set()
     for organism in session.organisms:
         if organisms and organism_matches(organism.name, organisms):
-            _select_organism_clusters(organism, selected_clusters)
+            selected_clusters.update(get_organism_clusters(organism))
             continue
         for scaffold in organism.scaffolds.values():
             if scaffolds and scaffold.accession in scaffolds:
-                _select_scaffold_clusters(scaffold, selected_clusters)
+                selected_clusters.update(get_scaffold_clusters(scaffold, organism.name))
                 continue
             for cluster in scaffold.clusters:
-                if cluster.number in chosen_cluster_numbers or (score_threshold and cluster.score >= score_threshold):
-                    selected_clusters.add(cluster.number)
+                if cluster_numbers and cluster.number in cluster_numbers or \
+                        (score_threshold and cluster.score >= score_threshold):
+                    selected_clusters.add((cluster, scaffold.accession, organism.name))
     return selected_clusters
 
 
-def _select_organism_clusters(organism, selected_clusters):
+def get_organism_clusters(organism):
     """Select all clusters of an organism"""
+    selected_clusters = []
     for scaffold in organism.scaffolds.values():
-        _select_scaffold_clusters(scaffold, selected_clusters)
+        selected_clusters.extend(get_scaffold_clusters(scaffold, organism.name))
+    return selected_clusters
 
 
-def _select_scaffold_clusters(scaffold, selected_clusters):
+def get_scaffold_clusters(scaffold, organism_name):
     """Select all clusters on a scaffold"""
-    for cluster in scaffold.clusters:
-        selected_clusters.add(cluster.number)
+    return [(cluster, scaffold.accession, organism_name) for cluster in scaffold.clusters]
 
 
-def create_files_from_clusters(session, cluster_numbers, output_dir, prefix, file_format):
+def create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix, file_format):
     """Create file_fromat files for each selected cluster
     Args:
         session (Session): a cblaster session object
-        cluster_numbers (Set): a set of selected clusters
+        cluster_hierarchy (Set): a set of selected clusters
         output_dir (string): path to a directory for writing the output files
         prefix (string): string to start the file name of each cluster with
         file_format (string):  the format of the output cluster files either
          genbank or fasta
     """
-
-    sequences = fetch_cluster_protein_sequences(session, cluster_numbers)
+    if session.params["mode"] == "remote":
+        protein_sequences = efetch_protein_sequences(session)
+        nucleotide_sequences = efetch_nucleotide_sequence(cluster_hierarchy)
+    elif session.params["mode"] == "local":
+        protein_sequences, nucleotide_sequences = database_fetch_sequences(session.params["json_db"], cluster_hierarchy)
+    else:
+        raise NotImplementedError(f"No protocol for mode {session.params['mode']}")
 
     # generate genbank files for all the required clusters
-    for organism in session.organisms:
-        for scaffold in organism.scaffolds.values():
-            for cluster in scaffold.clusters:
-                if cluster.number not in cluster_numbers:
+    for cluster, scaffold_accession, organism_name in cluster_hierarchy:
+        cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for subject in cluster.subjects}
+        cluster_nuc_sequence = nucleotide_sequences[scaffold_accession]
+        if file_format == "genbank":
+            with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gb", "w") as f:
+                f.write(cluster_to_genbank(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession))
+        elif file_format == "fasta":
+            with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.fa", "w") as f:
+                f.write(cluster_to_fasta(cluster, cluster_prot_sequences, organism_name, scaffold_accession))
+        else:
+            # this should not be possible
+            raise NotImplementedError(f"File format {file_format} is not supported.")
+        LOG.debug(f"Created {file_format} file for cluster {cluster.number}")
+
+
+def database_fetch_sequences(json_db, cluster_hierarchy):
+
+    # read the json database
+    with open(json_db, "r") as f:
+        # g2j Organism objects not cblaster Organism objects
+        organism_objs = [Organism.from_dict(dct) for dct in json.load(f)]
+
+    # extract all sequences from the database
+    organisms_dict = {organism.name: organism for organism in organism_objs}
+    identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
+    prot_sequences = dict()
+    nuc_sequences = dict()
+    for cluster, scaffold_accession, organism_name in cluster_hierarchy:
+        organism = organisms_dict[organism_name]
+        for scaffold in organism.scaffolds:
+            if scaffold.accession != scaffold_accession:
+                continue
+            nuc_sequences[scaffold_accession] = scaffold.sequence[cluster.start : cluster.end + 1]
+            for feature in scaffold.features:
+                if feature.type != "CDS":
                     continue
-                cluster_sequences = {subject.name: sequences[subject.name] for subject in cluster.subjects}
-                if file_format == "genbank":
-                    with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gb", "w") as f:
-                        f.write(cluster_to_genbank(cluster, cluster_sequences, organism.name, scaffold.accession))
-                elif file_format == "fasta":
-                    with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.fa", "w") as f:
-                        f.write(cluster_to_fasta(cluster, cluster_sequences, organism.name, scaffold.accession))
-                else:
-                    # this should not be possible
-                    raise NotImplementedError(f"File format {file_format} is not supported.")
-                LOG.debug(f"Created {file_format} file for cluster {cluster.number}")
+                for subject in cluster.subjects:
+                    for identifier in identifiers:
+                        if identifier in feature.qualifiers and subject.name == feature.qualifiers[identifier]:
+                            prot_sequences[subject.name] = feature.qualifiers["translation"]
+    return prot_sequences, nuc_sequences
 
 
-def fetch_cluster_protein_sequences(session, cluster_numbers):
+def efetch_protein_sequences(cluster_hierarchy):
     """Fetch all protein sequences for all the clusters in cluster_numbers
     Args:
         session (Session): a cblaster session object
-        cluster_numbers (Set): a set of selected clusters
+        cluster_hierarchy (Set): a set of selected clusters
     Returns:
         a dictionary with protein sequences keyed on protein names
     """
     # first collect all names to do the fetching all at once
     sequence_names = []
-    for organism in session.organisms:
-        for cluster in organism.clusters:
-            if cluster.number in cluster_numbers:
-                sequence_names.extend(subject.name for subject in cluster)
+    for cluster, sc_name, or_name in cluster_hierarchy:
+        sequence_names.extend([subject.name for subject in cluster.subjects])
 
     # request sequences in batces of MAX_REQUEST_SIZE every 0.34 seconds (no more then 3 requests per second)
     sequences = dict()
@@ -152,40 +193,40 @@ def fetch_cluster_protein_sequences(session, cluster_numbers):
     return sequences
 
 
-def fetch_nucleotide_sequence(start, end, scaffold_accession):
-    """Fetch a nucleotide sequence of a certain scaffold from the NCBI server
-    Args:
-        start (int): start coordinate on the scaffold
-        end (int): end coordinate on the scaffold
-        scaffold_accession (string): NCBI accession of a scaffold
-    Raises:
-        requests.HTTPError if the retrieval fails for any reason
-    Returns:
-        the nucleotide sequence
-    """
-    response = requests.post(
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
-        params={"db": "sequences", "rettype": "fasta",
-                "seq_start": str(start), "seq_stop": str(end),
-                "strand": "1"},
-        files={"id": scaffold_accession}
-    )
-    LOG.info(f"Efetch sequence for {scaffold_accession} from {start} to {end}")
-    LOG.debug(f"Efetch URL: {response.url}")
-
-    if response.status_code != 200:
-        raise requests.HTTPError(
-            f"Error fetching sequences from NCBI [code {response.status_code}]."
-            " Incorect scaffold accession?"
+def efetch_nucleotide_sequence(cluster_hierarchy):
+    sequences = dict()
+    passed_time = 0
+    for cluster, scaffold_accession, org_name in cluster_hierarchy:
+        if passed_time < MIN_TIME_BETWEEN_REQUEST:
+            time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
+        start_time = time.time()
+        response = requests.post(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+            params={"db": "sequences", "rettype": "fasta",
+                    "seq_start": str(cluster.start), "seq_stop": str(cluster.end),
+                    "strand": "1"},
+            files={"id": scaffold_accession}
         )
-    return response.text.split("\n", 1)[1]
+        LOG.debug(f"Efetch sequence for {scaffold_accession} from {cluster.start} to {cluster.end}")
+        LOG.debug(f"Efetch URL: {response.url}")
+
+        if response.status_code != 200:
+            raise requests.HTTPError(
+                f"Error fetching sequences from NCBI [code {response.status_code}]."
+                " Incorect scaffold accession?"
+            )
+        # only save the sequence not the fasta header
+        sequences[scaffold_accession] = response.text.split("\n", 1)[1]
+
+        passed_time = time.time() - start_time
+    return sequences
 
 
-def cluster_to_genbank(cluster, cluster_sequences, organism_name, scaffold_accession):
+def cluster_to_genbank(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession):
     """Write a Cluster object into a genbank string
     Args:
         cluster (Cluster): a cblaster Cluster object
-        cluster_sequences (dict): a dictionary linking sequence names to the aa
+        cluster_prot_sequences (dict): a dictionary linking sequence names to the aa
          sequence
         organism_name (string): name of the organism the cluster originated from
         scaffold_accession (string): accession number of the scaffold the organism
@@ -212,7 +253,7 @@ def cluster_to_genbank(cluster, cluster_sequences, organism_name, scaffold_acces
 
     subjects = {subject.name: subject for subject in cluster.subjects}
     # construct a CDS feature for every subject in the cluster
-    for name, sequence in cluster_sequences.items():
+    for name, sequence in cluster_prot_sequences.items():
         subject = subjects[name]
         hit_name = max(subject.hits, key=lambda x: x.bitscore).subject
         if subject.strand == "-":
@@ -224,8 +265,7 @@ def cluster_to_genbank(cluster, cluster_sequences, organism_name, scaffold_acces
         genbank_string += collapse_translation(f"                     /translation=\"{sequence}\"")
     genbank_string += "ORIGIN      \n"
 
-    nuc_sequence = fetch_nucleotide_sequence(cluster.start, cluster.end, scaffold_accession)
-    genbank_string += collapse_nucleotide_sequence(nuc_sequence)
+    genbank_string += collapse_nucleotide_sequence(cluster_nuc_sequence)
     genbank_string += "//\n"
     return genbank_string
 
@@ -332,14 +372,14 @@ def extract_clusters(
         session = Session.from_json(fp)
 
     LOG.info("Extracting clusters that match the filters")
-    selected_clusters = extract_cluster_numbers(session, cluster_numbers, score_threshold, organisms, scaffolds)
-    LOG.info(f"Extracted {len(selected_clusters)} clusters.")
-    if len(selected_clusters) == 0:
+    cluster_hierarchy = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds)
+    LOG.info(f"Extracted {len(cluster_hierarchy)} clusters.")
+    if len(cluster_hierarchy) == 0:
         LOG.info("There are no clusters that meet the filtering criteria. Exiting...")
         raise SystemExit
 
     LOG.info(f"Writing {file_format} files")
-    create_files_from_clusters(session, selected_clusters, output_dir, prefix, file_format)
+    create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix, file_format)
 
     LOG.info(f"All clusters have been written to files. Output can be found at {output_dir}")
     LOG.info("Done!")
