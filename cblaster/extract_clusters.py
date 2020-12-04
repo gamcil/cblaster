@@ -12,7 +12,7 @@ from g2j.classes import Organism
 
 
 from cblaster.classes import Session
-from cblaster.extract import organism_matches, parse_organisms
+from cblaster.extract import organism_matches, parse_organisms, parse_scaffolds
 from cblaster.helpers import efetch_sequences
 
 
@@ -73,8 +73,7 @@ def extract_cluster_hierarchies(
     if organisms:
         organisms = parse_organisms(organisms)
     if scaffolds:
-        # TODO add the same kind of filterign as in the extract module based on range
-        scaffolds = set(scaffolds)
+        scaffolds = parse_scaffolds(scaffolds)
 
     # actually filter out the clusters
     for organism in session.organisms:
@@ -83,7 +82,7 @@ def extract_cluster_hierarchies(
             continue
         for scaffold in organism.scaffolds.values():
             if scaffolds and scaffold.accession in scaffolds:
-                selected_clusters.update(get_scaffold_clusters(scaffold, organism.name))
+                selected_clusters.update(get_scaffold_clusters(scaffold, organism.name, **scaffolds[scaffold.accession]))
                 continue
             for cluster in scaffold.clusters:
                 if cluster_numbers and cluster.number in cluster_numbers or \
@@ -100,9 +99,15 @@ def get_organism_clusters(organism):
     return selected_clusters
 
 
-def get_scaffold_clusters(scaffold, organism_name):
+def get_scaffold_clusters(scaffold, organism_name, start=None, end=None):
     """Select all clusters on a scaffold"""
-    return [(cluster, scaffold.accession, organism_name) for cluster in scaffold.clusters]
+    selected_clusters = []
+    for cluster in scaffold.clusters:
+        # check if the cluster is within the range given for the scaffold
+        if (start and start >= cluster.start) or (end and end <= cluster.end):
+            continue
+        selected_clusters.append((cluster, scaffold.accession, organism_name))
+    return selected_clusters
 
 
 def create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix, file_format):
