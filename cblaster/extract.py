@@ -35,8 +35,13 @@ def parse_scaffolds(scaffolds):
     """Parses scaffold names and ranges
 
     e.g.
-        scaf_123 --> {"name": "scaf_123"}
-        scaf_123:520-62000 --> {"name": "scaf_123", "start": 520, "end": 62000}
+        scaf_123 --> {"scaf_123": {"name": None, "end": None}}
+        scaf_123:520-62000 --> {"scaf_123": {"name": 520, "end": 62000}}
+    Args:
+        scaffolds (list): a list of scaffold names with ranges
+    Returns:
+        A dictionary keyed on scaffolds names containing a dictionary with start and end keys
+        see e.g
     """
     records = {}
     for scaffold in scaffolds:
@@ -48,7 +53,7 @@ def parse_scaffolds(scaffolds):
                 start, end = [int(p) for p in parts.split("-")]
             except ValueError:
                 LOG.exception("Expected range in format start-end")
-        records[name] = dict(start=start, end=name)
+        records[name] = dict(start=start, end=end)
     return records
 
 
