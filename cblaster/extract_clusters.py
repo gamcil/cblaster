@@ -11,6 +11,13 @@ import json
 from g2j.classes import Organism
 
 
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.Alphabet import IUPAC
+from Bio.SeqFeature import SeqFeature, FeatureLocation
+
+
 from cblaster.classes import Session
 from cblaster.extract import organism_matches, parse_organisms, parse_scaffolds
 from cblaster.helpers import efetch_sequences
@@ -21,11 +28,6 @@ LOG = logging.getLogger(__name__)
 # from https://www.ncbi.nlm.nih.gov/books/NBK25497/
 MAX_REQUEST_SIZE = 500
 MIN_TIME_BETWEEN_REQUEST = 0.34  # seconds
-
-# constants for genbank files
-MAX_LINE_LENGTH = 80
-FEATURE_SPACE_LENGTH = 21
-NUCLEOTIDE_LINE_LENGTH = 60
 
 
 def parse_numbers(cluster_numbers):
@@ -110,18 +112,16 @@ def get_scaffold_clusters(scaffold, organism_name, start=None, end=None):
     return selected_clusters
 
 
-def create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix, file_format):
+def create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix):
     """Create file_fromat files for each selected cluster
     Args:
         session (Session): a cblaster session object
         cluster_hierarchy (Set): a set of selected clusters
         output_dir (string): path to a directory for writing the output files
         prefix (string): string to start the file name of each cluster with
-        file_format (string):  the format of the output cluster files either
-         genbank or fasta
     """
     if session.params["mode"] == "remote":
-        protein_sequences = efetch_protein_sequences(session)
+        protein_sequences = efetch_protein_sequences(cluster_hierarchy)
         nucleotide_sequences = efetch_nucleotide_sequence(cluster_hierarchy)
     elif session.params["mode"] == "local":
         protein_sequences, nucleotide_sequences = database_fetch_sequences(session.params["json_db"], cluster_hierarchy)
@@ -132,16 +132,10 @@ def create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix, f
     for cluster, scaffold_accession, organism_name in cluster_hierarchy:
         cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for subject in cluster.subjects}
         cluster_nuc_sequence = nucleotide_sequences[scaffold_accession]
-        if file_format == "genbank":
-            with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gb", "w") as f:
-                f.write(cluster_to_genbank(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession))
-        elif file_format == "fasta":
-            with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.fa", "w") as f:
-                f.write(cluster_to_fasta(cluster, cluster_prot_sequences, organism_name, scaffold_accession))
-        else:
-            # this should not be possible
-            raise NotImplementedError(f"File format {file_format} is not supported.")
-        LOG.debug(f"Created {file_format} file for cluster {cluster.number}")
+        with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gb", "w") as f:
+            record = cluster_to_genbank(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession)
+            SeqIO.write(record, f, 'genbank')
+        LOG.debug(f"Created {prefix}cluster{cluster.number}.gb file for cluster {cluster.number}")
 
 
 def database_fetch_sequences(json_db, cluster_hierarchy):
@@ -169,13 +163,13 @@ def database_fetch_sequences(json_db, cluster_hierarchy):
                     for identifier in identifiers:
                         if identifier in feature.qualifiers and subject.name == feature.qualifiers[identifier]:
                             prot_sequences[subject.name] = feature.qualifiers["translation"]
+                            break
     return prot_sequences, nuc_sequences
 
 
 def efetch_protein_sequences(cluster_hierarchy):
     """Fetch all protein sequences for all the clusters in cluster_numbers
     Args:
-        session (Session): a cblaster session object
         cluster_hierarchy (Set): a set of selected clusters
     Returns:
         a dictionary with protein sequences keyed on protein names
@@ -212,7 +206,7 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
                     "strand": "1"},
             files={"id": scaffold_accession}
         )
-        LOG.debug(f"Efetch sequence for {scaffold_accession} from {cluster.start} to {cluster.end}")
+        LOG.info(f"Querying NCBI for sequence for {scaffold_accession} from {cluster.start} to {cluster.end}")
         LOG.debug(f"Efetch URL: {response.url}")
 
         if response.status_code != 200:
@@ -221,136 +215,36 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
                 " Incorect scaffold accession?"
             )
         # only save the sequence not the fasta header
-        sequences[scaffold_accession] = response.text.split("\n", 1)[1]
+        sequences[scaffold_accession] = response.text.split("\n", 1)[1].replace("\n", "")
 
         passed_time = time.time() - start_time
     return sequences
 
 
 def cluster_to_genbank(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession):
-    """Write a Cluster object into a genbank string
-    Args:
-        cluster (Cluster): a cblaster Cluster object
-        cluster_prot_sequences (dict): a dictionary linking sequence names to the aa
-         sequence
-        organism_name (string): name of the organism the cluster originated from
-        scaffold_accession (string): accession number of the scaffold the organism
-         originates from
-    Returns:
-        a genbank string
-    """
+    nuc_seq_obj = Seq(cluster_nuc_sequence, IUPAC.unambiguous_dna)
 
-    # first construct a simple header
-    genbank_string = f"LOCUS       {scaffold_accession}               {cluster.end - cluster.start} bp    DNA\n"
-    genbank_string += f"DEFINITION  Genes for cluster {cluster.number} on scaffold {scaffold_accession}\n"
-    genbank_string += f"ACCESSION   {scaffold_accession}\n"
-    genbank_string += f"VERSION     {scaffold_accession}.1\n"
-    genbank_string += "KEYWORDS    \n"
-    genbank_string += f"SOURCE      {organism_name}\n"
-    genbank_string += f"  ORGANISM  {organism_name}\n"
-    genbank_string += f"REFERENCE   1  (bases {cluster.start} to {cluster.end})\n"
-    genbank_string += f"  AUTHORS   Creators of cblaster\n"
-    # TODO: add a proper title
-    genbank_string += f"  TITLE     \n"
-    genbank_string += "FEATURES             Location/Qualifiers\n"
-    genbank_string += f"     source          {cluster.start}..{cluster.end}\n"
-    genbank_string += f"                     /organism=\"{organism_name}\"\n"
+    # create the record
+    record = SeqRecord(nuc_seq_obj,
+                       id=scaffold_accession,
+                       name=scaffold_accession,
+                       description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}")
+    feature = SeqFeature(FeatureLocation(start=cluster.start, end=cluster.end), type="SOURCE",
+                         qualifiers={"organism": organism_name})
+    record.features.append(feature)
 
     subjects = {subject.name: subject for subject in cluster.subjects}
-    # construct a CDS feature for every subject in the cluster
     for name, sequence in cluster_prot_sequences.items():
         subject = subjects[name]
-        hit_name = max(subject.hits, key=lambda x: x.bitscore).subject
-        if subject.strand == "-":
-            location_string = f"complement({subject.start - cluster.start}..{subject.end - cluster.start})"
-        else:
-            location_string = f"{subject.start - cluster.start}..{subject.end - cluster.start}"
-        genbank_string += f"     CDS             {location_string}\n"
-        genbank_string += f"                     /protein_id=\"{hit_name}\"\n"
-        genbank_string += collapse_translation(f"                     /translation=\"{sequence}\"")
-    genbank_string += "ORIGIN      \n"
-
-    genbank_string += collapse_nucleotide_sequence(cluster_nuc_sequence)
-    genbank_string += "//\n"
-    return genbank_string
-
-
-def collapse_translation(line):
-    """Format a translation string to be in genbank form
-    e.g.
-        /translation="MRTTAQATSWLRRYRPRPAATWRLVCFPYA
-        VCFPYASGNATFYRQWAVRLPAEVEVVAVQYPGRLDRIHEPCVR
-        ASGNATF"
-    Args:
-        line (string): aa string to format
-    Returns:
-        the same string formatted to be in genbank form
-    """
-    collapsed_translation = line[0:MAX_LINE_LENGTH] + "\n"
-    aas_per_line = MAX_LINE_LENGTH - FEATURE_SPACE_LENGTH
-    for i in range(aas_per_line, len(line), aas_per_line):
-        collapsed_translation += " " * FEATURE_SPACE_LENGTH + line[i:i + aas_per_line] + "\n"
-    return collapsed_translation
-
-
-def collapse_nucleotide_sequence(line):
-    """Format a nuccleotide sequence string to be in genbank form
-    e.g.
-         1 aatgggcaaa aagc... etc
-        61 aaggtacccg ttta... etc
-    Args:
-        line (string): nucleotide string to format
-    Returns:
-        the same string formatted to be in genbank form
-    """
-    collapesed_sequence = ""
-    line = line.replace("\n", "")
-    for i in range(0, len(line), NUCLEOTIDE_LINE_LENGTH):
-
-        sequence_line = line[i:i + NUCLEOTIDE_LINE_LENGTH].lower()
-        # add a space every 10 characters to resemble the NCBI genbank format
-        spaced_sequence_line = ' '.join(sequence_line[i:i + 10] for i in range(0, len(sequence_line), 10))
-        collapesed_sequence += f"{i + 1:>10} {spaced_sequence_line}\n"
-    return collapesed_sequence
-
-
-def cluster_to_fasta(cluster, cluster_sequences, organism_name, scaffold_accession):
-    """Make a fasta string from a cluster object
-    Args:
-        cluster (Cluster): a cblaster Cluster object
-        cluster_sequences (dict): a dictionary linking sequence names to the aa
-         sequence
-        organism_name (string): name of the organism the cluster originated from
-        scaffold_accession (string): accession number of the scaffold the organism
-         originates from
-    Returns:
-        a string in fasta format
-    """
-    fasta_string = ""
-    for name, sequence in cluster_sequences.items():
-        fasta_string += f">{name} on Cluster={cluster.number}, Organism={organism_name}," \
-            f" Scaffold={scaffold_accession}\n"
-        fasta_string += collapse_protein_sequence(sequence)
-    return fasta_string
-
-
-def collapse_protein_sequence(line):
-    """Format a line of any lenght to MAX_LINE_LENGHT
-    Args:
-        line (string): an amino acid protein sequence
-    Returns:
-        the same string with a newline every MAX_LINE_LENGHT amount of characters
-    """
-    collapsed_sequence = ""
-    for i in range(0, len(line), MAX_LINE_LENGTH):
-        collapsed_sequence += line[i:i + MAX_LINE_LENGTH] + "\n"
-    return collapsed_sequence
+        cds_feature = SeqFeature(FeatureLocation(start=subject.start - cluster.start, end=subject.end- cluster.start),
+                                 type="CDS", qualifiers={"protein_id": subject.name, "translation": sequence})
+        record.features.append(cds_feature)
+    return record
 
 
 def extract_clusters(
     session,
     output_dir,
-    file_format="genbank",
     prefix="",
     cluster_numbers=None,
     score_threshold=None,
@@ -362,8 +256,6 @@ def extract_clusters(
     Args:
         session (string): path to a session.json file
         output_dir (string): path to a directory for writing the output files
-        file_format (string):  the format of the output cluster files either
-         genbank or fasta
         prefix (string): string to start the file name of each cluster with
         cluster_numbers (list): cluster numbers to include
         score_threshold (float): minum score in order for a cluster to be included
@@ -383,9 +275,8 @@ def extract_clusters(
         LOG.info("There are no clusters that meet the filtering criteria. Exiting...")
         raise SystemExit
 
-    LOG.info(f"Writing {file_format} files")
-    create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix, file_format)
+    LOG.info(f"Writing genbank files")
+    create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix)
 
     LOG.info(f"All clusters have been written to files. Output can be found at {output_dir}")
     LOG.info("Done!")
-
