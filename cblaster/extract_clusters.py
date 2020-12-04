@@ -31,6 +31,13 @@ MIN_TIME_BETWEEN_REQUEST = 0.34  # seconds
 
 
 def parse_numbers(cluster_numbers):
+    """parse clutser numbers from user input
+
+    Args:
+        cluster_numbers (list): a list of numbers or ranges of numbers
+    Returns:
+        list of integer numbers
+    """
     chosen_cluster_numbers = set()
     for number in cluster_numbers:
         try:
@@ -52,6 +59,7 @@ def extract_cluster_hierarchies(
     scaffolds
 ):
     """Filter out selected clusters
+
     Args:
         session (Session): A session object
         cluster_numbers (list): Numbers of clusters or a range of numbers eg 1-5
@@ -59,7 +67,7 @@ def extract_cluster_hierarchies(
         organisms (list): Regex patterns for organisms of which all clusters need to be extracted
         scaffolds (list): Names of scaffolds of which all clusters need to be extracted
     Returns:
-        Set of cluster names e.g. posive integers
+        Set of tuples in the form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
     """
     # no filter options return all clusters
     selected_clusters = set()
@@ -69,7 +77,6 @@ def extract_cluster_hierarchies(
         return selected_clusters
 
     # prepare the filters defined by the user
-
     if cluster_numbers:
         cluster_numbers = parse_numbers(cluster_numbers)
     if organisms:
@@ -94,7 +101,13 @@ def extract_cluster_hierarchies(
 
 
 def get_organism_clusters(organism):
-    """Select all clusters of an organism"""
+    """Get all clusters of an organism
+
+    Args:
+        organism (cblaster.Organism): cblaster Organism object
+    Returns:
+        list of tuples in form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
+    """
     selected_clusters = []
     for scaffold in organism.scaffolds.values():
         selected_clusters.extend(get_scaffold_clusters(scaffold, organism.name))
@@ -102,7 +115,16 @@ def get_organism_clusters(organism):
 
 
 def get_scaffold_clusters(scaffold, organism_name, start=None, end=None):
-    """Select all clusters on a scaffold"""
+    """Get all clusters on a scaffold
+
+    Args:
+        scaffold (cblaster.Scaffold): cblaster scaffold object
+        organism_name(str): name of the organism the scaffold is from
+        start (int): start coordinate of cluster must be bigger then start
+        end (int): end coordiante of cluster must be smaller then stop
+    Returns:
+        list of tuples in form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
+    """
     selected_clusters = []
     for cluster in scaffold.clusters:
         # check if the cluster is within the range given for the scaffold
@@ -112,8 +134,9 @@ def get_scaffold_clusters(scaffold, organism_name, start=None, end=None):
     return selected_clusters
 
 
-def create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix):
-    """Create file_fromat files for each selected cluster
+def create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix):
+    """Create genbank files for each selected cluster
+
     Args:
         session (Session): a cblaster session object
         cluster_hierarchy (Set): a set of selected clusters
@@ -133,13 +156,22 @@ def create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix):
         cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for subject in cluster.subjects}
         cluster_nuc_sequence = nucleotide_sequences[scaffold_accession]
         with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gb", "w") as f:
-            record = cluster_to_genbank(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession)
+            record = cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession)
             SeqIO.write(record, f, 'genbank')
         LOG.debug(f"Created {prefix}cluster{cluster.number}.gb file for cluster {cluster.number}")
 
 
 def database_fetch_sequences(json_db, cluster_hierarchy):
+    """Fetch sequences from an offline json_db
 
+    Args:
+        json_db (str): path to a json_db file
+        cluster_hierarchy (Set): set of tuples in the form (cblaster.Cluster object,
+         scaffold_accession of cluster, organism_name of cluster)
+    Returns:
+        tuple of a dict of protein sequences keyed on protein_names and a dict of
+         nucleotide sequences keyed on scaffold_accessions
+    """
     # read the json database
     with open(json_db, "r") as f:
         # g2j Organism objects not cblaster Organism objects
@@ -168,9 +200,11 @@ def database_fetch_sequences(json_db, cluster_hierarchy):
 
 
 def efetch_protein_sequences(cluster_hierarchy):
-    """Fetch all protein sequences for all the clusters in cluster_numbers
+    """eFetch all protein sequences for all the clusters in the cluster_hierarchy
+
     Args:
-        cluster_hierarchy (Set): a set of selected clusters
+        cluster_hierarchy (Set): set of tuples in the form (cblaster.Cluster object,
+         scaffold_accession of cluster, organism_name of cluster)
     Returns:
         a dictionary with protein sequences keyed on protein names
     """
@@ -193,6 +227,14 @@ def efetch_protein_sequences(cluster_hierarchy):
 
 
 def efetch_nucleotide_sequence(cluster_hierarchy):
+    """eFetch all nucleotide sequences for all the clusters in the cluster_hierarchy
+
+    Args:
+        cluster_hierarchy (Set): set of tuples in the form (cblaster.Cluster object,
+         scaffold_accession of cluster, organism_name of cluster)
+    Returns:
+        a dictionary with nucleotide sequences keyed on scaffold accession
+    """
     sequences = dict()
     passed_time = 0
     for cluster, scaffold_accession, org_name in cluster_hierarchy:
@@ -221,7 +263,18 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
     return sequences
 
 
-def cluster_to_genbank(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession):
+def cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession):
+    """Convert a cblaster.Cluster object into a Bio.Seqrecord object
+
+    Args:
+        cluster (cblaster.Cluster): cblasdter Cluster object
+        cluster_prot_sequences (dict): dictionary of protein sequences keyed on protein ids
+        cluster_nuc_sequence (dict): dictionary of nucleotide sequences keyed on scaffold accession
+        organism_name (str): name of the organism the cluster is originated from
+        scaffold_accession (str): accession of the scaffold the cluster belongs to
+    Returns:
+        a Bio.Seqrecord object
+    """
     nuc_seq_obj = Seq(cluster_nuc_sequence, IUPAC.unambiguous_dna)
 
     # create the record
@@ -253,6 +306,7 @@ def extract_clusters(
 ):
     """Extract Cluster objects from a Session object and write them to a file in a
     specified format
+
     Args:
         session (string): path to a session.json file
         output_dir (string): path to a directory for writing the output files
@@ -276,7 +330,7 @@ def extract_clusters(
         raise SystemExit
 
     LOG.info(f"Writing genbank files")
-    create_files_from_clusters(session, cluster_hierarchy, output_dir, prefix)
+    create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix)
 
     LOG.info(f"All clusters have been written to files. Output can be found at {output_dir}")
     LOG.info("Done!")
