@@ -50,7 +50,7 @@ def parse_scaffolds(scaffolds):
         end = None
         if parts:
             try:
-                start, end = [int(p) for p in parts.split("-")]
+                start, end = [int(p) for p in parts[0].split("-")]
             except ValueError:
                 LOG.exception("Expected range in format start-end")
         records[name] = dict(start=start, end=end)
