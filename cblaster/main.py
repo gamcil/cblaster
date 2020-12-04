@@ -349,7 +349,6 @@ def main():
         extract_clusters.extract_clusters(
             args.session,
             args.output,
-            file_format=args.format,
             prefix=args.prefix,
             cluster_numbers=args.clusters,
             score_threshold=args.score_threshold,

@@ -522,13 +522,6 @@ def add_extract_clusters_subparser(subparsers):
         required=True
     )
     output.add_argument(
-        "-f",
-        "--format",
-        help="The format of the output files, 'fasta' or 'genbank'",
-        choices=("fasta", "genbank"),
-        default="genbank"
-    )
-    output.add_argument(
         "-pf",
         "--prefix",
         help="Start of the name for each cluster file, the base name is cluster'clutser.number'",
