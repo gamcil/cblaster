@@ -465,6 +465,8 @@ def add_extract_clusters_subparser(subparsers):
         "  $ cblaster extract_clusters session.json -c 1-10 25 -o plot.html\n\n"
         "Extract only from a specific organisms (regular expressions):\n"
         "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
+        "Extract only from a specific range on a scaffold:\n"
+        "  $ cblaster extract_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -486,13 +488,13 @@ def add_extract_clusters_subparser(subparsers):
     fil.add_argument(
         "-or",
         "--organisms",
-        help="Organism names",
+        help="Organism names (can be regex patterns)",
         nargs="+"
     )
     fil.add_argument(
-        "-sc",
+        "-sf",
         "--scaffolds",
-        help="Scaffold names/ranges",
+        help="Scaffold names/ranges e.g name:start-stop. Only clusters fuly within the range are selected.",
         nargs="+"
     )
 
@@ -525,26 +527,25 @@ def add_plot_clusters_subparser(subparsers):
         description="Plot clusters in genbank files",
         epilog="Example usage\n-------------\n"
         "Plot all the clusters:\n"
-        " $ cblaster plot_clusters -s session.json -o plot.html\n\n"
+        " $ cblaster plot_clusters session.json -o plot.html\n\n"
         "Plot cluster 1 trough 10 and cluster 25 (these numbers can be\n"
         "found in the summary file of the 'search' command):\n"
-        " $ cblaster plot_clusters -s session.json -c 1-10 25 -o plot.html\n\n"
-        "Plot clusters located in genabnk files:\n"
-        " $ cblaster plot_clusters -cf ..\\genbank_directory genbank_file.gb -c 1-10 25 -o plot.html\n\n"
+        " $ cblaster plot_clusters session.json -c 1-10 25 -o plot.html\n\n"
+        "Plot clusters located in genbank files:\n"
+        " $ cblaster plot_clusters session.json -f ..\\genbank_directory genbank_file.gb -c 1-10 25 -o plot.html\n\n"
         "Plot only from specific organisms (regular expressions):\n"
-        " $ cblaster plot_clusters -s session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
+        " $ cblaster plot_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
         "Plot and allign clusters (carefull alligning a lot of clusters can take a while):\n"
-        " $ cblaster plot_clusters -s session.json -a -o plot.html\n\n"
+        " $ cblaster plot_clusters session.json -a -o plot.html\n\n"
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     main_input_group = parser.add_argument_group("Required arguments(mutualy exclusive)")
-    main_arguments = main_input_group.add_mutually_exclusive_group(required=True)
-    main_arguments.add_argument("-s", "--session", help="cblaster session file")
-    main_arguments.add_argument("-f", "--files", help="Genbank files and/or directories", nargs="+")
+    main_input_group.add_argument("session", help="cblaster session file")
+    main_input_group.add_argument("-f", "--files", help="Genbank files and/or directories", nargs="+")
 
-    fil = parser.add_argument_group("Filters when using --session")
+    fil = parser.add_argument_group("Filters when not using --files")
     fil.add_argument(
         "-c",
         "--clusters",
