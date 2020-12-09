@@ -107,19 +107,6 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
         temp_res.append(prof +"_results.txt")
     return temp_res
 
-def parse_ID(id):
-    """Parsing of id to only contain the NCBI identifier
-
-    Args:
-        id: String, hit id
-    Returns:
-        id: String, parsed hit id
-    """
-    if "|" in id:
-        return id.rstrip("|").split("|")[-1]
-    else:
-        return id
-
 
 def parse_hmmer_output(file_list):
     """Parse hmmsearch output
@@ -137,10 +124,9 @@ def parse_hmmer_output(file_list):
             num_hits = len(hits)
             if num_hits > 0:
                 for hit in hits:
-                    hit_id = parse_ID(hit.id)
                     hit_class = Hit(
                         query=record.accession,  # Pfam id
-                        subject=hit_id,  # Hit id
+                        subject=hit.id,  # Hit id
                         identity=None,  # Not present
                         coverage=None,  # Not present
                         evalue=hit.evalue,  # E-value of hit
@@ -162,7 +148,7 @@ def preform_hmmer(path_pfam=None,
         path_db: String, Path to seqeunce db, in fasta or gbk format
         acc_profile: List, Pfam profiles needed to be searched
     Returns:
-        hit_res: List of class objects with the hits 
+        hit_res: List of class objects with the hits
 
     """
     #1. Check if program exist else give error message and stop program
@@ -171,13 +157,13 @@ def preform_hmmer(path_pfam=None,
 
     LOG.info("Starting hmmer search")
     #2. run check_pfam_db
-    #check_pfam_db(path_pfam)
+    check_pfam_db(path_pfam)
 
     #3. get_full_acc_number and run hmmfetch
-    #ls_keys = fetch_profiles(path_pfam, acc_profile)
+    ls_keys = fetch_profiles(path_pfam, acc_profile)
 
     #4. run hmmsearch
-    #ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
+    ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
 
     #5. Parse hmm output, needs to be the same as blast output
     ls_res = ["PF00491.22_results.txt", "PF05593.15_results.txt"]
