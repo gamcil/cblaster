@@ -49,23 +49,6 @@ def add_gui_subparser(subparsers):
     subparsers.add_parser("gui", help="Launch cblaster GUI")
 
 
-def add_hmm_subparser(subparsers):
-    hmm = subparsers.add_parser("hmm", help="preform hmmfetch and hmmsearch")
-    hmm.add_argument(
-        "-db",
-        help="Path to Pfam database, if not present it will save db there",
-    )
-    hmm.add_argument(
-        "-dbf",
-        help="Path to Fasta, genbank or EMBL protein sequences file"
-    )
-    hmm.add_argument(
-        "-qp",
-        help="A collection of Pfam profile identifiers to be searched ",
-        nargs="+",
-    )
-
-
 def add_input_group(search):
     group = (
         search
@@ -82,6 +65,12 @@ def add_input_group(search):
         "--query_ids",
         nargs="+",
         help="A collection of valid NCBI sequence identifiers to be searched",
+    )
+    group.add_argument(
+        "-qp",
+        "--query_profiles",
+        nargs="+",
+        help="A collection of Pfam profile identifiers to be searched",
     )
 
 
@@ -187,7 +176,7 @@ def add_searching_group(search):
         "-m",
         "--mode",
         help="cblaster search mode",
-        choices=["local", "remote"],
+        choices=["local", "remote", "hmm", "combi"],
         default="remote",
     )
     group.add_argument(
@@ -206,11 +195,18 @@ def add_searching_group(search):
         " available cores will be used.",
     )
     group.add_argument(
+        "-db_pfam",
+        "--pfam",
+        help="Path to Pfam database, if not present it will save db there"
+        "This option is required when running hmm or combi search mode",
+    )
+    group.add_argument(
         "-jdb",
         "--json_db",
         help="Path to local JSON database created using cblaster makedb. If this"
         " argument is provided, genomic context will be fetched from this database"
-        " instead of through NCBI IPG.",
+        " instead of through NCBI IPG."
+        "Required for local, hmm and combi searches",
     )
     group.add_argument(
         "-eq",
@@ -491,7 +487,6 @@ def get_parser():
     subparsers = parser.add_subparsers(dest="subcommand")
     add_gui_subparser(subparsers)
     add_makedb_subparser(subparsers)
-    add_hmm_subparser(subparsers)
     add_search_subparser(subparsers)
     add_gne_subparser(subparsers)
     add_extract_subparser(subparsers)
@@ -506,7 +501,7 @@ def parse_args(args):
         parser.print_help()
         raise SystemExit
 
-    if arguments.subcommand in ("gui", "makedb", "gne", "extract", "hmm"):
+    if arguments.subcommand in ("gui", "makedb", "gne", "extract"):
         return arguments
 
     if arguments.mode == "remote":
