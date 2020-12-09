@@ -183,9 +183,12 @@ def add_searching_group(search):
         "-db",
         "--database",
         default="nr",
+        nargs="+",
         help="Database to be searched. This should be either a path to a local"
         " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
-        " database name (def. nr)",
+        " database name (def. nr) or ath to Pfam database, if not present it"
+        "will save db there"
+        "Can be multiple options when a combi-search mode is used",
     )
     group.add_argument(
         "-c",
