@@ -7,6 +7,11 @@ This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 import re
 import json
 import itertools
+from clinker.classes import (
+    Cluster as ClinkerCluster,
+    Locus as ClinkerLocus,
+    Gene as ClinkerGene
+)
 
 from cblaster.formatters import (
     binary,
@@ -338,7 +343,7 @@ class Cluster(Serializer):
 
         The score is based on accumulated blastbitscore, total amount of hits against the
         query and a synteny score if query sequence order is provided. If there are multiple
-        hits in a subject the hit with the top bitscore is selected for the caclulation.
+        hits in a subject the hit with the top bitscore is selected for the calculation.
 
         Args:
             query_sequence_order (list): list of sequences of the order in the query file, is
@@ -358,6 +363,17 @@ class Cluster(Serializer):
             "end": self.end,
             "number": self.number,
         }
+
+    def to_clinker_cluster(self):
+        clinker_genes = []
+        for subject in self.subjects:
+            clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
+                                             end=subject.end, strand=1 if subject.strand == '+' else -1))
+            # print(subject.start, subject.end, subject.end - subject.start)
+        clinker_genes.reverse()
+        clinker_locus = ClinkerLocus(self.number, clinker_genes, start=self.start, end=self.end)
+        clinker_cluster = ClinkerCluster(f"Hit cluster {self.number}", [clinker_locus])
+        return clinker_cluster
 
     @classmethod
     def from_dict(cls, d, *subjects):
