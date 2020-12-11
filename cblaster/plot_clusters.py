@@ -189,9 +189,12 @@ def plot_clusters(
     # filter the cluster using the filter functions from extract_clusters modue
     cluster_hierarchies = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds)
 
+    # sort the clusters based on score
+    sorted_clusters = sorted([h[0] for h in cluster_hierarchies], key=lambda x: x.score, reverse=True)
+
     clinker_query_cluster = query_to_clinker_cluster(session.params["query_file"])
 
-    allignments = clusters_to_clinker_alignments(clinker_query_cluster, [h[0] for h in cluster_hierarchies])
+    allignments = clusters_to_clinker_alignments(clinker_query_cluster, sorted_clusters)
     global_aligner = allignments_to_clinker_global_alligner(allignments)
 
     clinker_plot_clusters(global_aligner, plot_outfile, use_file_order=True)
