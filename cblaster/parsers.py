@@ -455,18 +455,18 @@ def add_extract_subparser(subparsers):
 def add_extract_clusters_subparser(subparsers):
     parser = subparsers.add_parser(
         "extract_clusters",
-        help="Extract clusters from a session file in genbank or fasta format",
-        description="Extract clusters found with 'search'",
+        help="Extract clusters from a session file in genbank format",
+        description="Extract clusters from a session file",
         epilog="Example usage\n-------------\n"
-        "Extract all clusters (carfull this can take a while):\n"
-        "  $ cblaster extract_clusters session.json -o plot.html\n\n"
+        "Extract all clusters (carfull this can take a while for a remote session):\n"
+        "  $ cblaster extract_clusters session.json -o example_directory\n\n"
         "Extract cluster 1 trough 10 and cluster 25 (these numbers can be\n"
         "found in the summary file of the 'search' command):\n"
-        "  $ cblaster extract_clusters session.json -c 1-10 25 -o plot.html\n\n"
+        "  $ cblaster extract_clusters session.json -c 1-10 25 -o example_directory\n\n"
         "Extract only from a specific organisms (regular expressions):\n"
-        "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
-        "Extract only from a specific range on a scaffold:\n"
-        "  $ cblaster extract_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
+        "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o example_directory\n\n"
+        "Extract only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
+        "  $ cblaster extract_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o example_directory\n\n"
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -494,7 +494,7 @@ def add_extract_clusters_subparser(subparsers):
     fil.add_argument(
         "-sf",
         "--scaffolds",
-        help="Scaffold names/ranges e.g name:start-stop. Only clusters fuly within the range are selected.",
+        help="Scaffold names/ranges e.g name:start-stop. Only clusters fully within the range are selected.",
         nargs="+"
     )
 
@@ -511,32 +511,34 @@ def add_extract_clusters_subparser(subparsers):
         help="Start of the name for each cluster file, the base name is cluster'clutser.number'",
         default=""
     )
+    output.add_argument(
+        "-bsf",
+        "--big_scape_format",
+        help="Format the genbanks in sutch a way that Bigscape can read them.",
+        action="store_false"
+    )
 
 
 def add_plot_clusters_subparser(subparsers):
     parser = subparsers.add_parser(
         "plot_clusters",
-        help="Plot clusters in genbank files using clinker",
-        description="Plot clusters in genbank files",
+        help="Plot clusters using clinker",
+        description="Plot clusters of a session",
         epilog="Example usage\n-------------\n"
-        "Plot all the clusters:\n"
-        " $ cblaster plot_clusters session.json -o plot.html\n\n"
+        "Minimum working example:\n"
+        " $ cblaster plot_clusters session.json\n\n"
         "Plot cluster 1 trough 10 and cluster 25 (these numbers can be\n"
         "found in the summary file of the 'search' command):\n"
         " $ cblaster plot_clusters session.json -c 1-10 25 -o plot.html\n\n"
-        "Plot clusters located in genbank files:\n"
-        " $ cblaster plot_clusters session.json -f ..\\genbank_directory genbank_file.gb -c 1-10 25 -o plot.html\n\n"
         "Plot only from specific organisms (regular expressions):\n"
         " $ cblaster plot_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
-        "Plot and allign clusters (carefull alligning a lot of clusters can take a while):\n"
-        " $ cblaster plot_clusters session.json -a -o plot.html\n\n"
+        "Plot only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
+        "  $ cblaster plot_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    main_input_group = parser.add_argument_group("Required arguments(mutualy exclusive)")
-    main_input_group.add_argument("session", help="cblaster session file")
-    main_input_group.add_argument("-f", "--files", help="Genbank files and/or directories", nargs="+")
+    parser.add_argument("session", help="cblaster session file")
 
     fil = parser.add_argument_group("Filters when not using --files")
     fil.add_argument(
@@ -564,46 +566,11 @@ def add_plot_clusters_subparser(subparsers):
         nargs="+"
     )
 
-    # arguments of clinker
-    alignment = parser.add_argument_group("Alignment options")
-    alignment.add_argument(
-        "-a",
-        "--align",
-        help="Allign clusters",
-        action="store_true",
-    )
-    alignment.add_argument(
-        "-i",
-        "--identity",
-        help="Minimum alignment sequence identity",
-        type=float,
-        default=0.3
-    )
-
     output = parser.add_argument_group("General output options")
     output.add_argument(
         "-o",
         "--output",
-        required=True,
         help="Location were to store the plot file."
-    )
-    output.add_argument(
-        "-ao",
-        "--allignment_out",
-        help="Save alignments to file"
-    )
-
-    extract_output = parser.add_argument_group("Extra output parameters when using --session")
-    extract_output.add_argument(
-        "-co",
-        "--cluster_out",
-        help="Output directory for the clusters, otherwise the files are deleted afterwards."
-    )
-    output.add_argument(
-        "-pf",
-        "--prefix",
-        help="Start of the name for each cluster file, the base name is cluster+clutser.number",
-        default=""
     )
 
 

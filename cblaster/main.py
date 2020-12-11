@@ -359,17 +359,11 @@ def main():
     elif args.subcommand == "plot_clusters":
         plot_clusters.plot_clusters(
             session=args.session,
-            files=args.files,
             cluster_numbers=args.clusters,
             score_threshold=args.score_threshold,
             organisms=args.organisms,
             scaffolds=args.scaffolds,
-            allign_clusters=args.align,
-            identity=args.identity,
             plot_outfile=args.output,
-            allignment_out=args.allignment_out,
-            cluster_out=args.cluster_out,
-            prefix=args.prefix,
         )
 
 
