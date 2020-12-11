@@ -1,5 +1,4 @@
 
-from pathlib import Path
 import logging
 from g2j import genbank
 from clinker.classes import (
@@ -20,16 +19,37 @@ from cblaster import embl
 
 
 LOG = logging.getLogger(__name__)
+FASTA_SPACE = 500
 
 
 def query_to_clinker_cluster(query_file):
+    """Turn a query file of a cblaster Session object into a clinker.Cluster object
+
+    Args:
+        query_file (str): Path to the query file
+
+    Returns:
+        a clinker.Cluster object
+    """
     with open(query_file) as query:
         if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
             organism = genbank.parse(query, feature_types=["CDS"])
+            return _organism_to_cluster(organism)
         elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
             organism = embl.parse(query_file, feature_types=["CDS"])
-        # TODO add the fasta case
+            return _organism_to_cluster(organism)
+        else:
+            return fasta_to_cluster(query)
 
+
+def _organism_to_cluster(organism):
+    """Convert a g2j.Organism object into a clinker.Cluster object
+
+    Args:
+        organism(g2j.Organism): g2j.Organism object
+    Returns:
+        clinker.Cluster object
+    """
     identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
 
     loci = []
@@ -52,6 +72,37 @@ def query_to_clinker_cluster(query_file):
         loci.append(ClinkerLocus(f"Locus{locus_nr}", locus_genes, start=sorted_cds_features[0].location.min(),
                                  end=sorted_cds_features[-1].location.max()))
     return ClinkerCluster("Query_cluster", loci)
+
+
+def fasta_to_cluster(fasta_handle):
+    """Convert a fasta text into a clinker.Cluster
+
+    Args:
+        fasta_handle (TextIOWrapper): handle for the fasta text
+    Returns:
+        a clinker.Cluster object
+    """
+    name = None
+    start = end = 0
+    sequence_length = 0
+    locus_genes = []
+    for line in fasta_handle:
+        if line.startswith(">"):
+            # if a sequence was found
+            if sequence_length != 0:
+                locus_genes.append(ClinkerGene(label=name, start=start, end=end, strand=0))
+                # space the genes a bit
+                end += FASTA_SPACE
+                start = end
+            name = line[1:].strip()
+            sequence_length = 0
+        else:
+            # do not count the newline character and get in nucleotide numbers
+            sequence_length += (len(line) - 1) * 3
+            end += (len(line) - 1) * 3
+    locus_genes.append(ClinkerGene(label=name, start=start, end=end, strand=0))
+    locus = ClinkerLocus("Locus1", locus_genes, start=0, end=end)
+    return ClinkerCluster("Query_cluster", [locus])
 
 
 def clusters_to_clinker_alignments(clinker_query_cluster, clusters):
