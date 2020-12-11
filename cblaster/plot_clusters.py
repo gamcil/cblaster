@@ -131,7 +131,7 @@ def plot_clusters(
         scaffolds(list): clusters on these scaffolds are included
         plot_outfile (str): path to a file for the final plot
     """
-    logging.info("Starting generation of cluster plot with clinker.")
+    LOG.info("Starting generation of cluster plot with clinker.")
     with open(session, "r") as f:
         session = Session.from_json(f.read())
 
