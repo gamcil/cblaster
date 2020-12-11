@@ -28,7 +28,9 @@ logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(message)s",
     datefmt="%H:%M:%S"
 )
-LOG = logging.getLogger(__name__)
+# make sure to not configure a name otherwise a different logger instance is returned where the debug level is set
+# resulting in no debug information being printed
+LOG = logging.getLogger()
 
 
 def gne(
