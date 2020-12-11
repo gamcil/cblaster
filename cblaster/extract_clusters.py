@@ -328,7 +328,7 @@ def extract_clusters(
     if len(cluster_hierarchy) == 0:
         LOG.info("There are no clusters that meet the filtering criteria. Exiting...")
         raise SystemExit
-
+    LOG.debug("test")
     LOG.info(f"Writing genbank files")
     create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix)
 
