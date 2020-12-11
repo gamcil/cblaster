@@ -269,7 +269,7 @@ def cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, org
     Args:
         cluster (cblaster.Cluster): cblasdter Cluster object
         cluster_prot_sequences (dict): dictionary of protein sequences keyed on protein ids
-        cluster_nuc_sequence (dict): dictionary of nucleotide sequences keyed on scaffold accession
+        cluster_nuc_sequence (str): cluster nucleotide sequence
         organism_name (str): name of the organism the cluster is originated from
         scaffold_accession (str): accession of the scaffold the cluster belongs to
     Returns:
