@@ -304,7 +304,7 @@ def extract_clusters(
     organisms=None,
     scaffolds=None,
 ):
-    """Extract Cluster objects from a Session object and write them to a file in a
+    """Extract Cluster objects from a Session file and write them to a file in a
     specified format
 
     Args:

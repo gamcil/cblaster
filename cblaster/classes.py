@@ -365,12 +365,15 @@ class Cluster(Serializer):
         }
 
     def to_clinker_cluster(self):
+        """Convert this cluster to a clinker format cluster
+
+        Returns:
+            A clinker.Cluster object
+        """
         clinker_genes = []
         for subject in self.subjects:
             clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
                                              end=subject.end, strand=1 if subject.strand == '+' else -1))
-            # print(subject.start, subject.end, subject.end - subject.start)
-        clinker_genes.reverse()
         clinker_locus = ClinkerLocus(self.number, clinker_genes, start=self.start, end=self.end)
         clinker_cluster = ClinkerCluster(f"Hit cluster {self.number}", [clinker_locus])
         return clinker_cluster
