@@ -528,10 +528,11 @@ def add_extract_clusters_subparser(subparsers):
         default=""
     )
     output.add_argument(
-        "-bsf",
-        "--big_scape_format",
-        help="Format the genbanks in sutch a way that Bigscape can read them.",
-        action="store_false"
+        "-f",
+        "--format",
+        choices=["genbank", "bigscape"],
+        help="The format of the resulting files. The options are genbank and bigscape",
+        default="genbank"
     )
 
 
