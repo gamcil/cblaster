@@ -134,7 +134,13 @@ def get_scaffold_clusters(scaffold, organism_name, start=None, end=None):
     return selected_clusters
 
 
-def create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix):
+def create_genbanks_from_clusters(
+    session,
+    cluster_hierarchy,
+    output_dir,
+    prefix,
+    format_
+):
     """Create genbank files for each selected cluster
 
     Args:
@@ -142,6 +148,7 @@ def create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix
         cluster_hierarchy (Set): a set of selected clusters
         output_dir (string): path to a directory for writing the output files
         prefix (string): string to start the file name of each cluster with
+        format_ (str): the format that the extracted cluster should have
     """
     if session.params["mode"] == "remote":
         protein_sequences = efetch_protein_sequences(cluster_hierarchy)
@@ -156,7 +163,8 @@ def create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix
         cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for subject in cluster.subjects}
         cluster_nuc_sequence = nucleotide_sequences[scaffold_accession]
         with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gb", "w") as f:
-            record = cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession)
+            record = cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name,
+                                       scaffold_accession, format_, session.params["require"])
             SeqIO.write(record, f, 'genbank')
         LOG.debug(f"Created {prefix}cluster{cluster.number}.gb file for cluster {cluster.number}")
 
@@ -263,7 +271,15 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
     return sequences
 
 
-def cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name, scaffold_accession):
+def cluster_to_record(
+    cluster,
+    cluster_prot_sequences,
+    cluster_nuc_sequence,
+    organism_name,
+    scaffold_accession,
+    format_,
+    required_genes,
+):
     """Convert a cblaster.Cluster object into a Bio.Seqrecord object
 
     Args:
@@ -272,25 +288,48 @@ def cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, org
         cluster_nuc_sequence (str): cluster nucleotide sequence
         organism_name (str): name of the organism the cluster is originated from
         scaffold_accession (str): accession of the scaffold the cluster belongs to
+        format_ (str): the format that the extracted cluster should have
+        required_genes (list): list of genes that the user has marked as required to be present in the cluster
     Returns:
         a Bio.Seqrecord object
     """
     nuc_seq_obj = Seq(cluster_nuc_sequence, IUPAC.unambiguous_dna)
-
     # create the record
-    record = SeqRecord(nuc_seq_obj,
-                       id=scaffold_accession,
-                       name=scaffold_accession,
-                       description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}")
-    feature = SeqFeature(FeatureLocation(start=cluster.start, end=cluster.end), type="SOURCE",
-                         qualifiers={"organism": organism_name})
-    record.features.append(feature)
+    record = SeqRecord(
+        nuc_seq_obj,
+        id=scaffold_accession,
+        name=scaffold_accession,
+        description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}"
+    )
+    source_feature = SeqFeature(
+        FeatureLocation(start=cluster.start, end=cluster.end),
+        type="SOURCE",
+        qualifiers={"organism": organism_name}
+    )
+    record.features.append(source_feature)
+    if format_ == "bigscape":
+        region_feature = SeqFeature(
+            FeatureLocation(start=cluster.start, end=cluster.end),
+            type="region",
+            qualifiers={"product": "other"}
+        )
+        record.features.append(region_feature)
 
     subjects = {subject.name: subject for subject in cluster.subjects}
     for name, sequence in cluster_prot_sequences.items():
         subject = subjects[name]
-        cds_feature = SeqFeature(FeatureLocation(start=subject.start - cluster.start, end=subject.end- cluster.start),
-                                 type="CDS", qualifiers={"protein_id": subject.name, "translation": sequence})
+        qualifiers = {"protein_id": subject.name, "translation": sequence}
+
+        # add what genes are seen as core of the cluster by the user. If no required genes are specified select them all
+        if format_ == "bigscape":
+            top_hit = max(subject.hits, key=lambda x: x.bitscore)
+            if required_genes is None or top_hit.query in required_genes:
+                qualifiers["gene_kind"] = "biosynthetic"
+        cds_feature = SeqFeature(
+            FeatureLocation(start=subject.start - cluster.start, end=subject.end - cluster.start),
+            type="CDS",
+            qualifiers=qualifiers
+        )
         record.features.append(cds_feature)
     return record
 
@@ -303,6 +342,7 @@ def extract_clusters(
     score_threshold=None,
     organisms=None,
     scaffolds=None,
+    format_="genbank"
 ):
     """Extract Cluster objects from a Session file and write them to a file in a
     specified format
@@ -316,6 +356,7 @@ def extract_clusters(
         organisms (list): Organism filtering regular expressions, clusters for
          these organisms are included
         scaffolds(list): clusters on these scaffolds are included
+        format_ (str): the format that the extracted cluster should have
     """
     LOG.info("Starting cblaster plotting of clusters using clinker")
     LOG.info("Loading session from: %s", session)
@@ -330,7 +371,7 @@ def extract_clusters(
         raise SystemExit
     LOG.debug("test")
     LOG.info(f"Writing genbank files")
-    create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix)
+    create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix, format_)
 
     LOG.info(f"All clusters have been written to files. Output can be found at {output_dir}")
     LOG.info("Done!")

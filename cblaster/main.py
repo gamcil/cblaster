@@ -156,7 +156,7 @@ def cblaster(
     Returns:
         Session: cblaster search Session object
     """
-
+    print(require)
     if session_file and all(Path(sf).exists() for sf in session_file):
         LOG.info("Loading session(s) %s", session_file)
         session = Session.from_files(session_file)
@@ -190,6 +190,7 @@ def cblaster(
                 "min_identity": min_identity,
                 "min_coverage": min_coverage,
                 "max_evalue": max_evalue,
+                "require": require,
             },
         )
 
@@ -365,6 +366,7 @@ def main():
             score_threshold=args.score_threshold,
             organisms=args.organisms,
             scaffolds=args.scaffolds,
+            format_=args.format,
         )
 
     elif args.subcommand == "plot_clusters":
