@@ -39,7 +39,14 @@ def parse(results, min_identity=30, min_coverage=50, max_evalue=0.01):
     return hits
 
 
-def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, cpus=1):
+def diamond(
+    fasta,
+    database,
+    max_evalue=0.01,
+    min_identity=30,
+    min_coverage=50,
+    cpus=None,
+):
     """Launch a local DIAMOND search against a database.
 
     Arguments:
@@ -54,6 +61,11 @@ def diamond(fasta, database, max_evalue=0.01, min_identity=30, min_coverage=50, 
     """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
     LOG.debug("diamond path: %s", diamond)
+
+    if not (cpus is None or isinstance(cpus, int)):
+        raise TypeError("cpus should be None or int")
+    if not cpus:
+        cpus = os.cpu_count()
 
     parameters = {
         "args": [diamond, "blastp"],

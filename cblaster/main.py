@@ -98,6 +98,7 @@ def cblaster(
     blast_file=None,
     ipg_file=None,
     hitlist_size=None,
+    cpus=None,
 ):
     """Run cblaster.
 
@@ -313,6 +314,7 @@ def main():
             blast_file=args.blast_file,
             ipg_file=args.ipg_file,
             hitlist_size=args.hitlist_size,
+            cpus=args.cpus,
         )
 
     elif args.subcommand == "gui":
