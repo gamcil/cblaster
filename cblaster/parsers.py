@@ -10,17 +10,38 @@ from cblaster import __version__
 def add_makedb_subparser(subparsers):
     makedb = subparsers.add_parser(
         "makedb",
-        help="Generate JSON/diamond databases from GenBank files"
+        help="Generate local databases from genome files"
     )
     makedb.add_argument(
-        "genbanks",
-        help="Path/s to GenBank files to use when building JSON/diamond databases",
+        "paths",
+        help="Path/s to genome files to use when building local databases",
         nargs="+",
     )
     makedb.add_argument(
         "filename",
         help="Name to use when building JSON/diamond databases (with extensions"
         " .json and .dmnd, respectively)",
+    )
+    makedb.add_argument(
+        "-c",
+        "--cpus",
+        type=int,
+        help="Number of CPUs to use when parsing genome files. By default, all"
+        " available cores will be used.",
+    )
+    makedb.add_argument(
+        "-b",
+        "--batch",
+        type=int,
+        help="Number of genome files to parse before saving them in the local"
+        " database. Useful when encountering memory issues with large/many"
+        " files. By default, all genome files will be parsed at once."
+    )
+    makedb.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite pre-existing files, if any"
     )
 
 
