@@ -59,7 +59,7 @@ def run_cblaster(values):
         else:
             args.update(
                 database=values["dmnd_database"],
-                json_db=values["json_db"]
+                cpus=values["cpus"]
             )
 
         if values["summary_gen"]:

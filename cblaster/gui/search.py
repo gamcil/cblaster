@@ -6,9 +6,6 @@ from cblaster.gui.parts import TextLabel, Frame
 sg.theme("Lightgrey1")
 
 local_tab = sg.Tab("Local", [
-    [TextLabel("JSON database"),
-     sg.In(default_text="e.g. cblaster.json", size=(34, 1), key="json_db"),
-     sg.FileBrowse(key="json_db")],
     [TextLabel("DIAMOND database"),
      sg.InputText(
          default_text="e.g. cblaster.dmnd",
@@ -16,6 +13,8 @@ local_tab = sg.Tab("Local", [
          key="dmnd_database"
      ),
      sg.FileBrowse(key="dmnd_database")],
+    [TextLabel("Number of CPUs"),
+     sg.InputText(default_text="1", key="cpus")],
 ], key="local")
 
 remote_tab = sg.Tab("Remote", [
