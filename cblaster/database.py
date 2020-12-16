@@ -179,6 +179,23 @@ def parse_gff(path):
     return fasta
 
 
+def find_files(paths, recurse=True, level=0):
+    files = []
+    for path in paths:
+        _path = Path(path)
+        if _path.is_dir():
+            if level == 0 or recurse:
+                new = Path(path).glob("*")
+                _files = find_files(new, recurse=recurse, level=level + 1)
+                files.extend(_files)
+        else:
+            ext = _path.suffix.lower()
+            valid = ext in GBK_SUFFIXES + GFF_SUFFIXES + EMBL_SUFFIXES
+            if _path.exists() and valid:
+                files.append(path)
+    return files
+
+
 def parse_file(path):
     """Dispatches a given file path to the correct parser given its extension.
 
@@ -406,6 +423,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     LOG.info("Initialising SQLite3 database at %s", sqlite_path)
     init_sqlite_db(sqlite_path, force=force)
 
+    paths = find_files(paths)
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
@@ -419,7 +437,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
 
     with Pool(cpus) as pool:
         for index, group in enumerate(path_groups, 1):
-            LOG.info("Batch %i: %s", index, group)
+            LOG.info("Batch %i: %s", index, [str(p) for p in group])
             organisms = pool.map(parse_file, group)
             tuples = organisms_to_tuples(organisms)
 
