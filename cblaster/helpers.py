@@ -4,6 +4,7 @@ import shutil
 import requests
 import logging
 
+from collections import OrderedDict
 from pathlib import Path
 
 from cblaster import genome_parsers as gp
@@ -113,8 +114,11 @@ def get_sequences(query_file=None, query_ids=None):
     """
     if query_file and not query_ids:
         organism = gp.parse_file(query_file)
-        genes = gp.organisms_to_tuples([organism])
-        sequences = {gene[0]: gene[4] for gene in genes}
+        if Path(query_file).suffix.lower() in gp.FASTA_SUFFIXES:
+            sequences = OrderedDict((r.id, str(r.seq)) for r in organism["records"])
+        else:
+            genes = gp.organisms_to_tuples([organism])
+            sequences = OrderedDict((gene[0], gene[4]) for gene in genes)
     elif query_ids:
         sequences = efetch_sequences(query_ids)
     else:
