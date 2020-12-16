@@ -2,13 +2,13 @@
 This module handles creation of local JSON databases for non-NCBI lookups.
 """
 
-import json
 import logging
 import subprocess
 import sqlite3
 import warnings
 
 from pathlib import Path
+from multiprocessing import Pool
 
 import gffutils
 from gffutils import biopython_integration
@@ -41,6 +41,7 @@ CREATE TABLE gene (
 
 QUERY = """\
 SELECT
+    id,
     name,
     start_pos,
     end_pos,
@@ -178,30 +179,19 @@ def parse_file(path):
     Returns:
         SeqRecord
     """
-    suffix = Path(path).suffix.lower()
+    path = Path(path)
+    suffix = path.suffix.lower()
     if suffix in GBK_SUFFIXES:
         file_type = "genbank"
     elif suffix in EMBL_SUFFIXES:
         file_type = "embl"
     elif suffix in GFF_SUFFIXES:
-        return parse_gff(path)
+        records = parse_gff(path)
     else:
         raise ValueError(f"File {path} has invalid extension ({suffix})")
     with open(path) as fp:
-        return list(SeqIO.parse(fp, file_type))
-
-
-def parse_files(paths):
-    """Parses a collection of file paths and generates a dictionary of SeqRecords."""
-    organisms = {}
-    for path in paths:
-        path = Path(path)
-        if not path.exists():
-            raise FileNotFoundError(f"No file exists at {path}")
-        name = path.with_suffix("").name
-        LOG.info("Parsing %s", name)
-        organisms[name] = parse_file(path)
-    return organisms
+        records = list(SeqIO.parse(fp, file_type))
+    return dict(name=path.with_suffix("").name, records=records)
 
 
 def init_sqlite_db(path, force=False):
@@ -284,9 +274,9 @@ def seqrecord_to_genes(record, source):
 def organisms_to_tuples(organisms):
     """Generates insertion tuples from a dictionary of parsed organisms."""
     tuples = []
-    for organism, records in organisms.items():
-        for record in records:
-            genes = seqrecord_to_genes(record, organism)
+    for organism in organisms:
+        for record in organism["records"]:
+            genes = seqrecord_to_genes(record, organism["name"])
             tuples.extend(genes)
     return tuples
 
@@ -304,7 +294,6 @@ def seqrecords_to_sqlite(tuples, database):
 
 def sqlite_to_fasta(path, database):
     """Writes all proteins in `database` to `path` in FASTA format."""
-    LOG.info("Dumping %s to FASTA: %s", database, path)
     with sqlite3.connect(database) as con, open(path, "w") as fasta:
         cur = con.cursor()
         for (record,) in cur.execute(FASTA):
@@ -347,25 +336,52 @@ def get_genbank_paths(folder):
     ]
 
 
-def makedb(paths, database, force=False):
+def makedb(paths, database, force=False, cpus=None, batch=None):
     """Makedb module entry point"""
+    LOG.info("Starting makedb module")
 
-    sqlite_path = f"{database}.sqlite3"
-    fasta_path = f"{database}.fasta"
-    dmnd_path = f"{database}.dmnd"
+    if not (batch is None or isinstance(batch, int)):
+        raise TypeError("batch should be None or int")
+    if not (cpus is None or isinstance(cpus, int)):
+        raise TypeError("cpus should be None or int")
+
+    sqlite_path = Path(f"{database}.sqlite3")
+    fasta_path = Path(f"{database}.fasta")
+    dmnd_path = Path(f"{database}.dmnd")
+
+    if sqlite_path.exists() or dmnd_path.exists():
+        if force:
+            LOG.info("Pre-existing files found, overwriting")
+        else:
+            raise RuntimeError("Existing files found but force=False")
 
     LOG.info("Initialising SQLite3 database at %s", sqlite_path)
     init_sqlite_db(sqlite_path, force=force)
 
-    LOG.info("Parsing genome files")
-    organisms = parse_files(paths)
-    tuples = organisms_to_tuples(organisms)
+    total_paths = len(paths)
+    if batch is None:
+        batch = total_paths
+    path_groups = [paths[i: i + batch] for i in range(0, total_paths, batch)]
+    LOG.info(
+        "Parsing %i genome files, in %i batches of %i",
+        total_paths,
+        len(path_groups),
+        batch
+    )
 
-    LOG.info("Inserting %i genes from %i organisms", len(tuples), len(organisms))
-    seqrecords_to_sqlite(tuples, sqlite_path)
+    with Pool(cpus) as pool:
+        for index, group in enumerate(path_groups, 1):
+            LOG.info("Batch %i: %s", index, group)
+            organisms = pool.map(parse_file, group)
+            tuples = organisms_to_tuples(organisms)
+
+            LOG.info("Saving %i genes", len(tuples))
+            seqrecords_to_sqlite(tuples, sqlite_path)
 
     LOG.info("Writing FASTA to %s", fasta_path)
     sqlite_to_fasta(fasta_path, sqlite_path)
 
     LOG.info("Building DIAMOND database at %s", dmnd_path)
     diamond_makedb(fasta_path, dmnd_path)
+
+    LOG.info("Done!")
