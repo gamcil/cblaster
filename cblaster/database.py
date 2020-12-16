@@ -70,8 +70,6 @@ VALUES
     (?, ?, ?, ?, ?, ?, ?)\
 """
 
-GET_ORGANISM_IDS = "SELECT id, name FROM organism"
-
 FASTA_SUFFIXES = (".fa", ".fsa", ".fna", ".fasta", ".faa")
 GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff")
 GFF_SUFFIXES = (".gtf", ".gff", ".gff3")
@@ -137,8 +135,8 @@ def parse_gff(path):
 
         # Normalise Feature location based on ##sequence-region directive.
         # Necessary for extracted GFF3 files that still store coordinates
-        # relative to the entire region. If no sequence-region directive
-        # is found, assumes 1 (i.e. default sequence start).
+        # relative to the entire region, not to the extracted FASTA.
+        # If no sequence-region directive is found, assumes 1 (i.e. sequence start).
         cds_features = []
         for feature in gff.region(seqid=record.id, featuretype=["gene", "CDS"]):
             feature = biopython_integration.to_seqfeature(feature)
