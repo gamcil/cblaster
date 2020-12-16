@@ -29,22 +29,6 @@ logging.basicConfig(
 LOG = logging.getLogger(__name__)
 
 
-def makedb(genbanks, filename, indent=None):
-    """Generate JSON and diamond databases."""
-    LOG.info("Starting cblaster makedb")
-    db = database.Database.from_files(genbanks)
-
-    LOG.info("Writing FASTA file with database sequences: %s", filename + ".faa")
-    LOG.info("Building DIAMOND database: %s", filename + ".dmnd")
-    db.makedb(filename)
-
-    LOG.info("Building JSON database: %s", filename + ".json")
-    with open(f"{filename}.json", "w") as handle:
-        db.to_json(handle, indent=indent)
-
-    LOG.info("Done.")
-
-
 def gne(
     session,
     output=None,
@@ -87,7 +71,6 @@ def cblaster(
     query_file=None,
     query_ids=None,
     mode=None,
-    json_db=None,
     database=None,
     gap=20000,
     unique=3,
@@ -124,7 +107,6 @@ def cblaster(
         query_file (str): Path to FASTA format query file
         query_ids (list): NCBI protein sequence identifiers
         mode (str): Search mode ('local' or 'remote')
-        json_db (str): JSON database created with cblaster makedb
         database (str): Search database (NCBI if remote, DIAMOND if local)
         gap (int): Maximum gap (kilobase) between cluster hits
         unique (int): Minimum number of query sequences with hits in clusters
@@ -195,11 +177,12 @@ def cblaster(
             session.queries = list(session.sequences)
             session.params["query_file"] = query_file
 
-        if json_db:
-            session.params["json_db"] = json_db
-
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
+            sqlite_db = Path(database).with_suffix(".sqlite3")
+            if not sqlite_db.exists():
+                LOG.error("Could not find matching SQlite3 database, exiting")
+                raise SystemExit
             results = local.search(
                 database,
                 sequences=session.sequences,
@@ -223,7 +206,11 @@ def cblaster(
                 blast_file=blast_file,
                 hitlist_size=hitlist_size,
             )
+            sqlite_db = None
             session.params["rid"] = rid
+
+        if sqlite_db:
+            session.params["sqlite_db"] = sqlite_db
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
         LOG.info("Fetching genomic context of hits")
@@ -233,11 +220,11 @@ def cblaster(
             else None
         session.organisms = context.search(
             results,
+            sqlite_db=sqlite_db,
             unique=unique,
             min_hits=min_hits,
             gap=gap,
             require=require,
-            json_db=json_db,
             ipg_file=ipg_file,
             query_sequence_order=query_sequence_order
         )
@@ -286,7 +273,13 @@ def main():
         LOG.setLevel(logging.DEBUG)
 
     if args.subcommand == "makedb":
-        makedb(args.genbanks, args.filename, args.indent)
+        database.makedb(
+            args.paths,
+            args.filename,
+            cpus=args.cpus,
+            batch=args.batch,
+            force=args.force,
+        )
 
     elif args.subcommand == "search":
         cblaster(
