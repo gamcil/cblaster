@@ -29,11 +29,11 @@ LOG = logging.getLogger("cblaster")
 SCHEMA = """\
 CREATE TABLE gene (
     id              INTEGER PRIMARY KEY,
-    name 	    TEXT,
+    name            TEXT,
     start_pos       INTEGER,
-    end_pos	    INTEGER,
-    strand	    INTEGER,
-    translation	    TEXT,
+    end_pos         INTEGER,
+    strand          INTEGER,
+    translation     TEXT,
     scaffold        TEXT,
     organism        TEXT
 );\
@@ -105,10 +105,12 @@ def find_regions(directives):
 def parse_gff(path):
     """Parses GFF and corresponding FASTA using GFFutils.
 
-    - Parse gene/CDS features, translations & real coordinates
-    - Convert to BioPython SeqRecords/SeqFeatures
-    - All other formats just str -> SeqIO.parse(fp, 'filetype')
-      then check for 'gff'
+    Args:
+        path (str):
+            Path to GFF file. Should have a corresponding FASTA file of the same
+            name with a valid FASTA suffix (.fa, .fasta, .fsa, .fna, .faa).
+    Returns:
+        list: SeqRecord objects corresponding to each scaffold in the file
     """
     fasta = find_fasta(path)
     if not fasta:
@@ -129,8 +131,9 @@ def parse_gff(path):
     for record in fasta:
         try:
             record_start, _ = regions[record.id]
+            record_start -= 1
         except KeyError:
-            record_start = 1
+            record_start = 0
 
         # Normalise Feature location based on ##sequence-region directive.
         # Necessary for extracted GFF3 files that still store coordinates
@@ -140,7 +143,7 @@ def parse_gff(path):
         for feature in gff.region(seqid=record.id, featuretype=["gene", "CDS"]):
             feature = biopython_integration.to_seqfeature(feature)
             feature.location = FeatureLocation(
-                feature.location.start - record_start - 1,
+                feature.location.start - record_start,
                 feature.location.end - record_start,
                 strand=feature.location.strand
             )
@@ -149,7 +152,7 @@ def parse_gff(path):
             else:
                 record.features.append(feature)
 
-        if not record.features:
+        if not cds_features:
             raise ValueError(f"Found no CDS features in {record.id} [{path}]")
 
         # Merge CDS features into singular SeqFeature objects, add them to record
@@ -160,7 +163,12 @@ def parse_gff(path):
             if not previous:
                 previous = seqid
             if same_feature:
-                record.features[-1].location += feature.location
+                if feature.location.strand == 1:
+                    record.features[-1].location += feature.location
+                else:
+                    # Reverse strand locations must be in biological order
+                    old, new = record.features[-1].location, feature.location
+                    record.features[-1].location = new + old
             else:
                 record.features.append(feature)
                 previous = seqid
@@ -177,21 +185,22 @@ def parse_file(path):
     Args:
         path (str): Path to genome file
     Returns:
-        SeqRecord
+        dict: File name and list of SeqRecord objects corresponding to scaffolds in file
     """
     path = Path(path)
+    name = path.with_suffix("").name
     suffix = path.suffix.lower()
     if suffix in GBK_SUFFIXES:
         file_type = "genbank"
     elif suffix in EMBL_SUFFIXES:
         file_type = "embl"
     elif suffix in GFF_SUFFIXES:
-        records = parse_gff(path)
+        return dict(name=name, records=parse_gff(path))
     else:
         raise ValueError(f"File {path} has invalid extension ({suffix})")
     with open(path) as fp:
         records = list(SeqIO.parse(fp, file_type))
-    return dict(name=path.with_suffix("").name, records=records)
+    return dict(name=name, records=records)
 
 
 def init_sqlite_db(path, force=False):
@@ -214,7 +223,15 @@ def init_sqlite_db(path, force=False):
 
 
 def find_overlapping_location(feature, locations):
-    """Finds the index of a gene location containing `feature`."""
+    """Finds the index of a gene location containing `feature`.
+
+    Args:
+        feature (SeqFeature): Feature being matched to a location
+        locations (list): Start and end coordinates of gene features
+    Returns:
+        int: Index of matching start/end, if any
+        None: No match found
+    """
     for index, (start, end) in enumerate(locations):
         if feature.location.start >= start and feature.location.end <= end:
             return index
@@ -228,8 +245,14 @@ def find_gene_name(qualifiers):
     return "N.A."
 
 
-def seqrecord_to_genes(record, source):
+def seqrecord_to_tuples(record, source):
     """Generates insertion tuples for genes in a SeqRecord object.
+
+    Args:
+        record (SeqRecord): SeqRecord object containing gene and CDS SeqFeatures
+        source (str): Name of source file, used as organism name
+    Returns:
+        list: Tuples used for insertion into SQLite3 database
     """
     features = [f for f in record.features if f.type == "CDS"]
     locations = [(f.location.start, f.location.end) for f in record.features if f.type == "gene"]
@@ -248,13 +271,10 @@ def seqrecord_to_genes(record, source):
             start, end = locations.pop(match)
         else:
             start, end = feature.location.start, feature.location.end
-
-        # TODO: fix broken translations for GFF features
         translation = (
             qualifiers.pop("translation", None)
             or feature.extract(record.seq).translate()
         )
-
         if not translation:
             LOG.warning("Failed to find translation for %s, skipping", name)
             continue
@@ -272,17 +292,27 @@ def seqrecord_to_genes(record, source):
 
 
 def organisms_to_tuples(organisms):
-    """Generates insertion tuples from a dictionary of parsed organisms."""
+    """Generates insertion tuples from parsed organisms.
+
+    Args:
+        organisms (list): Organism dictionaries parsed by `parse_file`
+    Returns:
+        list: SQLite3 database insertion tuples for all genes
+    """
     tuples = []
     for organism in organisms:
         for record in organism["records"]:
-            genes = seqrecord_to_genes(record, organism["name"])
+            genes = seqrecord_to_tuples(record, organism["name"])
             tuples.extend(genes)
     return tuples
 
 
 def seqrecords_to_sqlite(tuples, database):
     """Writes a collection of SeqRecord objects to a cblaster SQLite database.
+
+    Args:
+        tuples (list): Gene insertion tuples
+        database (str): Path to SQLite3 database
     """
     try:
         with sqlite3.connect(database) as con:
@@ -301,7 +331,14 @@ def sqlite_to_fasta(path, database):
 
 
 def query_database(ids, database):
-    """Queries the cblaster SQLite3 database for a collection of gene IDs."""
+    """Queries the cblaster SQLite3 database for a collection of gene IDs.
+
+    Args:
+        ids (list): Row IDs of genes being queried
+        database (str): Path to SQLite3 database
+    Returns:
+        list: Result tuples returned by the query
+    """
     marks = ", ".join("?" for _ in ids)
     query = QUERY.format(marks)
     with sqlite3.connect(database) as con:
@@ -324,20 +361,31 @@ def diamond_makedb(fasta, name):
     )
 
 
-def get_genbank_paths(folder):
-    """Generates a collection of paths to GenBank files in a specified folder."""
-    if not Path(folder).is_dir():
-        raise ValueError("Expected valid folder")
-    valid_extensions = (".gb", ".gbk", ".genbank")
-    return [
-        file
-        for file
-        in Path(folder).iterdir() if str(file).endswith(valid_extensions)
-    ]
-
-
 def makedb(paths, database, force=False, cpus=None, batch=None):
-    """Makedb module entry point"""
+    """makedb module entry point.
+
+    Will parse genome files in `paths` and create:
+
+        1. `database`.sqlite3
+        SQLite3 database used for looking up genome context of hit genes
+
+        2. `database`.dmnd
+        DIAMOND search database
+
+        3. `database`.fasta
+        FASTA file containing all protein sequences in parsed genomes
+
+    Args:
+        paths (list): Paths to genome files to build database from
+        database (str): Base name for database files
+        force (bool): Overwrite pre-existing database files
+        cpus (int):
+            Number of CPUs to use when parsing genome files.
+            By default, all available cores will be used.
+        batch (int):
+            Number of organisms to parse at once before saving to database.
+            Helpful when dealing with larger/many genome files.
+    """
     LOG.info("Starting makedb module")
 
     if not (batch is None or isinstance(batch, int)):
