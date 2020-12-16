@@ -182,6 +182,13 @@ def add_searching_group(search):
         " database name (def. nr)",
     )
     group.add_argument(
+        "-c",
+        "--cpus",
+        type=int,
+        help="Number of CPUs to use in local search. By default, all"
+        " available cores will be used.",
+    )
+    group.add_argument(
         "-jdb",
         "--json_db",
         help="Path to local JSON database created using cblaster makedb. If this"
