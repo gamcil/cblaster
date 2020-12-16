@@ -286,7 +286,6 @@ def main():
             query_file=args.query_file,
             query_ids=args.query_ids,
             mode=args.mode,
-            json_db=args.json_db,
             database=args.database,
             gap=args.gap,
             unique=args.unique,
