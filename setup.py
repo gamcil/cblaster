@@ -37,10 +37,10 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     install_requires=[
+        "biopython",
         "requests",
         "numpy",
         "scipy",
-        "genome2json",
         "PySimpleGUI",
     ],
     tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],
