@@ -12,13 +12,12 @@ import logging
 
 from Bio import SearchIO
 from shutil import which
-from shutil import rmtree
 from cblaster.classes import Hit
 
 LOG = logging.getLogger(__name__)
 
 def check_pfam_db(path):
-    """Check f Pfam-A db exists else download
+    """Check if Pfam-A db exists else download
 
     Args:
         path: String, path where to check
@@ -77,7 +76,6 @@ def fetch_profiles(db_path, keys_ls):
         LOG.error("No valid profiles could be selected")
     else:
         for key in ls_keys:
-            # TODO save results in a temp folder, delete when done
             command_fetch_profile = "hmmfetch -o {} {} {}".format(db_path +
                               key + ".hmm", db_path + "Pfam-A.hmm.gz", key)
             subprocess.run(command_fetch_profile, stdout=subprocess.PIPE,
@@ -96,9 +94,9 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
     Return:
         temp_res: List, String of result file names
     """
+    print("running")
     LOG.info("Preforming hmmsearch")
     temp_res = []
-    # TODO save results in a temp folder, delete when done
     for prof in ls_keys:
         command_run_hmmsearch = "hmmsearch -o {} {} {} ".format(prof +
                             "_results.txt", path_pfam + prof + ".hmm", path_db)
@@ -112,7 +110,7 @@ def parse_hmmer_output(file_list):
     """Parse hmmsearch output
 
     Args:
-        file: List, string of file name of results that need parsing
+        file_list: List, string of file name of results that need parsing
     Return:
         hit_info: list of class objects, with information
                  - query, subject, identity, coverage, e-value, bit score
@@ -138,9 +136,10 @@ def parse_hmmer_output(file_list):
     return hit_info
 
 
-def preform_hmmer(path_pfam=None,
-                  path_db=None,
-                  acc_profile=None):
+def preform_hmmer(database,
+                query_profiles,
+                database_pfam,
+                  ):
     """Main of running a hmmer search
 
     Args:
@@ -157,13 +156,13 @@ def preform_hmmer(path_pfam=None,
 
     LOG.info("Starting hmmer search")
     #2. run check_pfam_db
-    check_pfam_db(path_pfam)
+    check_pfam_db(database_pfam)
 
     #3. get_full_acc_number and run hmmfetch
-    ls_keys = fetch_profiles(path_pfam, acc_profile)
+    ls_keys = fetch_profiles(database_pfam, query_profiles)
 
     #4. run hmmsearch
-    ls_res = run_hmmsearch(path_pfam, path_db, ls_keys)
+    ls_res = run_hmmsearch(database_pfam, database, ls_keys)
 
     #5. Parse hmm output, needs to be the same as blast output
     ls_res = ["PF00491.22_results.txt", "PF05593.15_results.txt"]
