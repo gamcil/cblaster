@@ -70,7 +70,7 @@ def add_input_group(search):
         "-qp",
         "--query_profiles",
         nargs="+",
-        help="A collection of Pfam profile identifiers to be searched",
+        help="A collection of valid Pfam profile identifiers to be searched",
     )
 
 
@@ -186,9 +186,9 @@ def add_searching_group(search):
         nargs="+",
         help="Database to be searched. This should be either a path to a local"
         " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
-        " database name (def. nr) or ath to Pfam database, if not present it"
-        "will save db there"
-        "Can be multiple options when a combi-search mode is used",
+        " database name (def. nr)"
+        "For the hmm search mode a path to a local Fasta or genbanck database"
+        "is required",
     )
     group.add_argument(
         "-c",
@@ -200,6 +200,8 @@ def add_searching_group(search):
     group.add_argument(
         "-db_pfam",
         "--pfam",
+        "-pfam",
+        "--database_pfam",
         help="Path to Pfam database, if not present it will save db there"
         "This option is required when running hmm or combi search mode",
     )
