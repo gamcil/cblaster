@@ -176,7 +176,7 @@ def add_searching_group(search):
         "-m",
         "--mode",
         help="cblaster search mode",
-        choices=["local", "remote", "hmm", "combi_local, combi_remote"],
+        choices=["local", "remote", "hmm", "combi_local", "combi_remote"],
         default="remote",
     )
     group.add_argument(
