@@ -71,8 +71,10 @@ def gne(
 def cblaster(
     query_file=None,
     query_ids=None,
+    query_profiles=None,
     mode=None,
     database=None,
+    database_pfam=None,
     gap=20000,
     unique=3,
     min_hits=3,
@@ -108,8 +110,11 @@ def cblaster(
     Arguments:
         query_file (str): Path to FASTA format query file
         query_ids (list): NCBI protein sequence identifiers
+        query_profiles(list): Pfam profile identifiers
         mode (str): Search mode ('local' or 'remote')
-        database (str): Search database (NCBI if remote, DIAMOND if local)
+        json_db (str): JSON database created with cblaster makedb
+        database (list): Search database (NCBI if remote, DIAMOND & hmm if local)
+        database_pfam (str): Path to pfam db or where to download it
         gap (int): Maximum gap (kilobase) between cluster hits
         unique (int): Minimum number of query sequences with hits in clusters
         min_hits (int): Minimum number of hits in clusters
@@ -136,7 +141,6 @@ def cblaster(
     Returns:
         Session: cblaster search Session object
     """
-
     if session_file and all(Path(sf).exists() for sf in session_file):
         LOG.info("Loading session(s) %s", session_file)
         session = Session.from_files(session_file)
@@ -163,6 +167,7 @@ def cblaster(
             sequences=helpers.get_sequences(
                 query_file=query_file,
                 query_ids=query_ids,
+                query_profiles=query_profiles,
             ),
             params={
                 "mode": mode,
@@ -210,8 +215,16 @@ def cblaster(
             )
             sqlite_db = None
             session.params["rid"] = rid
+
         if sqlite_db:
             session.params["sqlite_db"] = sqlite_db
+
+        elif mode == "hmm":
+            results = hmmer.preform_hmmer(
+                database=database,
+                query_profiles=query_profiles,
+                database_pfam=database_pfam,
+            )
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
         LOG.info("Fetching genomic context of hits")
@@ -263,38 +276,6 @@ def cblaster(
     return session
 
 
-def search_hmm(
-    path_pfam=None,
-    path_db=None,
-    gap=20000,
-    min_hits=2,
-    unique=3,
-    acc_profile=None,
-    require=None,
-    json_db=None,
-    ipg_file=None,
-    output=None,
-):
-    hit_results = hmmer.preform_hmmer(path_pfam, path_db, acc_profile)
-    print(hit_results)
-
-    LOG.info("Found %i hits meeting score thresholds", len(hit_results))
-    LOG.info("Fetching genomic context of hits")
-    organisms = context.search(
-        hit_results,
-        unique=unique,
-        min_hits=min_hits,
-        gap=gap,
-        require=require,
-        json_db=json_db,
-        ipg_file=ipg_file,
-    )
-    print(organisms)
-
-    LOG.info("Writing summary to %s",
-             "stdout" if output == sys.stdout else output)
-
-
 def main():
     """cblaster entry point."""
     args = parsers.parse_args(sys.argv[1:])
@@ -315,8 +296,10 @@ def main():
         cblaster(
             query_file=args.query_file,
             query_ids=args.query_ids,
+            query_profiles=args.query_profiles,
             mode=args.mode,
             database=args.database,
+            database_pfam=args.database_pfam,
             gap=args.gap,
             unique=args.unique,
             min_hits=args.min_hits,
@@ -374,13 +357,6 @@ def main():
             name_only=args.name_only,
             delimiter=args.delimiter,
         )
-
-    elif args.subcommand == "hmm":
-        search_hmm(path_pfam=args.db,
-                   path_db=args.dbf,
-                   acc_profile=args.qp,
-        )
-
 
 if __name__ == "__main__":
     main()
