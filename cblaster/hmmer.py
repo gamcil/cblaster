@@ -94,11 +94,10 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
     Return:
         temp_res: List, String of result file names
     """
-    print("running")
     LOG.info("Preforming hmmsearch")
     temp_res = []
     for prof in ls_keys:
-        command_run_hmmsearch = "hmmsearch -o {} {} {} ".format(prof +
+        command_run_hmmsearch = "hmmsearch -o {} {} {}".format(prof +
                             "_results.txt", path_pfam + prof + ".hmm", path_db)
         subprocess.run(command_run_hmmsearch, stdout=subprocess.PIPE,
                        shell=True)
