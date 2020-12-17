@@ -18,11 +18,14 @@ LOG = logging.getLogger("cblaster")
 
 
 def init_sqlite_db(path, force=False):
-    """Initialises a cblaster SQLite database file at a given path.
+    """Initialises a cblaster SQLite3 database file at a given path.
 
     Args:
-        path (str): Path to write SQLite3 database
-        force (bool): Overwrite pre-existing files at `path`
+        path: Path to write SQLite3 database
+        force: Overwrite pre-existing files at `path`
+
+    Raises:
+        FileExistsError: If `path` already exists but `force` is False
     """
     if Path(path).exists():
         if force:
@@ -52,7 +55,12 @@ def seqrecords_to_sqlite(tuples, database):
 
 
 def sqlite_to_fasta(path, database):
-    """Writes all proteins in `database` to `path` in FASTA format."""
+    """Writes all proteins in `database` to `path` in FASTA format.
+
+    Args:
+        path (str): Path to output FASTA file
+        database (str): Path to SQLite3 database
+    """
     with sqlite3.connect(database) as con, open(path, "w") as fasta:
         cur = con.cursor()
         for (record,) in cur.execute(FASTA):
@@ -139,12 +147,12 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
-    path_groups = [paths[i: i + batch] for i in range(0, total_paths, batch)]
+    path_groups = [paths[i : i + batch] for i in range(0, total_paths, batch)]
     LOG.info(
         "Parsing %i genome files, in %i batches of %i",
         total_paths,
         len(path_groups),
-        batch
+        batch,
     )
 
     with Pool(cpus) as pool:

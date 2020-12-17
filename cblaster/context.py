@@ -260,11 +260,9 @@ def query_local_DB(hits, db):
     """Queries a local SQLite3 database created using the makedb module.
     """
     organisms = defaultdict(dict)
-
     hit_dict = defaultdict(list)
     for hit in hits:
         hit_dict[hit.subject].append(hit)
-
     for (
         rowid,
         name,
