@@ -191,7 +191,7 @@ def cblaster(
                 LOG.error("Could not find matching SQlite3 database, exiting")
                 raise SystemExit
             results = local.search(
-                database,
+                database[0],
                 sequences=session.sequences,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
@@ -205,7 +205,7 @@ def cblaster(
             rid, results = remote.search(
                 sequences=session.sequences,
                 rid=rid,
-                database=database,
+                database=database[0],
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
@@ -221,10 +221,46 @@ def cblaster(
 
         elif mode == "hmm":
             results = hmmer.preform_hmmer(
-                database=database,
+                database=database[0],
                 query_profiles=query_profiles,
                 database_pfam=database_pfam,
             )
+        elif mode == "combi_local":
+            results_hmm = hmmer.preform_hmmer(
+                database=database[0],
+                query_profiles=query_profiles,
+                database_pfam=database_pfam,
+            )
+            results_blast = local.search(
+                database[1],
+                sequences=session.sequences,
+                min_identity=min_identity,
+                min_coverage=min_coverage,
+                max_evalue=max_evalue,
+                blast_file=blast_file,
+            )
+            results = results_blast + results_hmm
+
+        elif mode == "combi_remote":
+            results_hmm = hmmer.preform_hmmer(
+                database=database[0],
+                query_profiles=query_profiles,
+                database_pfam=database_pfam,
+            )
+            if entrez_query:
+                session.params["entrez_query"] = entrez_query
+            rid, results_blast = remote.search(
+                sequences=session.sequences,
+                rid=rid,
+                database=database[1],
+                min_identity=min_identity,
+                min_coverage=min_coverage,
+                max_evalue=max_evalue,
+                entrez_query=entrez_query,
+                blast_file=blast_file,
+                hitlist_size=hitlist_size,
+            )
+            results = results_blast + results_hmm
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
         LOG.info("Fetching genomic context of hits")
