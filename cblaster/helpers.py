@@ -96,17 +96,19 @@ def sequences_to_fasta(sequences):
     )
 
 
+
 def get_project_root():
     return Path(__file__).resolve().parent
 
 
-def get_sequences(query_file=None, query_ids=None):
+def get_sequences(query_file=None, query_ids=None, query_profiles=None):
     """Convenience function to get dictionary of query sequences from file or IDs.
 
     Parameters:
         query_file (str): Path to FASTA genbank or EMBL file containing query
         protein sequences.
         query_ids (list): NCBI sequence accessions.
+        query_profiles (list): Pfam profile accessions.
     Raises:
         ValueError: Did not receive values for query_file or query_ids.
     Returns:
@@ -121,6 +123,8 @@ def get_sequences(query_file=None, query_ids=None):
             sequences = OrderedDict((gene[0], gene[4]) for gene in genes)
     elif query_ids:
         sequences = efetch_sequences(query_ids)
+    elif query_profiles:
+        sequences = None
     else:
-        raise ValueError("Expected 'query_file' or 'query_ids'")
+        raise ValueError("Expected 'query_file' or 'query_ids', or 'query_profiles'")
     return sequences
