@@ -14,6 +14,11 @@ from g2j.classes import Organism
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+# make sure that pre and post 1.78 biopython are valid
+try:
+    from Bio.Alphabet import generic_dna
+except ImportError:
+    generic_dna = None
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 
@@ -292,12 +297,17 @@ def cluster_to_record(
     Returns:
         a Bio.Seqrecord object
     """
-    nuc_seq_obj = Seq(cluster_nuc_sequence)
+    if generic_dna:
+        # Newer Biopython refuses second argument
+        nuc_seq_obj = Seq(cluster_nuc_sequence, generic_dna)
+    else:
+        nuc_seq_obj = Seq(cluster_nuc_sequence)
     # create the record
     record = SeqRecord(
         nuc_seq_obj,
         id=scaffold_accession,
         name=scaffold_accession,
+        annotations={"molecule_type": "DNA"},
         description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}"
     )
     source_feature = SeqFeature(
