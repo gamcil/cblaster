@@ -166,7 +166,7 @@ def create_genbanks_from_clusters(
     for cluster, scaffold_accession, organism_name in cluster_hierarchy:
         cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for subject in cluster.subjects}
         cluster_nuc_sequence = nucleotide_sequences[scaffold_accession]
-        with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gb", "w") as f:
+        with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gbk", "w") as f:
             record = cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name,
                                        scaffold_accession, format_, session.params["require"])
             SeqIO.write(record, f, 'genbank')
@@ -199,7 +199,7 @@ def database_fetch_sequences(json_db, cluster_hierarchy):
         for scaffold in organism.scaffolds:
             if scaffold.accession != scaffold_accession:
                 continue
-            nuc_sequences[scaffold_accession] = scaffold.sequence[cluster.start : cluster.end + 1]
+            nuc_sequences[scaffold_accession] = scaffold.sequence[cluster.start: cluster.end + 1]
             for feature in scaffold.features:
                 if feature.type != "CDS":
                     continue
