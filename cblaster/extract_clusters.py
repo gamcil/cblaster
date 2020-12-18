@@ -14,7 +14,6 @@ from g2j.classes import Organism
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import IUPAC
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 
@@ -293,7 +292,7 @@ def cluster_to_record(
     Returns:
         a Bio.Seqrecord object
     """
-    nuc_seq_obj = Seq(cluster_nuc_sequence, IUPAC.unambiguous_dna)
+    nuc_seq_obj = Seq(cluster_nuc_sequence)
     # create the record
     record = SeqRecord(
         nuc_seq_obj,
