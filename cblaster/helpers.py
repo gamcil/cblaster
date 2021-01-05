@@ -4,11 +4,7 @@
 import shutil
 import requests
 import logging
-
-import g2j
-from g2j import genbank
-
-from cblaster import embl
+from Bio import SeqIO
 
 from pathlib import Path
 from collections import OrderedDict
@@ -71,6 +67,31 @@ def parse_fasta(handle):
         else:
             if not skip:
                 sequences[header] += line
+    return sequences
+
+
+def _extract_sequences_from_seqrecord(seqrecord):
+    sequences = OrderedDict()
+    identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
+    count = 1
+    for record in seqrecord:
+        for feature in record.features:
+            if feature.type == "CDS":
+                name = None
+                for identifier in identifiers:
+                    if identifier not in feature.qualifiers:
+                        continue
+                    name = feature.qualifiers[identifier][0]
+                    break
+                if name is None:
+                    name = f"protein_{count}"
+                    count += 1
+                if "translation" not in feature.qualifiers:
+                    LOG.warning("Skipping '%s', has no translation", name)
+                elif name in sequences:
+                    LOG.warning("Skipping %s, duplicate sequence", name)
+                else:
+                    sequences[name] = feature.qualifiers["translation"][0]
     return sequences
 
 
@@ -186,11 +207,11 @@ def get_sequences(query_file=None, query_ids=None):
     if query_file and not query_ids:
         with open(query_file) as query:
             if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
-                organism = genbank.parse(query, feature_types=["CDS"])
-                sequences = _extract_sequences_from_organism(organism)
+                seqrecord = SeqIO.parse(query, "genbank")
+                sequences = _extract_sequences_from_seqrecord(seqrecord)
             elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
-                organism = embl.parse(query_file, feature_types=["CDS"])
-                sequences = _extract_sequences_from_organism(organism)
+                seqrecord = SeqIO.parse(query, "embl")
+                sequences = _extract_sequences_from_seqrecord(seqrecord)
             else:
                 sequences = parse_fasta(query)
     elif query_ids:

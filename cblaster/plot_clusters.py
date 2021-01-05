@@ -1,6 +1,7 @@
 
 import logging
-from g2j import genbank
+from Bio import SeqIO
+
 from clinker.classes import (
     Cluster as ClinkerCluster,
     Locus as ClinkerLocus,
@@ -15,7 +16,6 @@ from clinker.plot import plot_clusters as clinker_plot_clusters
 
 from cblaster.extract_clusters import extract_cluster_hierarchies
 from cblaster.classes import Session
-from cblaster import embl
 
 
 LOG = logging.getLogger(__name__)
@@ -27,50 +27,52 @@ def query_to_clinker_cluster(query_file):
 
     Args:
         query_file (str): Path to the query file
-
     Returns:
         a clinker.Cluster object
     """
     with open(query_file) as query:
         if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
-            organism = genbank.parse(query, feature_types=["CDS"])
-            return _organism_to_cluster(organism)
+            seqrecord = SeqIO.parse(query, "genbank")
+            return _seqrecord_to_clinker_cluster(seqrecord)
         elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
-            organism = embl.parse(query_file, feature_types=["CDS"])
-            return _organism_to_cluster(organism)
+            seqrecord = SeqIO.parse(query, "embl")
+            return _seqrecord_to_clinker_cluster(seqrecord)
         else:
             return fasta_to_cluster(query)
 
 
-def _organism_to_cluster(organism):
-    """Convert a g2j.Organism object into a clinker.Cluster object
+def _seqrecord_to_clinker_cluster(seqrecord):
+    """Transform a Bio.Seqrecord into a clinker cluster so clinker can plot it easily
 
     Args:
-        organism(g2j.Organism): g2j.Organism object
+        seqrecord (Bio.Seqrecord): seqrecord object
     Returns:
-        clinker.Cluster object
+        A cinker cluster object
     """
     identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
-
     loci = []
     count = 1
-    for locus_nr, scaffold in enumerate(organism.scaffolds):
+    for locus_nr, record in enumerate(seqrecord):
         locus_genes = []
-        sorted_cds_features = sorted(scaffold.features, key=lambda f: f.location.min())
-        for feature in sorted_cds_features:
-            name = None
-            for identifier in identifiers:
-                if identifier in feature.qualifiers:
-                    name = feature.qualifiers[identifier].split(" ")[0]
+        locus_start = locus_end = None
+        for feature in record.features:
+            if feature.type == "CDS":
+                name = None
+                for identifier in identifiers:
+                    if identifier not in feature.qualifiers:
+                        continue
+                    name = feature.qualifiers[identifier][0]
                     break
-            if not name:
-                name = f"protein_{count}"
-                count += 1
-
-            locus_genes.append(ClinkerGene(label=name, start=feature.location.min(), end=feature.location.max(),
-                                           strand=1 if feature.location.strand == '+' else -1))
-        loci.append(ClinkerLocus(f"Locus{locus_nr}", locus_genes, start=sorted_cds_features[0].location.min(),
-                                 end=sorted_cds_features[-1].location.max()))
+                if name is None:
+                    name = f"protein_{count}"
+                    count += 1
+                if locus_start is None or feature.location.start < locus_start:
+                    locus_start = feature.location.start
+                if locus_end is None or feature.location.end > locus_end:
+                    locus_end = feature.location.end
+                locus_genes.append(ClinkerGene(label=name, start=feature.location.start, end=feature.location.end,
+                                               strand=feature.location.strand))
+        loci.append(ClinkerLocus(f"Locus{locus_nr + 1}", locus_genes, start=locus_start, end=locus_end))
     return ClinkerCluster("Query_cluster", loci)
 
 

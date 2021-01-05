@@ -156,7 +156,6 @@ def cblaster(
     Returns:
         Session: cblaster search Session object
     """
-    print(require)
     if session_file and all(Path(sf).exists() for sf in session_file):
         LOG.info("Loading session(s) %s", session_file)
         session = Session.from_files(session_file)
