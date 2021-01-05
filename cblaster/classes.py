@@ -375,7 +375,8 @@ class Cluster(Serializer):
             clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
                                              end=subject.end, strand=1 if subject.strand == '+' else -1))
         clinker_locus = ClinkerLocus(self.number, clinker_genes, start=self.start, end=self.end)
-        clinker_cluster = ClinkerCluster(f"Hit cluster {self.number}", [clinker_locus])
+        clinker_cluster = ClinkerCluster("Cluster {} with score {:.2f}".format(self.number, self.score),
+                                         [clinker_locus])
         return clinker_cluster
 
     @classmethod
