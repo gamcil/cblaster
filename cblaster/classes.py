@@ -378,8 +378,13 @@ class Cluster(Serializer):
         # make sure subjects are sorted low to high
         sorted_subjects = sorted(self.subjects, key=lambda x: (x.start, x.end))
         for subject in sorted_subjects:
+            best_hit = max(subject.hits, key=lambda x: x.bitscore)
+            tooltip_dict = \
+                {"accession": subject.name, "identity": best_hit.identity, "bitscore": best_hit.bitscore,
+                 "coverage": best_hit.coverage, "e-value": best_hit.evalue if best_hit.evalue != 0 else "0.0"}
             clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
-                                             end=subject.end, strand=1 if subject.strand == '+' else -1))
+                                             end=subject.end, strand=1 if subject.strand == '+' else -1,
+                                             names=tooltip_dict))
         clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.start, end=self.end)
         clinker_cluster = ClinkerCluster("Cluster {} with score {:.2f}".format(self.number, self.score),
                                          [clinker_locus])
