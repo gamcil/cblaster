@@ -42,6 +42,9 @@ setup(
         "numpy",
         "scipy",
         "PySimpleGUI",
+        "Biopython",
+        "clinker"
+
     ],
     tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],
     python_requires=">=3.6",
