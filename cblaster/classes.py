@@ -244,8 +244,8 @@ class Scaffold(Serializer):
         After clusters are added they are sorted based on score
 
         Args:
-            subject_lists (list): a list of lists Subject objects that
-            form clusters
+            subject_lists (list): a list of lists of Subject objects that are
+            form a clusters
             query_sequence_order (list): list of sequences of the order in the query file, is
             only provided if the query has a meningfull order (gbk, embl files).
         """
@@ -289,6 +289,7 @@ class Cluster(Serializer):
         These are not serialised for this cluster
         start (int): The start coordinate of the cluster on the parent scaffold
         end (int): The end coordinate of the cluster on the parent scaffold
+        number (int): number that is unique for each cluster in order to identify them
     """
     NUMBER = itertools.count(1, 1)
 
@@ -364,17 +365,22 @@ class Cluster(Serializer):
             "number": self.number,
         }
 
-    def to_clinker_cluster(self):
+    def to_clinker_cluster(self, scaffold_accession=""):
         """Convert this cluster to a clinker format cluster
+
+        Args:
+            scaffold_accession (str): accession of the scaffold this cluster is located on
 
         Returns:
             A clinker.Cluster object
         """
         clinker_genes = []
-        for subject in self.subjects:
+        # make sure subjects are sorted low to high
+        sorted_subjects = sorted(self.subjects, key=lambda x: (x.start, x.end))
+        for subject in sorted_subjects:
             clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
                                              end=subject.end, strand=1 if subject.strand == '+' else -1))
-        clinker_locus = ClinkerLocus(self.number, clinker_genes, start=self.start, end=self.end)
+        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.start, end=self.end)
         clinker_cluster = ClinkerCluster("Cluster {} with score {:.2f}".format(self.number, self.score),
                                          [clinker_locus])
         return clinker_cluster

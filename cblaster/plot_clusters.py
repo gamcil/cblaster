@@ -105,7 +105,7 @@ def fasta_to_cluster(fasta_handle):
     return ClinkerCluster("Query_cluster", [locus])
 
 
-def clusters_to_clinker_alignments(clinker_query_cluster, clusters):
+def clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies):
     """Create clinker.Alignments classes between the query cluster and all other clusters
 
     Make clinker.Link objects between all genes of the query and the genes in the clusters that
@@ -113,13 +113,14 @@ def clusters_to_clinker_alignments(clinker_query_cluster, clusters):
 
     Args:
         clinker_query_cluster(clinker.Cluster): clinker.Cluster object of the query used for the session
-        clusters(List): a list of cblaster.Cluster objects
+        cluster_hierarchies(List): a list of tuples in the form (cblaster.Cluster object, scaffold_accession
+         of cluster, organism_name of cluster)
     Returns:
         a list of clinker.Alignment objects
     """
     allignments = []
-    for cblaster_cluster in clusters:
-        clinker_cluster = cblaster_cluster.to_clinker_cluster()
+    for cblaster_cluster, scaffold_accession, organism_name in cluster_hierarchies:
+        clinker_cluster = cblaster_cluster.to_clinker_cluster(scaffold_accession)
         allignment = ClinkerAlignment(query=clinker_query_cluster, target=clinker_cluster)
         for subject in cblaster_cluster.subjects:
             best_hit = max(subject.hits, key=lambda x: x.bitscore)
@@ -189,12 +190,13 @@ def plot_clusters(
     # filter the cluster using the filter functions from extract_clusters modue
     cluster_hierarchies = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds)
 
+    cluster_hierarchies = list(cluster_hierarchies)
     # sort the clusters based on score
-    sorted_clusters = sorted([h[0] for h in cluster_hierarchies], key=lambda x: x.score, reverse=True)
+    cluster_hierarchies.sort(key=lambda x: x[0].score, reverse=True)
 
     clinker_query_cluster = query_to_clinker_cluster(session.params["query_file"])
 
-    allignments = clusters_to_clinker_alignments(clinker_query_cluster, sorted_clusters)
+    allignments = clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies)
     global_aligner = allignments_to_clinker_global_alligner(allignments)
 
     clinker_plot_clusters(global_aligner, plot_outfile, use_file_order=True)
