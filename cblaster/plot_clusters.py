@@ -100,7 +100,7 @@ def fasta_to_cluster(fasta_handle):
             # do not count the newline character and get in nucleotide numbers
             sequence_length += (len(line) - 1) * 3
             end += (len(line) - 1) * 3
-    locus_genes.append(ClinkerGene(label=name, start=start, end=end, strand=0))
+    locus_genes.append(ClinkerGene(label=name, start=start, end=end, strand=0, names={"accession": name}))
     locus = ClinkerLocus("Locus1", locus_genes, start=0, end=end)
     return ClinkerCluster("Query_cluster", [locus])
 
@@ -126,7 +126,7 @@ def clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies):
             best_hit = max(subject.hits, key=lambda x: x.bitscore)
             query_gene = _gene_from_clinker_cluster(clinker_query_cluster, best_hit.query)
             subject_gene = _gene_from_clinker_cluster(clinker_cluster, best_hit.subject)
-            allignment.add_link(query_gene, subject_gene, best_hit.identity, 0)
+            allignment.add_link(query_gene, subject_gene, best_hit.identity / 100, 0)
         allignments.append(allignment)
     return allignments
 
