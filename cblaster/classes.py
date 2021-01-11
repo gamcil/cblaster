@@ -316,6 +316,16 @@ class Cluster(Serializer):
     def __len__(self):
         return len(self.subjects)
 
+    def __eq__(self, other):
+        if not isinstance(other, Cluster):
+            raise NotImplementedError("Expected Cluster object")
+        return (set(self.subjects) == set(other.subjects)
+                and self.score == other.score)
+
+    def __hash__(self):
+        # make sure to define a __hash__ when defining __eq__ to allow hashing of the object for sets, dicts etc.
+        return hash(id(self))
+
     def __calculate_synteny_score(self, query_sequence_order):
         if not query_sequence_order:
             return 0
@@ -427,16 +437,18 @@ class Subject(Serializer):
         self.end = int(end) if end is not None else None
         self.strand = strand
 
+    def __key(self):
+        # make equals behaviour of higher classes consistent with different instances
+        return tuple(sorted(self.hits, key=lambda x: x.bitscore)), self.ipg, self.start, self.end, self.strand
+
     def __eq__(self, other):
         if not isinstance(other, Subject):
             raise NotImplementedError("Expected Subject object")
-        return (
-            set(self.hits) == set(other.hits)
-            and self.ipg == other.ipg
-            and self.start == other.start
-            and self.end == other.end
-            and self.strand == other.strand
-        )
+        return self.__key() == other.__key()
+
+    def __hash__(self):
+        # make sure that subjects can still be hashed
+        return hash(self.__key())
 
     def to_dict(self):
         return {
