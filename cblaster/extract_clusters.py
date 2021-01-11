@@ -61,7 +61,7 @@ def extract_cluster_hierarchies(
     organisms,
     scaffolds
 ):
-    """Filter out selected clusters
+    """Filter out selected clusters with their associated scaffold and organism
 
     Args:
         session (Session): A session object
@@ -280,9 +280,9 @@ def cluster_to_record(
         a Bio.Seqrecord object
     """
     if generic_dna:
-        # Newer Biopython refuses second argument
         nuc_seq_obj = Seq(cluster_nuc_sequence, generic_dna)
     else:
+        # Newer Biopython refuses second argument
         nuc_seq_obj = Seq(cluster_nuc_sequence)
     # create the record
     record = SeqRecord(

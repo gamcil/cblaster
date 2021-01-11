@@ -3,8 +3,67 @@
 
 import argparse
 import builtins
+from pathlib import Path
+import os
 
 from cblaster import __version__
+
+
+NCBI_DATABASES = ("nr", "refseq_protein", "swissprot", "pdbaa")
+
+
+def full_path(file_path, *acces_modes, dir=False):
+    """Test if a file path or directory exists and has the correct permissions and create a full path
+
+    For reading acces the file has to be pressent and there has to be read acces. For writing acces the directory with
+    the file has to be present and there has to be write acces in that directory.
+
+    Args:
+        file_path (str): relative or absoluete path to a file
+        acces_modes (List): a list of integers of acces modes for which at least one should be allowed
+        dir (bool): if the path is to a directory or not
+    Returns:
+        A string that is the full path to the provided file_path
+    Raises:
+        argparse.ArgumentTypeError when the provided path does not exist or the file does not have the correct
+        permissions to be accessed
+    """
+    full_file_path = Path(file_path).absolute().resolve()
+    failed_path = failed_acces = False
+    for acces_mode in acces_modes:
+        if not dir and full_file_path.is_file() or (acces_mode == os.W_OK and full_file_path.parent.is_dir()):
+            if os.access(full_file_path, acces_mode) or \
+                    (acces_mode == os.W_OK and os.access(full_file_path.parent, acces_mode)):
+                return str(full_file_path)
+            else:
+                failed_acces = True
+        elif dir and full_file_path.is_dir():
+            if os.access(full_file_path, acces_mode):
+                return str(full_file_path)
+        else:
+            failed_path = True
+    if failed_path:
+        raise argparse.ArgumentTypeError(f"Invalid path: '{file_path}'.")
+    elif failed_acces:
+        raise argparse.ArgumentTypeError(f"Invalid acces for path: {file_path}.")
+
+
+def full_database_path(database, *acces_modes):
+    """Make sure the database path is also correct, but do not check when providing one of the NCBI databases
+
+    Args:
+        database (str): a string that is the path to the database creation files or a NCBI database identifier
+        acces_modes (List): a list of integers of acces modes for which at least one should be allowed
+    Returns:
+        a string that is the full path to the database file or a NCBI database identifier
+    """
+    if database not in NCBI_DATABASES:
+        try:
+            return full_path(database, *acces_modes)
+        except argparse.ArgumentTypeError as e:
+            raise type(e)(str(e) + f" Or use one of the following databases {', '.join(NCBI_DATABASES)}"
+                                   f" when running in remote mode")
+    return database
 
 
 def add_makedb_subparser(subparsers):
@@ -14,6 +73,7 @@ def add_makedb_subparser(subparsers):
     )
     makedb.add_argument(
         "paths",
+        type=lambda x: full_path(x, os.R_OK),
         help="Path/s to genome files to use when building local databases",
         nargs="+",
     )
@@ -58,6 +118,7 @@ def add_input_group(search):
     group.add_argument(
         "-qf",
         "--query_file",
+        type=lambda x: full_path(x, os.R_OK),
         help="Path to FASTA file containing protein sequences to be searched",
     )
     group.add_argument(
@@ -72,6 +133,7 @@ def add_output_arguments(group):
     group.add_argument(
         "-o",
         "--output",
+        type=lambda x: full_path(x, os.W_OK),
         help="Write results to file",
     )
     group.add_argument(
@@ -177,6 +239,7 @@ def add_searching_group(search):
         "-db",
         "--database",
         default="nr",
+        type=lambda x: full_database_path(x, os.R_OK),
         help="Database to be searched. This should be either a path to a local"
         " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
         " database name (def. nr)",
@@ -191,6 +254,7 @@ def add_searching_group(search):
     group.add_argument(
         "-jdb",
         "--json_db",
+        type=lambda x: full_path(x, os.W_OK),
         help="Path to local JSON database created using cblaster makedb. If this"
         " argument is provided, genomic context will be fetched from this database"
         " instead of through NCBI IPG.",
@@ -213,6 +277,7 @@ def add_searching_group(search):
         "-s",
         "--session_file",
         nargs="*",
+        type=lambda x: full_path(x, os.R_OK, os.W_OK),
         help="Load session from JSON. If the specified file does not exist, "
         "the results of the new search will be saved to this file.",
     )
@@ -313,13 +378,13 @@ def add_search_subparser(subparsers):
         "Save plot as a static HTML file:\n"
         "  $ cblaster search -s session.json -p gne.html\n\n"
         "Kitchen sink example:\n"
-        "  $ cblaster search --query_file query.fa \ \n"
-        "      --session_file session.json \ \n"
-        "      --plot my_plot.html \ \n"
-        "      --output summary.csv --output_decimals 2 \ \n"
-        "      --binary abspres.csv --binary_delimiter \",\" \ \n"
-        "      --entrez_query \"Aspergillus\"[orgn] \ \n"
-        "      --max_evalue 0.05 --min_identity 50 --min_coverage 70 \ \n"
+        "  $ cblaster search --query_file query.fa \\ \n"
+        "      --session_file session.json \\ \n"
+        "      --plot my_plot.html \\ \n"
+        "      --output summary.csv --output_decimals 2 \\ \n"
+        "      --binary abspres.csv --binary_delimiter \",\" \\ \n"
+        "      --entrez_query \"Aspergillus\"[orgn] \\ \n"
+        "      --max_evalue 0.05 --min_identity 50 --min_coverage 70 \\ \n"
         "      --gap 50000 --unique 2 --min_hits 3 --require Gene1 Gene2\n\n"
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -361,6 +426,7 @@ def add_gne_output_group(parser):
     group.add_argument(
         "-p",
         "--plot",
+        type=lambda x: full_path(x, os.W_OK),
         help="GNE plot HTML file. The plot is generated by default;"
         " this option will just save a static version of it."
     )
@@ -466,7 +532,7 @@ def add_extract_clusters_subparser(subparsers):
         "Extract only from a specific organisms (regular expressions):\n"
         "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o example_directory\n\n"
         "Extract only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
-        "  $ cblaster extract_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o example_directory\n\n"
+        "  $ cblaster extract_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o example_directory\n\n"
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -492,7 +558,7 @@ def add_extract_clusters_subparser(subparsers):
         nargs="+"
     )
     fil.add_argument(
-        "-sf",
+        "-sc",
         "--scaffolds",
         help="Scaffold names/ranges e.g name:start-stop. Only clusters fully within the range are selected.",
         nargs="+"
@@ -502,6 +568,7 @@ def add_extract_clusters_subparser(subparsers):
     output.add_argument(
         "-o",
         "--output",
+        type=lambda x: full_path(x, os.W_OK, dir=True),
         help="Output directory for the clusters",
         required=True
     )
@@ -528,13 +595,13 @@ def add_plot_clusters_subparser(subparsers):
         epilog="Example usage\n-------------\n"
         "Minimum working example:\n"
         " $ cblaster plot_clusters session.json\n\n"
-        "Plot cluster 1 trough 10 and cluster 25 (these numbers can be\n"
+        "Plot cluster 1 trough 10 and cluster 25 (these numbers can be"
         "found in the summary file of the 'search' command):\n"
         " $ cblaster plot_clusters session.json -c 1-10 25 -o plot.html\n\n"
         "Plot only from specific organisms (regular expressions):\n"
         " $ cblaster plot_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
         "Plot only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
-        "  $ cblaster plot_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
+        "  $ cblaster plot_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -571,6 +638,7 @@ def add_plot_clusters_subparser(subparsers):
     output.add_argument(
         "-o",
         "--output",
+        type=lambda x: full_path(x, os.W_OK),
         help="Location were to store the plot file."
     )
 
@@ -617,9 +685,8 @@ def parse_args(args):
         return arguments
 
     if arguments.mode == "remote":
-        valid_dbs = ("nr", "refseq_protein", "swissprot", "pdbaa")
-        if arguments.database not in valid_dbs:
-            parser.error(f"Valid databases are: {', '.join(valid_dbs)}")
+        if arguments.database not in NCBI_DATABASES:
+            parser.error(f"Valid databases are: {', '.join(NCBI_DATABASES)}")
     else:
         for arg in ["entrez_query", "rid"]:
             if getattr(arguments, arg):
