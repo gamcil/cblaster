@@ -256,9 +256,9 @@ def cluster_to_record(
         a Bio.Seqrecord object
     """
     if generic_dna:
-        # Newer Biopython refuses second argument
         nuc_seq_obj = Seq(cluster_nuc_sequence, generic_dna)
     else:
+        # Newer Biopython refuses second argument
         nuc_seq_obj = Seq(cluster_nuc_sequence)
     # create the record
     record = SeqRecord(
