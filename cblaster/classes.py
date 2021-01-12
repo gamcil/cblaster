@@ -290,6 +290,7 @@ class Cluster(Serializer):
         of the parent scaffold
         subjects (list): Subject objects that are in this cluster. Note:
         These are not serialised for this cluster
+        intermediate_genes (list):
         start (int): The start coordinate of the cluster on the parent scaffold
         end (int): The end coordinate of the cluster on the parent scaffold
         number (int): number that is unique for each cluster in order to identify them
@@ -300,6 +301,7 @@ class Cluster(Serializer):
         self,
         indices=None,
         subjects=None,
+        intermediate_genes=None,
         query_sequence_order=None,
         score=None,
         start=None,
@@ -308,6 +310,7 @@ class Cluster(Serializer):
     ):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
+        self.intermediate_genes = intermediate_genes if intermediate_genes else []
         self.score = score if score else self.calculate_score(query_sequence_order)
         self.start = start if start else self.subjects[0].start
         self.end = end if end else self.subjects[-1].end
@@ -372,6 +375,7 @@ class Cluster(Serializer):
     def to_dict(self):
         return {
             "indices": self.indices,
+            "intermediate_genes": self.intermediate_genes,
             "score": self.score,
             "start": self.start,
             "end": self.end,
@@ -383,14 +387,11 @@ class Cluster(Serializer):
 
         Args:
             scaffold_accession (str): accession of the scaffold this cluster is located on
-
         Returns:
             A clinker.Cluster object
         """
         clinker_genes = []
-        # make sure subjects are sorted low to high
-        sorted_subjects = sorted(self.subjects, key=lambda x: (x.start, x.end))
-        for subject in sorted_subjects:
+        for subject in self.subjects:
             best_hit = max(subject.hits, key=lambda x: x.bitscore)
             tooltip_dict = \
                 {"accession": subject.name, "identity": best_hit.identity, "bitscore": best_hit.bitscore,
@@ -398,8 +399,22 @@ class Cluster(Serializer):
             clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
                                              end=subject.end, strand=1 if subject.strand == '+' else -1,
                                              names=tooltip_dict))
-        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.start, end=self.end)
-        clinker_cluster = ClinkerCluster("Cluster {} with score {:.2f}".format(self.number, self.score),
+        for gene in self.intermediate_genes:
+            tooltip_dict = {"accession": gene["name"]}
+            clinker_genes.append(ClinkerGene(label=gene["name"], start=gene["start"], end=gene["end"],
+                                             strand=1 if gene["strand"] == '+' else -1, names=tooltip_dict))
+
+        # make sure that also the genes just outisde the cluster are included
+        if len(self.intermediate_genes) > 0:
+            sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x["start"], x["end"]))
+            cluster_start = min(self.start, sorted_intermediate_genes[0]["start"])
+            cluster_end = max(self.end, sorted_intermediate_genes[-1]["end"])
+        else:
+            cluster_start = self.start
+            cluster_end = self.end
+
+        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=cluster_start, end=cluster_end)
+        clinker_cluster = ClinkerCluster("Cluster {} ({:.2f} score)".format(self.number, self.score),
                                          [clinker_locus])
         return clinker_cluster
 
@@ -407,6 +422,7 @@ class Cluster(Serializer):
     def from_dict(cls, d, *subjects):
         return cls(
             indices=d["indices"],
+            intermediate_genes=d["intermediate_genes"],
             subjects=subjects,
             score=d["score"],
             start=d["start"],

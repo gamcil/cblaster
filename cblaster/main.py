@@ -22,6 +22,7 @@ from cblaster import (
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
+from cblaster.intermediate_genes import find_intermediate_hits
 
 
 logging.basicConfig(
@@ -109,6 +110,7 @@ def cblaster(
     ipg_file=None,
     hitlist_size=None,
     cpus=None,
+    intermediate_genes=False
 ):
     """Run cblaster.
 
@@ -148,6 +150,7 @@ def cblaster(
         blast_file (str): path to file to save blast output
         ipg_file (str): path to file to save ipg output
         cpus (int): number of cpu's to use when blasting.
+        intermediate_genes (bool): Signifies if intermediate genes have to be shown
         hitlist_size (int): Number of database sequences to keep
     Returns:
         Session: cblaster search Session object
@@ -280,7 +283,7 @@ def cblaster(
         )
 
     LOG.info("Writing summary to %s", "stdout" if output == sys.stdout else output)
-    results = session.format(
+    session.format(
         "summary",
         fp=open(output, "w") if output else sys.stdout,
         hide_headers=output_hide_headers,
@@ -363,6 +366,7 @@ def main():
             ipg_file=args.ipg_file,
             hitlist_size=args.hitlist_size,
             cpus=args.cpus,
+            intermediate_genes=args.intermediate_genes
         )
 
     elif args.subcommand == "gui":
