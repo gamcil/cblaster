@@ -209,6 +209,7 @@ def add_output_group(search):
         nargs="?",
         const=True,
         default=False,
+        type=lambda x: full_path(x, os.W_OK),
         help="Generate a cblaster plot. If this argument is specified with no"
         " file name, the plot will be served using Python's HTTP server. If a"
         " file name is specified, a static HTML file will be generated at that"
@@ -287,6 +288,7 @@ def add_searching_group(search):
         nargs="?",
         const=True,
         default=False,
+        type=lambda x: full_path(x, os.W_OK),
         help="Recompute previous search session using new thresholds. The filtered"
         " session will be written to the file specified by this argument. If this"
         " argument is specified with no value, the session will be filtered but"
@@ -299,6 +301,13 @@ def add_searching_group(search):
         default=5000,
         help="Maximum total hits to save in a BLAST search (def. 5000). Setting"
         " this value too low may result in missed hits/clusters."
+    )
+    group.add_argument(
+        "-ig",
+        "--intermediate_genes",
+        action="store_true",
+        help="Show genes that in or near clusters but not part of the cluster. "
+             "This takes some extra computation time."
     )
 
 
@@ -538,26 +547,26 @@ def add_extract_clusters_subparser(subparsers):
     )
     parser.add_argument("session", help="cblaster session file")
 
-    fil = parser.add_argument_group("Filters")
-    fil.add_argument(
+    filter_parser = parser.add_argument_group("Filters")
+    filter_parser.add_argument(
         "-c",
         "--clusters",
         help="Cluster numbers/ ranges provided by the summary file of the 'search' command.",
         nargs="+"
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-st",
         "--score_threshold",
         help="Minimum score of a cluster to be included",
         type=float
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-or",
         "--organisms",
         help="Organism names (can be regex patterns)",
         nargs="+"
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-sc",
         "--scaffolds",
         help="Scaffold names/ranges e.g name:start-stop. Only clusters fully within the range are selected.",
@@ -608,26 +617,26 @@ def add_plot_clusters_subparser(subparsers):
 
     parser.add_argument("session", help="cblaster session file")
 
-    fil = parser.add_argument_group("Filters when not using --files")
-    fil.add_argument(
+    filter_parser = parser.add_argument_group("Filters when not using --files")
+    filter_parser.add_argument(
         "-c",
         "--clusters",
         help="Cluster numbers/ ranges provided by the summary file of the 'search' command.",
         nargs="+"
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-st",
         "--score_threshold",
         help="Minimum score of a cluster to be included",
         type=float
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-or",
         "--organisms",
         help="Organism names",
         nargs="+"
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-sc",
         "--scaffolds",
         help="Scaffold names/ranges",
