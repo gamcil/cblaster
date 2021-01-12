@@ -481,7 +481,11 @@ def add_gne_subparser(subparsers):
         "  $ cblaster gne session.json -p gne.html\n\n"
         "Cameron Gilchrist, 2020",
     )
-    gne.add_argument("session", help="cblaster session file")
+    gne.add_argument(
+        "session",
+        type=lambda x: full_path(x, os.R_OK),
+        help="cblaster session file"
+    )
     add_gne_params_group(gne)
     add_gne_output_group(gne)
 
@@ -545,7 +549,11 @@ def add_extract_clusters_subparser(subparsers):
         "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("session", help="cblaster session file")
+    parser.add_argument(
+        "session",
+        type=lambda x: full_path(x, os.R_OK),
+        help="cblaster session file"
+    )
 
     filter_parser = parser.add_argument_group("Filters")
     filter_parser.add_argument(
@@ -615,7 +623,11 @@ def add_plot_clusters_subparser(subparsers):
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.add_argument("session", help="cblaster session file")
+    parser.add_argument(
+        "session",
+        type=lambda x: full_path(x, os.R_OK),
+        help="cblaster session file"
+    )
 
     filter_parser = parser.add_argument_group("Filters when not using --files")
     filter_parser.add_argument(
