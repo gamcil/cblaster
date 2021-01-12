@@ -19,8 +19,8 @@ def add_makedb_subparser(subparsers):
     )
     makedb.add_argument(
         "filename",
-        help="Name to use when building JSON/diamond databases (with extensions"
-        " .json and .dmnd, respectively)",
+        help="Name to use when building SQLite3/diamond databases (with extensions"
+        " .sqlite3 and .dmnd, respectively)",
     )
     makedb.add_argument(
         "-c",
