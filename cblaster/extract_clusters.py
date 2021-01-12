@@ -221,9 +221,10 @@ def efetch_protein_sequences(cluster_hierarchy):
         a dictionary with protein sequences keyed on protein names
     """
     # first collect all names to do the fetching all at once
-    sequence_names = []
+    sequence_names = set()
     for cluster, sc_name, or_name in cluster_hierarchy:
-        sequence_names.extend([subject.name for subject in cluster.subjects])
+        sequence_names.update([subject.name for subject in cluster.subjects])
+    sequence_names = list(sequence_names)
 
     # request sequences in batces of MAX_REQUEST_SIZE every 0.34 seconds (no more then 3 requests per second)
     sequences = dict()
