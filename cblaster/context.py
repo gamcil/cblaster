@@ -256,79 +256,38 @@ def find_identifier(qualifiers):
     return None
 
 
-def query_local_DB(hits, database):
-    """Build Organisms/Scaffolds using database.DB instance.
-
-    This function essentially mirrors parse_IPG_table, but is adapted to the JSON
-    database created using cblaster makedb. Protein headers in the DIAMOND database
-    follow the form "i_j_k" where i, j and k refer to the database indexes of organisms,
-    scaffolds and proteins, respectively. For example, >2_56_123 refers to the 123rd
-    protein of the 56th scaffold of the 2nd organism in the database. Context of each
-    hit is found by directly accessing those indices in the database, and then
-    Organism, Scaffold and Subject objects are generated as in parse_IPG_table.
-
-    Args:
-        hits (list): Hit objects created during cblaster search.
-        database (database.DB): cblaster database object.
-    Returns:
-        Organism objects containing hits sorted into genomic scaffolds.
+def query_local_DB(hits, db):
+    """Queries a local SQLite3 database created using the makedb module.
     """
-
     organisms = defaultdict(dict)
-
-    # Form non-redundant dictionary of hits. Each key will become a unique Subject.
     hit_dict = defaultdict(list)
     for hit in hits:
         hit_dict[hit.subject].append(hit)
-
-    for hit_index, hits in hit_dict.items():
-        # Hit headers should follow form "i_j_k", where i, j and k refer to the
-        # database indexes of organisms, scaffolds and proteins, respectively.
-        # e.g. >2_56_123 => 123rd protein of 56th scaffold of the 2nd organism
-        try:
-            i, j, k = [int(index) for index in hit_index.split("_")]
-        except ValueError:
-            LOG.exception("Hit has malformed header")
-
-        organism = database.organisms[i]
-        scaffold = organism.scaffolds[j]
-        protein = scaffold.features[k]
-
-        # For brevity...
-        org = organism.name
-        st = organism.strain
-        sc = scaffold.accession
-
-        # Instantiate new Organism/Scaffold objects on first encounter
-        if st not in organisms[org]:
-            organisms[org][st] = Organism(org, st)
-        if sc not in organisms[org][st].scaffolds:
-            organisms[org][st].scaffolds[sc] = Scaffold(sc)
-
-        # Want to report just protein ID, not lineage
-        identifier = find_identifier(protein.qualifiers)
-        if not identifier:
-            LOG.warning("Could not find identifier for hit %, skipping", hit.subject)
-            continue
-        for hit in hits:
-            hit.subject = identifier
-
-        # Save genomic location on the Hit instance
-        subject = Subject(
-            name=identifier,
-            hits=hits,
-            start=protein.location.min(),
-            end=protein.location.max(),
-            strand=protein.location.strand
-        )
-
-        organisms[org][st].scaffolds[sc].subjects.append(subject)
-
-    return [
+    for (
+        rowid,
+        name,
+        start_pos,
+        end_pos,
+        strand,
+        scaffold,
         organism
-        for strains in organisms.values()
-        for organism in strains.values()
-    ]
+    ) in database.query_database(list(hit_dict), db):
+        if organism not in organisms:
+            organisms[organism] = Organism(organism, "")
+        if scaffold not in organisms[organism].scaffolds:
+            organisms[organism].scaffolds[scaffold] = Scaffold(scaffold)
+        hits = hit_dict[str(rowid)]
+        for hit in hits:
+            hit.subject = name
+        subject = Subject(
+            name=name,
+            hits=hits,
+            start=int(start_pos),
+            end=int(end_pos),
+            strand="+" if strand == 1 else "-"
+        )
+        organisms[organism].scaffolds[scaffold].subjects.append(subject)
+    return [organism for organism in organisms.values()]
 
 
 def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3):
@@ -540,13 +499,13 @@ def estimate_neighbourhood(session, max_gap=100000, samples=100, scale="linear")
 
 def search(
     hits,
+    sqlite_db=None,
     unique=3,
     min_hits=3,
     gap=20000,
     require=None,
-    json_db=None,
-    ipg_file=None,
-    query_sequence_order=None
+    query_sequence_order=None,
+    ipg_file=None
 ):
     """Gets the genomic context for a collection of Hit objects.
 
@@ -559,7 +518,6 @@ def search(
     ...     min_hits=3,  # minimum number of hits in a cluster
     ...     gap=20000,  # maximum intergenic gap
     ...     require=["q1", "q2"],  # specific query sequences that MUST be in a cluster
-    ...     json_db=None,  # query a JSON database created using cblaster makedb
     ... )
 
     Args:
@@ -568,16 +526,13 @@ def search(
         unique (int): Unique query sequence threshold.
         min_hits (int): Minimum number of hits in a hit cluster.
         gap (int): Maximum intergenic distance (bp) between any two hits in a cluster.
-        json_db (str): Path to a JSON database created with cblaster makedb.
         query_sequence_order (list): list of sequences of the order in the query file, is
-        only provided if the query has a meningfull order (gbk, embl files).
     Returns:
         Dictionary of Organism objects keyed on species name.
     """
-    if json_db:
-        LOG.info("Loading JSON database: %s", json_db)
-        db = database.Database.from_json(json_db)
-        organisms = query_local_DB(hits, db)
+    if sqlite_db:
+        LOG.info("Querying local SQLite3 database: %s", sqlite_db)
+        organisms = query_local_DB(hits, sqlite_db)
     else:
         rows = efetch_IPGs(
             [hit.subject for hit in hits],
@@ -593,8 +548,8 @@ def search(
             min_hits=min_hits,
             gap=gap,
             require=require,
-            remote=json_db is None,
-            query_sequence_order=query_sequence_order
+            query_sequence_order=query_sequence_order,
+            remote=sqlite_db is None,
         )
 
     return organisms

@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
-
 import shutil
 import requests
 import logging
 
-import g2j
-from g2j import genbank
-
-from cblaster import embl
-
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
+
+from cblaster import genome_parsers as gp
 
 
 LOG = logging.getLogger(__name__)
@@ -43,78 +39,6 @@ def form_command(parameters):
         else:
             command.extend([key, value])
     return command
-
-
-def parse_fasta(handle):
-    """Parse sequences in a FASTA file.
-
-    Sequence headers are trimmed after the first whitespace.
-
-    Returns:
-        Sequences in FASTA file keyed on their headers (i.e. > line)
-    """
-    sequences = OrderedDict()
-    skip = False
-
-    for line in handle:
-        try:
-            line = line.decode().strip()
-        except AttributeError:
-            line = line.strip()
-        if line.startswith(">"):
-            header = line[1:].split(" ", 1)[0]
-            skip = header in sequences
-            if skip:
-                LOG.warning("Skipping duplicate sequence: %s", header)
-            else:
-                sequences[header] = ""
-        else:
-            if not skip:
-                sequences[header] += line
-    return sequences
-
-
-def _extract_sequences_from_organism(organism):
-    """Extract sequences from an Organism and write them into a fasta format
-
-    The name of the fasta lines are based on qualifiers associated with the CDS
-    feature. Names are extracted from the following qualifiers in that order:
-    "protein_id", "locus_tag", "gene", "ID". If none of the qualifiers are present
-    a name is auto generated in the form protein _ count.
-
-    Parameters:
-        organism (g2j.classes.Organism): organism object created from EMBL
-        or genbank file using g2j
-    Returns:
-        sequences (OrderedDict): Dictionary of query sequences keyed on accession
-        sorted by location.
-    """
-    sequences = OrderedDict()
-    identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
-    count = 1
-    for scaffold in organism.scaffolds:
-        for feature in sorted(scaffold.features, key=lambda f: f.location.min()):
-            name = None
-            for identifier in identifiers:
-                if identifier in feature.qualifiers:
-                    name = feature.qualifiers[identifier].split(" ")[0]
-                    break
-            if not name:
-                name = f"protein_{count}"
-                count += 1
-            if "translation" not in feature.qualifiers:
-                LOG.warning("Skipping '%s', has no translation", name)
-            elif name in sequences:
-                LOG.warning("Skipping %s, duplicate sequence", name)
-            else:
-                sequences[name] = feature.qualifiers["translation"]
-    return sequences
-
-
-def parse_fasta_file(path):
-    with open(path) as fp:
-        sequences = parse_fasta(fp)
-    return sequences
 
 
 def efetch_sequences_request(headers):
@@ -160,7 +84,8 @@ def efetch_sequences(headers):
     LOG.info("Querying NCBI for sequences of: %s", headers)
     response = efetch_sequences_request(headers)
     results = response.text.split("\n")
-    return parse_fasta(results)
+    records = gp.parse_fasta_str(results)
+    return {r.id: r.sequence for r in records}
 
 
 def sequences_to_fasta(sequences):
@@ -169,6 +94,10 @@ def sequences_to_fasta(sequences):
         f">{header}\n{sequence}"
         for header, sequence in sequences.items()
     )
+
+
+def get_project_root():
+    return Path(__file__).resolve().parent
 
 
 def get_sequences(query_file=None, query_ids=None):
@@ -184,21 +113,14 @@ def get_sequences(query_file=None, query_ids=None):
         sequences (dict): Dictionary of query sequences keyed on accession.
     """
     if query_file and not query_ids:
-        with open(query_file) as query:
-            if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
-                organism = genbank.parse(query, feature_types=["CDS"])
-                sequences = _extract_sequences_from_organism(organism)
-            elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
-                organism = embl.parse(query_file, feature_types=["CDS"])
-                sequences = _extract_sequences_from_organism(organism)
-            else:
-                sequences = parse_fasta(query)
+        organism = gp.parse_file(query_file)
+        if Path(query_file).suffix.lower() in gp.FASTA_SUFFIXES:
+            sequences = OrderedDict((r.id, str(r.seq)) for r in organism["records"])
+        else:
+            genes = gp.organisms_to_tuples([organism])
+            sequences = OrderedDict((gene[0], gene[4]) for gene in genes)
     elif query_ids:
         sequences = efetch_sequences(query_ids)
     else:
         raise ValueError("Expected 'query_file' or 'query_ids'")
     return sequences
-
-
-def get_project_root():
-    return Path(__file__).resolve().parent
