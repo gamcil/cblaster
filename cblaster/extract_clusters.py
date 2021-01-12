@@ -57,10 +57,10 @@ def parse_numbers(cluster_numbers):
 
 def extract_cluster_hierarchies(
     session,
-    cluster_numbers,
-    score_threshold,
-    organisms,
-    scaffolds
+    cluster_numbers=None,
+    score_threshold=None,
+    organisms=None,
+    scaffolds=None
 ):
     """Filter out selected clusters with their associated scaffold and organism
 

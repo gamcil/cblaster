@@ -21,6 +21,7 @@ from cblaster import (
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
+from cblaster.intermediate_genes import find_intermediate_hits
 
 
 logging.basicConfig(
@@ -119,6 +120,7 @@ def cblaster(
     blast_file=None,
     ipg_file=None,
     hitlist_size=None,
+    intermediate_genes=False
 ):
     """Run cblaster.
 
@@ -153,6 +155,10 @@ def cblaster(
         indent (int): Total spaces to indent JSON files
         plot (str): Path to cblaster plot HTML file
         recompute (str): Path to recomputed session JSON file
+        blast_file
+        ipg_file
+        hitlist_size
+        intermediate_genes (bool): Signifies if intermediate genes have to be shown
     Returns:
         Session: cblaster search Session object
     """
@@ -199,10 +205,9 @@ def cblaster(
             session.queries = list(session.sequences)
             session.params["query_file"] = query_file
 
-        if json_db:
-            session.params["json_db"] = json_db
-
         if mode == "local":
+            if json_db:
+                session.params["json_db"] = json_db
             LOG.info("Starting cblaster in local mode")
             results = local.search(
                 database,
@@ -245,6 +250,8 @@ def cblaster(
             ipg_file=ipg_file,
             query_sequence_order=query_sequence_order
         )
+        if intermediate_genes:
+            find_intermediate_hits(session)
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -266,7 +273,7 @@ def cblaster(
         )
 
     LOG.info("Writing summary to %s", "stdout" if output == sys.stdout else output)
-    results = session.format(
+    session.format(
         "summary",
         fp=open(output, "w") if output else sys.stdout,
         hide_headers=output_hide_headers,
@@ -325,6 +332,7 @@ def main():
             blast_file=args.blast_file,
             ipg_file=args.ipg_file,
             hitlist_size=args.hitlist_size,
+            intermediate_genes=args.intermediate_genes
         )
 
     elif args.subcommand == "gui":
