@@ -83,9 +83,8 @@ def efetch_sequences(headers):
     """
     LOG.info("Querying NCBI for sequences of: %s", headers)
     response = efetch_sequences_request(headers)
-    results = response.text.split("\n")
-    records = gp.parse_fasta_str(results)
-    return {r.id: r.sequence for r in records}
+    records = gp.parse_fasta_str(response.text)
+    return {r.id: r.seq for r in records}
 
 
 def sequences_to_fasta(sequences):

@@ -215,7 +215,7 @@ def cblaster(
             session.params["rid"] = rid
 
         if sqlite_db:
-            session.params["sqlite_db"] = sqlite_db
+            session.params["sqlite_db"] = str(sqlite_db)
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
         LOG.info("Fetching genomic context of hits")
