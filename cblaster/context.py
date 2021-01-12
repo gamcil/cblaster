@@ -260,10 +260,11 @@ def find_identifier(qualifiers):
 def query_local_DB(hits, db):
     """Queries a local SQLite3 database created using the makedb module.
     """
-    organisms = defaultdict(dict)
+    organisms = {}
     hit_dict = defaultdict(list)
     for hit in hits:
         hit_dict[hit.subject].append(hit)
+    print(list(hit_dict))
     for (
         rowid,
         name,
@@ -272,7 +273,7 @@ def query_local_DB(hits, db):
         strand,
         scaffold,
         organism
-    ) in database.query_database(list(hit_dict), db):
+    ) in database.query_database_with_ids(list(hit_dict), db):
         if organism not in organisms:
             organisms[organism] = Organism(organism, "")
         if scaffold not in organisms[organism].scaffolds:

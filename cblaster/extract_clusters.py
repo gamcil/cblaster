@@ -7,8 +7,6 @@ import logging
 import os
 import time
 import requests
-import json
-from g2j.classes import Organism
 
 
 from Bio import SeqIO
@@ -25,6 +23,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from cblaster.classes import Session
 from cblaster.extract import organism_matches, parse_organisms, parse_scaffolds
 from cblaster.helpers import efetch_sequences
+from cblaster.database import query_database_with_names
 
 
 LOG = logging.getLogger(__name__)
@@ -156,16 +155,16 @@ def create_genbanks_from_clusters(
     """
     if session.params["mode"] == "remote":
         protein_sequences = efetch_protein_sequences(cluster_hierarchy)
-        nucleotide_sequences = efetch_nucleotide_sequence(cluster_hierarchy)
     elif session.params["mode"] == "local":
-        protein_sequences, nucleotide_sequences = database_fetch_sequences(session.params["json_db"], cluster_hierarchy)
+        protein_sequences = database_fetch_sequences(session.params["sqlite_db"], cluster_hierarchy)
     else:
         raise NotImplementedError(f"No protocol for mode {session.params['mode']}")
+    nucleotide_sequences = efetch_nucleotide_sequence(cluster_hierarchy)
 
     # generate genbank files for all the required clusters
     for cluster, scaffold_accession, organism_name in cluster_hierarchy:
         cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for subject in cluster.subjects}
-        cluster_nuc_sequence = nucleotide_sequences[scaffold_accession]
+        cluster_nuc_sequence = nucleotide_sequences[cluster.number]
         with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gbk", "w") as f:
             record = cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name,
                                        scaffold_accession, format_, session.params["require"])
@@ -173,42 +172,24 @@ def create_genbanks_from_clusters(
         LOG.debug(f"Created {prefix}cluster{cluster.number}.gb file for cluster {cluster.number}")
 
 
-def database_fetch_sequences(json_db, cluster_hierarchy):
+def database_fetch_sequences(sqlite_db, cluster_hierarchy):
     """Fetch sequences from an offline json_db
 
     Args:
-        json_db (str): path to a json_db file
+        sqlite_db (str): path to a json_db file
         cluster_hierarchy (Set): set of tuples in the form (cblaster.Cluster object,
          scaffold_accession of cluster, organism_name of cluster)
     Returns:
         tuple of a dict of protein sequences keyed on protein_names and a dict of
          nucleotide sequences keyed on scaffold_accessions
     """
-    # read the json database
-    with open(json_db, "r") as f:
-        # g2j Organism objects not cblaster Organism objects
-        organism_objs = [Organism.from_dict(dct) for dct in json.load(f)]
+    # get the names of all unique subjects in all clusters
+    needed_ids = set([subject.name for cluster, _, _ in cluster_hierarchy for subject in cluster])
 
-    # extract all sequences from the database
-    organisms_dict = {organism.name: organism for organism in organism_objs}
-    identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
     prot_sequences = dict()
-    nuc_sequences = dict()
-    for cluster, scaffold_accession, organism_name in cluster_hierarchy:
-        organism = organisms_dict[organism_name]
-        for scaffold in organism.scaffolds:
-            if scaffold.accession != scaffold_accession:
-                continue
-            nuc_sequences[scaffold_accession] = scaffold.sequence[cluster.start: cluster.end + 1]
-            for feature in scaffold.features:
-                if feature.type != "CDS":
-                    continue
-                for subject in cluster.subjects:
-                    for identifier in identifiers:
-                        if identifier in feature.qualifiers and subject.name == feature.qualifiers[identifier]:
-                            prot_sequences[subject.name] = feature.qualifiers["translation"]
-                            break
-    return prot_sequences, nuc_sequences
+    for name, translation, scaffold_accession in query_database_with_names(list(needed_ids), sqlite_db):
+        prot_sequences[name] = translation
+    return prot_sequences
 
 
 def efetch_protein_sequences(cluster_hierarchy):
@@ -246,7 +227,7 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
         cluster_hierarchy (Set): set of tuples in the form (cblaster.Cluster object,
          scaffold_accession of cluster, organism_name of cluster)
     Returns:
-        a dictionary with nucleotide sequences keyed on scaffold accession
+        a dictionary with nucleotide sequences keyed on cluster number
     """
     sequences = dict()
     passed_time = 0
@@ -270,7 +251,7 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
                 " Incorect scaffold accession?"
             )
         # only save the sequence not the fasta header
-        sequences[scaffold_accession] = response.text.split("\n", 1)[1].replace("\n", "")
+        sequences[cluster.number] = response.text.split("\n", 1)[1].replace("\n", "")
 
         passed_time = time.time() - start_time
     return sequences
