@@ -184,10 +184,10 @@ def database_fetch_sequences(sqlite_db, cluster_hierarchy):
          nucleotide sequences keyed on scaffold_accessions
     """
     # get the names of all unique subjects in all clusters
-    needed_ids = set([subject.name for cluster, _, _ in cluster_hierarchy for subject in cluster])
+    cluster_ids = set([subject.name for cluster, _, _ in cluster_hierarchy for subject in cluster])
 
     prot_sequences = dict()
-    for name, translation, scaffold_accession in query_database_with_names(list(needed_ids), sqlite_db):
+    for name, translation, scaffold_accession in query_database_with_names(list(cluster_ids), sqlite_db):
         prot_sequences[name] = translation
     return prot_sequences
 

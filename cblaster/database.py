@@ -11,7 +11,7 @@ from multiprocessing import Pool
 
 from cblaster import helpers
 from cblaster import genome_parsers as gp
-from cblaster.sql import FASTA, INSERT, ID_QUERY, SCHEMA, NAME_QUERY
+from cblaster.sql import FASTA, INSERT, ID_QUERY, SCHEMA, INCLUSIVE_NAME_QUERY, INTERMEDIATE_GENES_QUERY
 
 
 LOG = logging.getLogger("cblaster")
@@ -93,10 +93,18 @@ def query_database_with_names(names, database):
         list: Result tuples returned by the query
     """
     marks = ", ".join("?" for _ in names)
-    query = NAME_QUERY.format(marks)
+    query = INCLUSIVE_NAME_QUERY.format(marks)
     with sqlite3.connect(database) as con:
         cur = con.cursor()
         return cur.execute(query, names).fetchall()
+
+
+def query_database_for_intermediate_genes(names, start, end, database):
+    marks = ", ".join("?" for _ in names)
+    query = INTERMEDIATE_GENES_QUERY.format(marks)
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        return cur.execute(query, [*names, start, end]).fetchall()
 
 
 def diamond_makedb(fasta, name):
@@ -163,7 +171,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
-    path_groups = [paths[i : i + batch] for i in range(0, total_paths, batch)]
+    path_groups = [paths[i: i + batch] for i in range(0, total_paths, batch)]
     LOG.info(
         "Parsing %i genome files, in %i batches of %i",
         total_paths,

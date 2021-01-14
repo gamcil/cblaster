@@ -26,7 +26,7 @@ WHERE
     id IN ({})\
 """
 
-NAME_QUERY = """\
+INCLUSIVE_NAME_QUERY = """\
 SELECT
     name,
     translation,
@@ -34,7 +34,19 @@ SELECT
 FROM
     gene
 WHERE
-    name IN ({})\
+    name IN ({}) \
+"""
+
+INTERMEDIATE_GENES_QUERY = """\
+SELECT
+    start_pos,
+    end_pos,
+    name,
+    strand
+FROM
+    gene
+WHERE
+    name NOT IN ({}) AND start_pos >= ? AND end_pos <= ?\
 """
 
 FASTA = 'SELECT ">"||gene.id||"\n"||gene.translation||"\n" FROM gene'
