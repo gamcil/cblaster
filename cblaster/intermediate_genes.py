@@ -3,6 +3,7 @@ import logging
 
 from cblaster.extract_clusters import extract_cluster_hierarchies
 from cblaster.database import query_database_for_intermediate_genes
+from cblaster.classes import Subject
 
 
 LOG = logging.getLogger(__name__)
@@ -18,12 +19,8 @@ def get_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
         intermediate_genes = []
         for start, end, name, strand in \
                 query_database_for_intermediate_genes(cluster_ids, search_start, search_stop, sqlite_db):
-            intermediate_genes.append({
-                "start": start,
-                "end": end,
-                "name": name,
-                "strand": strand
-            })
+            # generate an empty subject
+            intermediate_genes.append(Subject(name=name, start=start, end=end, strand=strand))
         cluster.intermediate_genes = intermediate_genes
 
 

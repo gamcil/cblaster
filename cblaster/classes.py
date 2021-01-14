@@ -352,6 +352,18 @@ class Cluster(Serializer):
             max(hit.bitscore for hit in subject.hits) for subject in self.subjects
         )
 
+    @property
+    def intermediate_start(self):
+        """The start of the cluster taking the intermediate genes into account"""
+        sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
+        return min(sorted_intermediate_genes[0].start, self.start)
+
+    @property
+    def intermediate_end(self):
+        """The end of the cluster taking the intermediate genes into account"""
+        sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
+        return max(sorted_intermediate_genes[-1].end, self.end)
+
     def calculate_score(self, query_sequence_order=None):
         """Calculate the score of the current cluster
 
@@ -368,16 +380,6 @@ class Cluster(Serializer):
         synteny_score = self.__calculate_synteny_score(query_sequence_order)
         bitscore = self.__calculate_bitscore()
         return bitscore / 10000 + len(self.subjects) + synteny_score
-
-    def to_dict(self):
-        return {
-            "indices": self.indices,
-            "intermediate_genes": self.intermediate_genes,
-            "score": self.score,
-            "start": self.start,
-            "end": self.end,
-            "number": self.number,
-        }
 
     def to_clinker_cluster(self, scaffold_accession=""):
         """Convert this cluster to a clinker format cluster
@@ -397,29 +399,31 @@ class Cluster(Serializer):
                                              end=subject.end, strand=1 if subject.strand == '+' else -1,
                                              names=tooltip_dict))
         for gene in self.intermediate_genes:
-            tooltip_dict = {"accession": gene["name"]}
-            clinker_genes.append(ClinkerGene(label=gene["name"], start=gene["start"], end=gene["end"],
-                                             strand=1 if gene["strand"] == '+' else -1, names=tooltip_dict))
+            tooltip_dict = {"accession": gene.name}
+            clinker_genes.append(ClinkerGene(label=gene.name, start=gene.start, end=gene.end,
+                                             strand=1 if gene.strand == '+' else -1, names=tooltip_dict))
 
-        # make sure that also the genes just outisde the cluster are included
-        if len(self.intermediate_genes) > 0:
-            sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x["start"], x["end"]))
-            cluster_start = min(self.start, sorted_intermediate_genes[0]["start"])
-            cluster_end = max(self.end, sorted_intermediate_genes[-1]["end"])
-        else:
-            cluster_start = self.start
-            cluster_end = self.end
-
-        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=cluster_start, end=cluster_end)
+        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.intermediate_start,
+                                     end=self.intermediate_end)
         clinker_cluster = ClinkerCluster("Cluster {} ({:.2f} score)".format(self.number, self.score),
                                          [clinker_locus])
         return clinker_cluster
+
+    def to_dict(self):
+        return {
+            "indices": self.indices,
+            "intermediate_genes": [gene.to_dict() for gene in self.intermediate_genes],
+            "score": self.score,
+            "start": self.start,
+            "end": self.end,
+            "number": self.number,
+        }
 
     @classmethod
     def from_dict(cls, d, *subjects):
         return cls(
             indices=d["indices"],
-            intermediate_genes=d["intermediate_genes"],
+            intermediate_genes=[Subject.from_dict(d) for d in d["intermediate_genes"]],
             subjects=subjects,
             score=d["score"],
             start=d["start"],
@@ -535,7 +539,7 @@ class Hit(Serializer):
         )
 
     def __key(self):
-        return (self.query, self.bitscore, self.identity, self.coverage, self.evalue)
+        return self.query, self.bitscore, self.identity, self.coverage, self.evalue
 
     def __hash__(self):
         return hash(self.__key())
