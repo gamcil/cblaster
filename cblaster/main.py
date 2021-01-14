@@ -21,7 +21,7 @@ from cblaster import (
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
-from cblaster.intermediate_genes import find_intermediate_hits
+from cblaster.intermediate_genes import find_intermediate_genes
 
 
 logging.basicConfig(
@@ -104,7 +104,8 @@ def cblaster(
     ipg_file=None,
     hitlist_size=None,
     cpus=None,
-    intermediate_genes=False
+    intermediate_genes=False,
+    intermediate_gene_distance=5000
 ):
     """Run cblaster.
 
@@ -141,7 +142,11 @@ def cblaster(
         blast_file
         ipg_file
         hitlist_size
+        cpus
         intermediate_genes (bool): Signifies if intermediate genes have to be shown
+        intermediate_gene_distance (int): the maximum allowed distance between the
+         edge of a cluster and an intermediate gene.
+
     Returns:
         Session: cblaster search Session object
     """
@@ -161,6 +166,10 @@ def cblaster(
                 min_hits,
                 require,
             )
+
+            if intermediate_genes:
+                find_intermediate_genes(session, intermediate_gene_distance)
+
             if recompute is not True:
                 LOG.info("Writing recomputed session to %s", recompute)
                 with open(recompute, "w") as fp:
@@ -187,6 +196,8 @@ def cblaster(
             # preserve query order
             session.queries = list(session.sequences)
             session.params["query_file"] = query_file
+
+        sqlite_db = None
 
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
@@ -217,7 +228,6 @@ def cblaster(
                 blast_file=blast_file,
                 hitlist_size=hitlist_size,
             )
-            sqlite_db = None
             session.params["rid"] = rid
 
         if sqlite_db:
@@ -236,8 +246,9 @@ def cblaster(
             ipg_file=ipg_file,
             query_sequence_order=list(session.sequences)
         )
+
         if intermediate_genes:
-            find_intermediate_hits(session)
+            find_intermediate_genes(session, intermediate_gene_distance)
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -324,7 +335,8 @@ def main():
             ipg_file=args.ipg_file,
             hitlist_size=args.hitlist_size,
             cpus=args.cpus,
-            intermediate_genes=args.intermediate_genes
+            intermediate_genes=args.intermediate_genes,
+            intermediate_gene_distance=args.max_distance
         )
 
     elif args.subcommand == "gui":

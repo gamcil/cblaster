@@ -84,7 +84,7 @@ def query_database_with_ids(ids, database):
 
 
 def query_database_with_names(names, database):
-    """Queries the cblaster SQLite3 database for a collection of gene IDs.
+    """Queries the cblaster SQLite3 database for a collection of gene names.
 
     Args:
         names (list): Names of genes being queried
@@ -100,6 +100,18 @@ def query_database_with_names(names, database):
 
 
 def query_database_for_intermediate_genes(names, start, end, database):
+    """Queries the cblaster SQLite3 database for a collection of intermediate genes.
+
+    These are the genes between start and stop that are not part of the names list
+
+    Args:
+        names (list): a list of names that are part of one cluster
+        start (int): the minimal start a gene can have to be considered intermediate
+        end (int): the maximum end a gene can have to be considered intermediate
+        database (str): Path to SQLite3 database
+    Returns:
+        list: Result tuples returned by the query
+    """
     marks = ", ".join("?" for _ in names)
     query = INTERMEDIATE_GENES_QUERY.format(marks)
     with sqlite3.connect(database) as con:
@@ -108,7 +120,7 @@ def query_database_for_intermediate_genes(names, start, end, database):
 
 
 def diamond_makedb(fasta, name):
-    """Builds a DIAMOND database from JSON.
+    """Builds a DIAMOND database
 
     Args:
         fasta (str): Path to FASTA file containing protein sequences.
