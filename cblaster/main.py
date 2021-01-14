@@ -186,7 +186,7 @@ def cblaster(
 
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
-            sqlite_db = Path(database).with_suffix(".sqlite3")
+            sqlite_db = Path(database[0]).with_suffix(".sqlite3")
             if not sqlite_db.exists():
                 LOG.error("Could not find matching SQlite3 database, exiting")
                 raise SystemExit
