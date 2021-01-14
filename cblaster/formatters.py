@@ -1,9 +1,6 @@
 """cblaster result formatters."""
 
 
-from operator import attrgetter
-
-
 def get_maximum_row_lengths(rows):
     """Finds the longest lengths of fields per column in a collection of rows."""
     lengths, total = [], len(rows[0])
@@ -87,8 +84,8 @@ def binary(
         [
             organism.full_name,
             accession,
-            str(cluster[0].start),
-            str(cluster[-1].end),
+            str(cluster.start),
+            str(cluster.end),
             *[
                 set_decimals(value)
                 for value in get_cell_values(
