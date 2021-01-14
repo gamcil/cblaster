@@ -341,13 +341,6 @@ def add_searching_group(search):
         help="Maximum total hits to save from a remote BLAST search (def. 5000). Setting"
              " this value too low may result in missed hits/clusters."
     )
-    group.add_argument(
-        "-ig",
-        "--intermediate_genes",
-        action="store_true",
-        help="Show genes that in or near clusters but not part of the cluster. "
-             "This takes some extra computation time."
-    )
 
 
 def add_clustering_group(search):
@@ -408,6 +401,25 @@ def add_filtering_group(search):
     )
 
 
+def add_intermediate_genes_group(search):
+    group = search.add_argument_group("Intermediate genes")
+
+    group.add_argument(
+        "-ig",
+        "--intermediate_genes",
+        action="store_true",
+        help="Show genes that in or near clusters but not part of the cluster. "
+             "This takes some extra computation time."
+    )
+    group.add_argument(
+        "-md",
+        "--max_distance",
+        type=int,
+        default=5000,
+        help="The maximum distance between the start/end of a cluster and an intermediate gene (def. 5000)"
+    )
+
+
 def add_search_subparser(subparsers):
     search = subparsers.add_parser(
         "search",
@@ -442,6 +454,7 @@ def add_search_subparser(subparsers):
     add_searching_group(search)
     add_clustering_group(search)
     add_filtering_group(search)
+    add_intermediate_genes_group(search)
 
 
 def add_gne_output_group(parser):

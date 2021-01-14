@@ -10,9 +10,9 @@ MAX_CLUSTER_DISTANCE = 5000
 PROTEIN_NAME_IDENTIFIERS = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
 
 
-def get_local_intermediate_hits(sqlite_db, cluster_hierarchy):
+def get_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
     for cluster, _, _ in cluster_hierarchy:
-        search_start, search_stop = cluster.start - MAX_CLUSTER_DISTANCE, cluster.end + MAX_CLUSTER_DISTANCE
+        search_start, search_stop = cluster.start - gene_distance, cluster.end + gene_distance
         cluster_ids = [subject.name for subject in cluster.subjects]
 
         intermediate_genes = []
@@ -27,15 +27,12 @@ def get_local_intermediate_hits(sqlite_db, cluster_hierarchy):
         cluster.intermediate_genes = intermediate_genes
 
 
-def find_intermediate_hits(session):
+def find_intermediate_genes(session, gene_distance=5000):
     LOG.info("Searching for intermediate genes")
     cluster_hierarchy = extract_cluster_hierarchies(session)
 
     if session.params["mode"] == "local":
         sqlite_db = session.params["sqlite_db"]
-        get_local_intermediate_hits(sqlite_db, cluster_hierarchy)
+        get_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance)
     elif session.params["mode"] == "remote":
         pass
-
-
-
