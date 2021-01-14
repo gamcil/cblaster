@@ -23,6 +23,7 @@ def add_makedb_subparser(subparsers):
         " .sqlite3 and .dmnd, respectively)",
     )
     makedb.add_argument(
+        "-cp",
         "--cpus",
         type=int,
         help="Number of CPUs to use when parsing genome files. By default, all"
@@ -190,7 +191,7 @@ def add_searching_group(search):
         "is required",
     )
     group.add_argument(
-        "-c",
+        "-cp",
         "--cpus",
         type=int,
         help="Number of CPUs to use in local search. By default, all"
