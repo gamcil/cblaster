@@ -111,7 +111,8 @@ def cblaster(
     hitlist_size=None,
     cpus=None,
     intermediate_genes=False,
-    intermediate_gene_distance = 5000
+    intermediate_gene_distance=5000,
+    intermediate_max_clusters=100
 ):
     """Run cblaster.
 
@@ -155,6 +156,9 @@ def cblaster(
         hitlist_size (int): Number of database sequences to keep
         intermediate_gene_distance (int): the maximum allowed distance between the
          edge of a cluster and an intermediate gene.
+        intermediate_max_clusters (int): the maximum amount of clusters for which intermediate
+         genes will be fetched, since this can become expensive for remote searches
+
     Returns:
         Session: cblaster search Session object
     """
@@ -174,6 +178,10 @@ def cblaster(
                 min_hits,
                 require,
             )
+
+            if intermediate_genes:
+                find_intermediate_genes(session, intermediate_gene_distance)
+
             if recompute is not True:
                 LOG.info("Writing recomputed session to %s", recompute)
                 with open(recompute, "w") as fp:
@@ -267,7 +275,7 @@ def cblaster(
             session.params["sqlite_db"] = str(sqlite_db)
 
         if intermediate_genes:
-            find_intermediate_genes(session, intermediate_gene_distance)
+            find_intermediate_genes(session, intermediate_gene_distance, intermediate_max_clusters)
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -373,8 +381,8 @@ def main():
             hitlist_size=args.hitlist_size,
             cpus=args.cpus,
             intermediate_genes=args.intermediate_genes,
-            intermediate_gene_distance = args.max_distance
-
+            intermediate_gene_distance=args.max_distance,
+            intermediate_max_clusters=args.maximum_clusters,
         )
 
     elif args.subcommand == "gui":
@@ -427,6 +435,7 @@ def main():
             organisms=args.organisms,
             scaffolds=args.scaffolds,
             plot_outfile=args.output,
+            max_clusters=args.maximum_clusters,
         )
 
 

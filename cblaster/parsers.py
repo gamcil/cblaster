@@ -15,8 +15,10 @@ NCBI_DATABASES = ("nr", "refseq_protein", "swissprot", "pdbaa")
 
 def full_path(file_path, *acces_modes, dir=False):
     """Test if a file path or directory exists and has the correct permissions and create a full path
+
     For reading acces the file has to be pressent and there has to be read acces. For writing acces the directory with
     the file has to be present and there has to be write acces in that directory.
+
     Args:
         file_path (str): relative or absoluete path to a file
         acces_modes (List): a list of integers of acces modes for which at least one should be allowed
@@ -49,6 +51,7 @@ def full_path(file_path, *acces_modes, dir=False):
 
 def full_database_path(database, *acces_modes):
     """Make sure the database path is also correct, but do not check when providing one of the NCBI databases
+
     Args:
         database (str): a string that is the path to the database creation files or a NCBI database identifier
         acces_modes (List): a list of integers of acces modes for which at least one should be allowed
@@ -417,6 +420,13 @@ def add_intermediate_genes_group(search):
         type=int,
         default=5000,
         help="The maximum distance between the start/end of a cluster and an intermediate gene (def. 5000)"
+    )
+    group.add_argument(
+        "-mic",
+        "--maximum_clusters",
+        type=int,
+        default=100,
+        help="The maximum amount of clusters will get intermediate genes assigned. Ordered on score (def. 100)"
     )
 
 

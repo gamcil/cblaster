@@ -23,9 +23,9 @@ def get_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
         cluster.intermediate_genes = intermediate_genes
 
 
-def find_intermediate_genes(session, gene_distance=5000):
+def find_intermediate_genes(session, gene_distance=5000, max_clusters=100):
     LOG.info("Searching for intermediate genes")
-    cluster_hierarchy = extract_cluster_hierarchies(session)
+    cluster_hierarchy = extract_cluster_hierarchies(session, max_clusters=max_clusters)
 
     if session.params["mode"] == "local":
         sqlite_db = session.params["sqlite_db"]
