@@ -296,7 +296,7 @@ def cblaster(
             decimals=binary_decimals,
         )
 
-    LOG.info("Writing summary to %s", "stdout" if output == sys.stdout or output is None else output)
+    LOG.info("Writing summary to %s", "stdout" if output is None else output)
     session.format(
         "summary",
         fp=open(output, "w") if output else sys.stdout,
