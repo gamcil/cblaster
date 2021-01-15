@@ -19,7 +19,7 @@ def get_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
         for start, end, name, strand in \
                 query_database_for_intermediate_genes(cluster_ids, search_start, search_stop, sqlite_db):
             # generate an empty subject
-            intermediate_genes.append(Subject(name=name, start=start, end=end, strand=strand))
+            intermediate_genes.append(Subject(name=name, start=start, end=end, strand="+" if strand == 1 else "-"))
         cluster.intermediate_genes = intermediate_genes
 
 

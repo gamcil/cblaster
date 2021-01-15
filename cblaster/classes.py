@@ -486,14 +486,26 @@ class Subject(Serializer):
 
     def values(self, decimals=4):
         records = []
-        for hit in self.hits:
-            record = (
-                *hit.values(decimals),
+        if len(self.hits) > 0:
+            for hit in self.hits:
+                record = (
+                    *hit.values(decimals),
+                    str(self.start),
+                    str(self.end),
+                    self.strand,
+                )
+                records.append(record)
+        # when deeling with intermediate genes
+        else:
+            records.append((
+                "intermediate", self.name,
+                "-", "-",
+                "-", "-",
                 str(self.start),
                 str(self.end),
-                self.strand,
-            )
-            records.append(record)
+                self.strand
+            ))
+
         return records
 
     @classmethod
