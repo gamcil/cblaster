@@ -31,7 +31,6 @@ def get_program_path(aliases):
         which = shutil.which(alias)
         if which:
             return which
-    return "D:\\University\\Master\\Thesis\\cblaster\\testing_directory\\diamond.exe"
     raise ValueError(f"Failed to find {aliases} on system $PATH!")
 
 

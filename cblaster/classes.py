@@ -358,12 +358,16 @@ class Cluster(Serializer):
     @property
     def intermediate_start(self):
         """The start of the cluster taking the intermediate genes into account"""
+        if len(self.intermediate_genes) == 0:
+            return self.start
         sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
         return min(sorted_intermediate_genes[0].start, self.start)
 
     @property
     def intermediate_end(self):
         """The end of the cluster taking the intermediate genes into account"""
+        if len(self.intermediate_genes) == 0:
+            return self.end
         sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
         return max(sorted_intermediate_genes[-1].end, self.end)
 

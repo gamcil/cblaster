@@ -110,7 +110,8 @@ def cblaster(
     ipg_file=None,
     hitlist_size=None,
     cpus=None,
-    intermediate_genes=False
+    intermediate_genes=False,
+    intermediate_gene_distance = 5000
 ):
     """Run cblaster.
 
@@ -152,6 +153,8 @@ def cblaster(
         cpus (int): number of cpu's to use when blasting.
         intermediate_genes (bool): Signifies if intermediate genes have to be shown
         hitlist_size (int): Number of database sequences to keep
+        intermediate_gene_distance (int): the maximum allowed distance between the
+         edge of a cluster and an intermediate gene.
     Returns:
         Session: cblaster search Session object
     """
@@ -263,6 +266,9 @@ def cblaster(
         if sqlite_db:
             session.params["sqlite_db"] = str(sqlite_db)
 
+        if intermediate_genes:
+            find_intermediate_genes(session, intermediate_gene_distance)
+
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
             if len(session_file) > 1:
@@ -282,7 +288,7 @@ def cblaster(
             decimals=binary_decimals,
         )
 
-    LOG.info("Writing summary to %s", "stdout" if output == sys.stdout else output)
+    LOG.info("Writing summary to %s", "stdout" if output == sys.stdout or output is None else output)
     session.format(
         "summary",
         fp=open(output, "w") if output else sys.stdout,
@@ -366,7 +372,9 @@ def main():
             ipg_file=args.ipg_file,
             hitlist_size=args.hitlist_size,
             cpus=args.cpus,
-            intermediate_genes=args.intermediate_genes
+            intermediate_genes=args.intermediate_genes,
+            intermediate_gene_distance = args.max_distance
+
         )
 
     elif args.subcommand == "gui":
