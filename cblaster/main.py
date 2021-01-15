@@ -105,7 +105,8 @@ def cblaster(
     hitlist_size=None,
     cpus=None,
     intermediate_genes=False,
-    intermediate_gene_distance=5000
+    intermediate_gene_distance=5000,
+    intermediate_max_clusters=100
 ):
     """Run cblaster.
 
@@ -146,6 +147,8 @@ def cblaster(
         intermediate_genes (bool): Signifies if intermediate genes have to be shown
         intermediate_gene_distance (int): the maximum allowed distance between the
          edge of a cluster and an intermediate gene.
+        intermediate_max_clusters (int): the maximum amount of clusters for which intermediate
+         genes will be fetched, since this can become expensive for remote searches
 
     Returns:
         Session: cblaster search Session object
@@ -250,7 +253,7 @@ def cblaster(
         LOG.info("Found %d clusters in total", sum(len(scaffold.clusters) for organism in session.organisms for
                                                    scaffold in organism.scaffolds.values()))
         if intermediate_genes:
-            find_intermediate_genes(session, intermediate_gene_distance)
+            find_intermediate_genes(session, intermediate_gene_distance, intermediate_max_clusters)
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -338,7 +341,8 @@ def main():
             hitlist_size=args.hitlist_size,
             cpus=args.cpus,
             intermediate_genes=args.intermediate_genes,
-            intermediate_gene_distance=args.max_distance
+            intermediate_gene_distance=args.max_distance,
+            intermediate_max_clusters=args.maximum_clusters,
         )
 
     elif args.subcommand == "gui":
@@ -380,6 +384,7 @@ def main():
             organisms=args.organisms,
             scaffolds=args.scaffolds,
             format_=args.format,
+            max_clusters=args.maximum_clusters,
         )
 
     elif args.subcommand == "plot_clusters":
@@ -390,6 +395,7 @@ def main():
             organisms=args.organisms,
             scaffolds=args.scaffolds,
             plot_outfile=args.output,
+            max_clusters=args.maximum_clusters,
         )
 
 

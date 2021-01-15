@@ -59,7 +59,8 @@ def extract_cluster_hierarchies(
     cluster_numbers=None,
     score_threshold=None,
     organisms=None,
-    scaffolds=None
+    scaffolds=None,
+    max_clusters=50
 ):
     """Filter out selected clusters with their associated scaffold and organism
 
@@ -69,14 +70,17 @@ def extract_cluster_hierarchies(
         score_threshold (float): Minimum score a cluster needs to have in order to be included
         organisms (list): Regex patterns for organisms of which all clusters need to be extracted
         scaffolds (list): Names of scaffolds of which all clusters need to be extracted
+        max_clusters (int): the maximum amount of clusters extracted regardless of filters
     Returns:
-        Set of tuples in the form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
+        List of tuples of in the form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
+        sorted on cluster score
     """
     # no filter options return all clusters
     selected_clusters = set()
     if not cluster_numbers and not score_threshold and not organisms and not scaffolds:
         for organism in session.organisms:
             selected_clusters.update(get_organism_clusters(organism))
+        selected_clusters = sorted(list(selected_clusters), key=lambda x: x[0].score, reverse=True)[:max_clusters]
         return selected_clusters
 
     # prepare the filters defined by the user
@@ -100,6 +104,7 @@ def extract_cluster_hierarchies(
                 if cluster_numbers and cluster.number in cluster_numbers or \
                         (score_threshold and cluster.score >= score_threshold):
                     selected_clusters.add((cluster, scaffold.accession, organism.name))
+    selected_clusters = sorted(list(selected_clusters), key=lambda x: x[0].score, reverse=True)[:max_clusters]
     return selected_clusters
 
 
@@ -349,7 +354,8 @@ def extract_clusters(
     score_threshold=None,
     organisms=None,
     scaffolds=None,
-    format_="genbank"
+    format_="genbank",
+    max_clusters=50
 ):
     """Extract Cluster objects from a Session file and write them to a file in a
     specified format.
@@ -371,6 +377,7 @@ def extract_clusters(
          these organisms are included
         scaffolds(list): clusters on these scaffolds are included
         format_ (str): the format that the extracted cluster should have
+        max_clusters (int): the maximum amount of clusters extracted regardless of filters
     """
     LOG.info("Starting cblaster plotting of clusters using clinker")
     LOG.info("Loading session from: %s", session)
@@ -378,7 +385,8 @@ def extract_clusters(
         session = Session.from_json(fp)
 
     LOG.info("Extracting clusters that match the filters")
-    cluster_hierarchy = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds)
+    cluster_hierarchy = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds,
+                                                    max_clusters)
     LOG.info(f"Extracted {len(cluster_hierarchy)} clusters.")
     if len(cluster_hierarchy) == 0:
         LOG.info("There are no clusters that meet the filtering criteria. Exiting...")

@@ -379,6 +379,13 @@ def add_intermediate_genes_group(search):
         default=5000,
         help="The maximum distance between the start/end of a cluster and an intermediate gene (def. 5000)"
     )
+    group.add_argument(
+        "-mic",
+        "--maximum_clusters",
+        type=int,
+        default=100,
+        help="The maximum amount of clusters will get intermediate genes assigned. Ordered on score (def. 100)"
+    )
 
 
 def add_search_subparser(subparsers):
@@ -615,6 +622,13 @@ def add_extract_clusters_subparser(subparsers):
         help="The format of the resulting files. The options are genbank and bigscape",
         default="genbank"
     )
+    output.add_argument(
+        "-mec",
+        "--maximum_clusters",
+        type=int,
+        default=50,
+        help="The maximum amount of clusters that will be extracted. Ordered on score (def. 50)"
+    )
 
 
 def add_plot_clusters_subparser(subparsers):
@@ -642,7 +656,7 @@ def add_plot_clusters_subparser(subparsers):
         help="cblaster session file"
     )
 
-    filter_parser = parser.add_argument_group("Filters when not using --files")
+    filter_parser = parser.add_argument_group("Filters")
     filter_parser.add_argument(
         "-c",
         "--clusters",
@@ -674,6 +688,13 @@ def add_plot_clusters_subparser(subparsers):
         "--output",
         type=lambda x: full_path(x, os.W_OK),
         help="Location were to store the plot file."
+    )
+    output.add_argument(
+        "-mpc",
+        "--maximum_clusters",
+        type=int,
+        default=50,
+        help="The maximum amount of clusters that will be plotted. Ordered on score (def. 50)"
     )
 
 
