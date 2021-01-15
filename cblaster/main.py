@@ -22,7 +22,7 @@ from cblaster import (
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
-from cblaster.intermediate_genes import find_intermediate_hits
+from cblaster.intermediate_genes import find_intermediate_genes
 
 
 logging.basicConfig(

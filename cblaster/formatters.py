@@ -199,8 +199,8 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
 def summary(session, hide_headers=False, delimiter=None, decimals=4, sort_clusters=False):
     if sort_clusters:
         sorted_clusters = sorted([cluster for organism in session.organisms for
-                                  scaffold in organism.scaffolds.values() for
-                                  cluster in scaffold.clusters], key=lambda x: x.score, reverse=True)
+                                 scaffold in organism.scaffolds.values() for
+                                 cluster in scaffold.clusters], key=lambda x: x.score, reverse=True)
         return _summarise(
             sorted_clusters,
             summarise_cluster,
