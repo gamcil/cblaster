@@ -247,6 +247,8 @@ def cblaster(
             query_sequence_order=list(session.sequences)
         )
 
+        LOG.info("Found %d clusters in total", sum(len(scaffold.clusters) for organism in session.organisms for
+                                                   scaffold in organism.scaffolds.values()))
         if intermediate_genes:
             find_intermediate_genes(session, intermediate_gene_distance)
 
@@ -269,7 +271,7 @@ def cblaster(
             decimals=binary_decimals,
         )
 
-    LOG.info("Writing summary to %s", "stdout" if output == sys.stdout else output)
+    LOG.info("Writing summary to %s", "stdout" if output == sys.stdout or output is None else output)
     session.format(
         "summary",
         fp=open(output, "w") if output else sys.stdout,

@@ -7,7 +7,6 @@ from cblaster.classes import Subject
 
 
 LOG = logging.getLogger(__name__)
-MAX_CLUSTER_DISTANCE = 5000
 PROTEIN_NAME_IDENTIFIERS = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
 
 
