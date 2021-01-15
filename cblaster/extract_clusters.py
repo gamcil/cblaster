@@ -70,7 +70,8 @@ def extract_cluster_hierarchies(
         score_threshold (float): Minimum score a cluster needs to have in order to be included
         organisms (list): Regex patterns for organisms of which all clusters need to be extracted
         scaffolds (list): Names of scaffolds of which all clusters need to be extracted
-        max_clusters (int): the maximum amount of clusters extracted regardless of filters
+        max_clusters (int, None): the maximum amount of clusters extracted regardless of filters. You can set the value to
+        None to extract all clusters
     Returns:
         List of tuples of in the form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
         sorted on cluster score
@@ -118,7 +119,7 @@ def get_organism_clusters(organism):
     """
     selected_clusters = []
     for scaffold in organism.scaffolds.values():
-        selected_clusters.extend(get_scaffold_clusters(scaffold, organism.name))
+        selected_clusters.extend(get_scaffold_clusters(scaffold, organism.full_name))
     return selected_clusters
 
 
