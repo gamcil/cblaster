@@ -88,6 +88,7 @@ def cblaster(
     output_hide_headers=False,
     output_delimiter=None,
     output_decimals=4,
+    output_sort_clusters=False,
     binary=None,
     binary_hide_headers=True,
     binary_delimiter=None,
@@ -128,6 +129,7 @@ def cblaster(
         output_hide_headers (bool): Hide headers in summary table
         output_delimiter (str): Delimiter used in summary table
         output_decimals (int): Total decimal places in hit scores in summary table
+        output_sort_clusters (bool): If the clusters in the final summary table need to sorted
         binary (str): Path to cblaster binary output file
         binary_hide_headers (bool): Hide headers in binary table
         binary_delimiter (str): Delimiter used in binary table
@@ -281,6 +283,7 @@ def cblaster(
         hide_headers=output_hide_headers,
         delimiter=output_delimiter,
         decimals=output_decimals,
+        sort_clusters=output_sort_clusters
     )
 
     if plot:
@@ -325,6 +328,7 @@ def main():
             output_hide_headers=args.output_hide_headers,
             output_delimiter=args.output_delimiter,
             output_decimals=args.output_decimals,
+            output_sort_clusters=args.sort_clusters,
             binary=args.binary,
             binary_hide_headers=args.binary_hide_headers,
             binary_delimiter=args.binary_delimiter,

@@ -155,12 +155,20 @@ def add_output_arguments(group):
         help="Total decimal places to use when printing score values",
         default=4,
     )
+    group.add_argument(
+        "-osc",
+        "--sort_clusters",
+        action="store_true",
+        help="Sorts the clusters of the final output on score. This means that clusters of the same organism are not"
+             " neccesairily close together in the output."
+    )
 
 
 def add_binary_arguments(group):
     group.add_argument(
         "-b",
         "--binary",
+        type=lambda x: full_path(x, os.W_OK),
         help="Generate a binary table.",
     )
     group.add_argument(
