@@ -43,7 +43,7 @@ from cblaster.classes import Organism, Scaffold, Subject
 LOG = logging.getLogger(__name__)
 
 
-def efetch_IPGs(ids, output_handle=None):
+def efetch_IPGs(ids, output_file=None):
     """Queries the Identical Protein Groups (IPG) resource for given IDs.
 
     The NCBI caps Efetch requests at 10000 maximum returned records (retmax=10000)
@@ -52,7 +52,7 @@ def efetch_IPGs(ids, output_handle=None):
 
     Args:
         ids (list): Valid NCBI sequence identifiers.
-        output_handle (file handle): File handle to write to.
+        output_file (str): File to write the ipg table to.
     Returns:
         List of rows from resulting IPG table, split by newline.
     """
@@ -80,9 +80,10 @@ def efetch_IPGs(ids, output_handle=None):
 
         table += response.text
 
-    if output_handle:
-        LOG.info("Writing IPG table to %s", output_handle.name)
-        output_handle.write(table)
+    if output_file:
+        LOG.info("Writing IPG table to %s", output_file)
+        with open(output_file, "w") as f:
+            f.write(table)
 
     return table.split("\n")
 
@@ -522,11 +523,13 @@ def search(
 
     Args:
         hits (list): Collection of Hit objects to find clusters in.
+        sqlite_db (str): path to sqlite database.
         require (list): Names of query sequences that must be represented in a cluster.
         unique (int): Unique query sequence threshold.
         min_hits (int): Minimum number of hits in a hit cluster.
         gap (int): Maximum intergenic distance (bp) between any two hits in a cluster.
         query_sequence_order (list): list of sequences of the order in the query file, is
+        ipg_file (str): file to save the ipg table into.
     Returns:
         Dictionary of Organism objects keyed on species name.
     """
@@ -536,7 +539,7 @@ def search(
     else:
         rows = efetch_IPGs(
             [hit.subject for hit in hits],
-            output_handle=ipg_file
+            output_file=ipg_file
         )
         organisms = parse_IPG_table(rows, hits)
 

@@ -115,7 +115,7 @@ def search(
         sequences (dict): Query sequences
         query_file (str): Path to FASTA file containing query sequences
         query_ids (list): NCBI sequence accessions
-        blast_file (TextIOWrapper): file blast results are written to
+        blast_file (str): Path to the file blast results are written to
     Raises:
         ValueError: No value given for query_file or query_ids
     Returns:
@@ -141,8 +141,9 @@ def search(
     results = parse(table)
 
     if blast_file:
-        LOG.info("Writing DIAMOND hit table to %s", blast_file.name)
-        blast = "\n".join(results)
-        blast_file.write(blast)
+        LOG.info("Writing DIAMOND hit table to %s", blast_file)
+        blast_table = "".join(table)
+        with open(blast_file, "w") as f:
+            f.write(blast_table)
 
     return results

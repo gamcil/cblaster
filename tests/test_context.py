@@ -127,7 +127,7 @@ def test_efetch_IPGs_output(hits, tmp_path):
         test_out = tmp_path / "out.tsv"
 
         with test_out.open("w") as handle:
-            context.efetch_IPGs([hit.subject for hit in hits], output_handle=handle)
+            context.efetch_IPGs([hit.subject for hit in hits], output_file=handle)
 
         assert test_out.read_text() == "test"
 

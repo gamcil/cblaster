@@ -138,6 +138,10 @@ def cblaster(
         indent (int): Total spaces to indent JSON files
         plot (str): Path to cblaster plot HTML file
         recompute (str): Path to recomputed session JSON file
+        blast_file (str): path to file to save blast output
+        ipg_file (str): path to file to save ipg output
+        cpus (int): number of cpu's to use when blasting.
+        hitlist_size (int): Number of database sequences to keep
     Returns:
         Session: cblaster search Session object
     """
@@ -184,6 +188,8 @@ def cblaster(
             session.queries = list(session.sequences)
             session.params["query_file"] = query_file
 
+        sqlite_db = None
+
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
             sqlite_db = Path(database).with_suffix(".sqlite3")
@@ -197,6 +203,7 @@ def cblaster(
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
                 blast_file=blast_file,
+                cpus=cpus,
             )
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
@@ -213,7 +220,6 @@ def cblaster(
                 blast_file=blast_file,
                 hitlist_size=hitlist_size,
             )
-            sqlite_db = None
             session.params["rid"] = rid
 
         if sqlite_db:
