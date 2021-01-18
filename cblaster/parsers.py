@@ -228,13 +228,13 @@ def add_output_group(search):
     )
     group.add_argument(
         "--blast_file",
-        type=argparse.FileType("w"),
+        type=lambda x: full_path(x, os.W_OK),
         help="Save BLAST/DIAMOND hit table to file"
     )
     group.add_argument(
         "--ipg_file",
-        type=argparse.FileType("w"),
-        help="Save IPG table to file"
+        type=lambda x: full_path(x, os.W_OK),
+        help="Save IPG table to file (only if --mode remote)"
     )
 
 
@@ -319,7 +319,7 @@ def add_searching_group(search):
         "--hitlist_size",
         type=int,
         default=5000,
-        help="Maximum total hits to save in a BLAST search (def. 5000). Setting"
+        help="Maximum total hits to save from a remote BLAST search (def. 5000). Setting"
              " this value too low may result in missed hits/clusters."
     )
 

@@ -87,7 +87,7 @@ def binary(
             str(cluster.start),
             str(cluster.end),
             *[
-                set_decimals(value)
+                set_decimals(value, decimals)
                 for value in get_cell_values(
                     session.queries,
                     cluster,
@@ -170,7 +170,7 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
 
     rows = []
 
-    general_information = f"Cluster {cluster.number} with score {cluster.score:.3f}:\n"
+    general_information = f"Cluster {cluster.number} with score {cluster.score:.{decimals}f}:\n"
 
     for subject in cluster:
         values = subject.values(decimals)
