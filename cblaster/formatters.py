@@ -194,18 +194,33 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
     return general_information + "\n".join(delimiter.join(hit) for hit in rows)
 
 
-def summary(session, hide_headers=False, delimiter=None, decimals=4):
-    return _summarise(
-        session.organisms,
-        summarise_organism,
-        "cblaster search",
-        condition_fn=lambda o: o.total_hit_clusters > 0,
-        hide_headers=hide_headers,
-        delimiter=delimiter,
-        decimals=decimals,
-        header_symbol="=",
-        separator="\n\n\n",
-    )
+def summary(session, hide_headers=False, delimiter=None, decimals=4, sort_clusters=False):
+    if sort_clusters:
+        sorted_clusters = sorted([cluster for organism in session.organisms for
+                                  scaffold in organism.scaffolds.values() for
+                                  cluster in scaffold.clusters], key=lambda x: x.score, reverse=True)
+        return _summarise(
+            sorted_clusters,
+            summarise_cluster,
+            "cblaster search (sorted)",
+            hide_headers=hide_headers,
+            delimiter=delimiter,
+            decimals=decimals,
+            header_symbol="=",
+            separator="\n\n\n",
+        )
+    else:
+        return _summarise(
+            session.organisms,
+            summarise_organism,
+            "cblaster search",
+            condition_fn=lambda o: o.total_hit_clusters > 0,
+            hide_headers=hide_headers,
+            delimiter=delimiter,
+            decimals=decimals,
+            header_symbol="=",
+            separator="\n\n\n",
+        )
 
 
 def summarise_gne(data, hide_headers=False, delimiter=None, decimals=4):

@@ -264,7 +264,6 @@ def query_local_DB(hits, db):
     hit_dict = defaultdict(list)
     for hit in hits:
         hit_dict[hit.subject].append(hit)
-    print(list(hit_dict))
     for (
         rowid,
         name,
