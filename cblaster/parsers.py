@@ -3,8 +3,64 @@
 
 import argparse
 import builtins
+from pathlib import Path
+import os
 
 from cblaster import __version__
+
+
+NCBI_DATABASES = ("nr", "refseq_protein", "swissprot", "pdbaa")
+
+
+def full_path(file_path, *acces_modes, dir=False):
+    """Test if a file path or directory exists and has the correct permissions and create a full path
+    For reading acces the file has to be pressent and there has to be read acces. For writing acces the directory with
+    the file has to be present and there has to be write acces in that directory.
+    Args:
+        file_path (str): relative or absoluete path to a file
+        acces_modes (List): a list of integers of acces modes for which at least one should be allowed
+        dir (bool): if the path is to a directory or not
+    Returns:
+        A string that is the full path to the provided file_path
+    Raises:
+        argparse.ArgumentTypeError when the provided path does not exist or the file does not have the correct
+        permissions to be accessed
+    """
+    full_file_path = Path(file_path).absolute().resolve()
+    failed_path = failed_acces = False
+    for acces_mode in acces_modes:
+        if not dir and full_file_path.is_file() or (acces_mode == os.W_OK and full_file_path.parent.is_dir()):
+            if os.access(full_file_path, acces_mode) or \
+                    (acces_mode == os.W_OK and os.access(full_file_path.parent, acces_mode)):
+                return str(full_file_path)
+            else:
+                failed_acces = True
+        elif dir and full_file_path.is_dir():
+            if os.access(full_file_path, acces_mode):
+                return str(full_file_path)
+        else:
+            failed_path = True
+    if failed_path:
+        raise argparse.ArgumentTypeError(f"Invalid path: '{file_path}'.")
+    elif failed_acces:
+        raise argparse.ArgumentTypeError(f"Invalid acces for path: {file_path}.")
+
+
+def full_database_path(database, *acces_modes):
+    """Make sure the database path is also correct, but do not check when providing one of the NCBI databases
+    Args:
+        database (str): a string that is the path to the database creation files or a NCBI database identifier
+        acces_modes (List): a list of integers of acces modes for which at least one should be allowed
+    Returns:
+        a string that is the full path to the database file or a NCBI database identifier
+    """
+    if database not in NCBI_DATABASES:
+        try:
+            return full_path(database, *acces_modes)
+        except argparse.ArgumentTypeError as e:
+            raise type(e)(str(e) + f" Or use one of the following databases {', '.join(NCBI_DATABASES)}"
+                                   f" when running in remote mode")
+    return database
 
 
 def add_makedb_subparser(subparsers):
@@ -14,28 +70,29 @@ def add_makedb_subparser(subparsers):
     )
     makedb.add_argument(
         "paths",
+        type=lambda x: full_path(x, os.R_OK),
         help="Path/s to genome files to use when building local databases",
         nargs="+",
     )
     makedb.add_argument(
         "filename",
         help="Name to use when building JSON/diamond databases (with extensions"
-        " .json and .dmnd, respectively)",
+             " .json and .dmnd, respectively)",
     )
     makedb.add_argument(
         "-c",
         "--cpus",
         type=int,
         help="Number of CPUs to use when parsing genome files. By default, all"
-        " available cores will be used.",
+             " available cores will be used.",
     )
     makedb.add_argument(
         "-b",
         "--batch",
         type=int,
         help="Number of genome files to parse before saving them in the local"
-        " database. Useful when encountering memory issues with large/many"
-        " files. By default, all genome files will be parsed at once."
+             " database. Useful when encountering memory issues with large/many"
+             " files. By default, all genome files will be parsed at once."
     )
     makedb.add_argument(
         "-f",
@@ -58,6 +115,7 @@ def add_input_group(search):
     group.add_argument(
         "-qf",
         "--query_file",
+        type=lambda x: full_path(x, os.R_OK),
         help="Path to FASTA file containing protein sequences to be searched",
     )
     group.add_argument(
@@ -72,6 +130,7 @@ def add_output_arguments(group):
     group.add_argument(
         "-o",
         "--output",
+        type=lambda x: full_path(x, os.W_OK),
         help="Write results to file",
     )
     group.add_argument(
@@ -93,12 +152,20 @@ def add_output_arguments(group):
         help="Total decimal places to use when printing score values",
         default=4,
     )
+    group.add_argument(
+        "-osc",
+        "--sort_clusters",
+        action="store_true",
+        help="Sorts the clusters of the final output on score. This means that clusters of the same organism are not"
+             " neccesairily close together in the output."
+    )
 
 
 def add_binary_arguments(group):
     group.add_argument(
         "-b",
         "--binary",
+        type=lambda x: full_path(x, os.W_OK),
         help="Generate a binary table.",
     )
     group.add_argument(
@@ -147,10 +214,11 @@ def add_output_group(search):
         nargs="?",
         const=True,
         default=False,
+        type=lambda x: full_path(x, os.W_OK),
         help="Generate a cblaster plot. If this argument is specified with no"
-        " file name, the plot will be served using Python's HTTP server. If a"
-        " file name is specified, a static HTML file will be generated at that"
-        " path."
+             " file name, the plot will be served using Python's HTTP server. If a"
+             " file name is specified, a static HTML file will be generated at that"
+             " path."
     )
     group.add_argument(
         "--blast_file",
@@ -177,44 +245,39 @@ def add_searching_group(search):
         "-db",
         "--database",
         default="nr",
+        type=lambda x: full_database_path(x, os.R_OK),
         help="Database to be searched. This should be either a path to a local"
-        " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
-        " database name (def. nr)",
+             " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
+             " database name (def. nr)",
     )
     group.add_argument(
         "-c",
         "--cpus",
         type=int,
         help="Number of CPUs to use in local search. By default, all"
-        " available cores will be used.",
-    )
-    group.add_argument(
-        "-jdb",
-        "--json_db",
-        help="Path to local JSON database created using cblaster makedb. If this"
-        " argument is provided, genomic context will be fetched from this database"
-        " instead of through NCBI IPG.",
+             " available cores will be used.",
     )
     group.add_argument(
         "-eq",
         "--entrez_query",
         help="An NCBI Entrez search term for pre-search filtering of an NCBI database"
-        " when using command line BLASTp (i.e. only used if 'remote' is passed to"
-        ' --mode); e.g. "Aspergillus"[organism]',
+             " when using command line BLASTp (i.e. only used if 'remote' is passed to"
+             ' --mode); e.g. "Aspergillus"[organism]',
     )
     group.add_argument(
         "--rid",
         help="Request Identifier (RID) for a web BLAST search. This is only used"
-        " if 'remote' is passed to --mode. Useful if you have previously run a web BLAST"
-        " search and want to directly retrieve those results instead of running a new"
-        " search.",
+             " if 'remote' is passed to --mode. Useful if you have previously run a web BLAST"
+             " search and want to directly retrieve those results instead of running a new"
+             " search.",
     )
     group.add_argument(
         "-s",
         "--session_file",
         nargs="*",
+        type=lambda x: full_path(x, os.R_OK, os.W_OK),
         help="Load session from JSON. If the specified file does not exist, "
-        "the results of the new search will be saved to this file.",
+             "the results of the new search will be saved to this file.",
     )
     group.add_argument(
         "-rcp",
@@ -222,10 +285,11 @@ def add_searching_group(search):
         nargs="?",
         const=True,
         default=False,
+        type=lambda x: full_path(x, os.W_OK),
         help="Recompute previous search session using new thresholds. The filtered"
-        " session will be written to the file specified by this argument. If this"
-        " argument is specified with no value, the session will be filtered but"
-        " not saved (e.g. for plotting purposes).",
+             " session will be written to the file specified by this argument. If this"
+             " argument is specified with no value, the session will be filtered but"
+             " not saved (e.g. for plotting purposes).",
     )
     group.add_argument(
         "-hs",
@@ -233,7 +297,7 @@ def add_searching_group(search):
         type=int,
         default=5000,
         help="Maximum total hits to save in a BLAST search (def. 5000). Setting"
-        " this value too low may result in missed hits/clusters."
+             " this value too low may result in missed hits/clusters."
     )
 
 
@@ -245,7 +309,7 @@ def add_clustering_group(search):
         type=int,
         default=20000,
         help="Maximum allowed intergenic distance (bp) between conserved hits to"
-        " be considered in the same block (def. 20000)",
+             " be considered in the same block (def. 20000)",
     )
     group.add_argument(
         "-u",
@@ -253,7 +317,7 @@ def add_clustering_group(search):
         type=int,
         default=3,
         help="Minimum number of unique query sequences that must be conserved"
-        " in a hit cluster (def. 3)",
+             " in a hit cluster (def. 3)",
     )
     group.add_argument(
         "-mh",
@@ -301,27 +365,27 @@ def add_search_subparser(subparsers):
         help="Start a local/remote cblaster search",
         description="Remote/local cblaster searches.",
         epilog="Example usage\n-------------\n"
-        "Run a remote cblaster search, save the session and generate a plot:\n"
-        "  $ cblaster search -qf query.fa -s session.json -p\n\n"
-        "Recompute a search session with new parameters:\n"
-        "  $ cblaster search -s session.json -rcp new.json -u 4 -g 40000\n\n"
-        "Merge multiple search sessions:\n"
-        "  $ cblaster search -s one.json two.json three.json -rcp merged.json\n\n"
-        "Perform a local search:\n"
-        "  $ cblaster makedb $(ls folder/*.gbk) mydb\n"
-        "  $ cblaster search -qf query.fa -db mydb.dmnd -jdb mydb.json\n\n"
-        "Save plot as a static HTML file:\n"
-        "  $ cblaster search -s session.json -p gne.html\n\n"
-        "Kitchen sink example:\n"
-        "  $ cblaster search --query_file query.fa \ \n"
-        "      --session_file session.json \ \n"
-        "      --plot my_plot.html \ \n"
-        "      --output summary.csv --output_decimals 2 \ \n"
-        "      --binary abspres.csv --binary_delimiter \",\" \ \n"
-        "      --entrez_query \"Aspergillus\"[orgn] \ \n"
-        "      --max_evalue 0.05 --min_identity 50 --min_coverage 70 \ \n"
-        "      --gap 50000 --unique 2 --min_hits 3 --require Gene1 Gene2\n\n"
-        "Cameron Gilchrist, 2020",
+               "Run a remote cblaster search, save the session and generate a plot:\n"
+               "  $ cblaster search -qf query.fa -s session.json -p\n\n"
+               "Recompute a search session with new parameters:\n"
+               "  $ cblaster search -s session.json -rcp new.json -u 4 -g 40000\n\n"
+               "Merge multiple search sessions:\n"
+               "  $ cblaster search -s one.json two.json three.json -rcp merged.json\n\n"
+               "Perform a local search:\n"
+               "  $ cblaster makedb $(ls folder/*.gbk) mydb\n"
+               "  $ cblaster search -qf query.fa -db mydb.dmnd -jdb mydb.json\n\n"
+               "Save plot as a static HTML file:\n"
+               "  $ cblaster search -s session.json -p gne.html\n\n"
+               "Kitchen sink example:\n"
+               "  $ cblaster search --query_file query.fa \\ \n"
+               "      --session_file session.json \\ \n"
+               "      --plot my_plot.html \\ \n"
+               "      --output summary.csv --output_decimals 2 \\ \n"
+               "      --binary abspres.csv --binary_delimiter \",\" \\ \n"
+               "      --entrez_query \"Aspergillus\"[orgn] \\ \n"
+               "      --max_evalue 0.05 --min_identity 50 --min_coverage 70 \\ \n"
+               "      --gap 50000 --unique 2 --min_hits 3 --require Gene1 Gene2\n\n"
+               "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     add_input_group(search)
@@ -361,8 +425,9 @@ def add_gne_output_group(parser):
     group.add_argument(
         "-p",
         "--plot",
+        type=lambda x: full_path(x, os.W_OK),
         help="GNE plot HTML file. The plot is generated by default;"
-        " this option will just save a static version of it."
+             " this option will just save a static version of it."
     )
 
 
@@ -393,20 +458,24 @@ def add_gne_subparser(subparsers):
         "gne",
         help="Perform gene neighbourhood estimation",
         description="Gene neighbourhood estimation.\n"
-        "Repeatedly recomputes homologue clusters with different --gap values.",
+                    "Repeatedly recomputes homologue clusters with different --gap values.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Example usage\n-------------\n"
-        "Maximum gap value 200Kbp, with 200 evenly distributed gap values:\n"
-        "  $ cblaster gne session.json --max_gap 200000 --samples 200 --scale linear\n\n"
-        "Draw gap values from a log scale (gaps increase as values increase):\n"
-        "  $ cblaster gne session.json --scale log\n\n"
-        "Save delimited tabular output:\n"
-        "  $ cblaster gne session.json --output gne.csv --delimiter \",\"\n\n"
-        "Save plot as a static HTML file:\n"
-        "  $ cblaster gne session.json -p gne.html\n\n"
-        "Cameron Gilchrist, 2020",
+               "Maximum gap value 200Kbp, with 200 evenly distributed gap values:\n"
+               "  $ cblaster gne session.json --max_gap 200000 --samples 200 --scale linear\n\n"
+               "Draw gap values from a log scale (gaps increase as values increase):\n"
+               "  $ cblaster gne session.json --scale log\n\n"
+               "Save delimited tabular output:\n"
+               "  $ cblaster gne session.json --output gne.csv --delimiter \",\"\n\n"
+               "Save plot as a static HTML file:\n"
+               "  $ cblaster gne session.json -p gne.html\n\n"
+               "Cameron Gilchrist, 2020",
     )
-    gne.add_argument("session", help="cblaster session file")
+    gne.add_argument(
+        "session",
+        type=lambda x: full_path(x, os.R_OK),
+        help="cblaster session file"
+    )
     add_gne_params_group(gne)
     add_gne_output_group(gne)
 
@@ -417,15 +486,15 @@ def add_extract_subparser(subparsers):
         help="Extract hit sequences from session files",
         description="Extract information from session files",
         epilog="Example usage\n-------------\n"
-        "Extract names of sequences matching a specific query:\n"
-        "  $ cblaster extract session.json -q \"Query1\"\n\n"
-        "Extract, download from NCBI and write to file in FASTA format:\n"
-        "  $ cblaster extract session.json -q \"Query1\" -d -o output.fasta\n\n"
-        "Extract only from specific organisms (regular expressions):\n"
-        "  $ cblaster extract session.json -or \"Aspergillus.*\" \"Penicillium.*\"\n\n"
-        "Generate delimited table (CSV) of all hits in clusters:\n"
-        "  $ cblaster extract session.json -de \",\"\n\n"
-        "Cameron Gilchrist, 2020",
+               "Extract names of sequences matching a specific query:\n"
+               "  $ cblaster extract session.json -q \"Query1\"\n\n"
+               "Extract, download from NCBI and write to file in FASTA format:\n"
+               "  $ cblaster extract session.json -q \"Query1\" -d -o output.fasta\n\n"
+               "Extract only from specific organisms (regular expressions):\n"
+               "  $ cblaster extract session.json -or \"Aspergillus.*\" \"Penicillium.*\"\n\n"
+               "Generate delimited table (CSV) of all hits in clusters:\n"
+               "  $ cblaster extract session.json -de \",\"\n\n"
+               "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("session", help="cblaster session file")
@@ -458,41 +527,45 @@ def add_extract_clusters_subparser(subparsers):
         help="Extract clusters from a session file in genbank format",
         description="Extract clusters from a session file",
         epilog="Example usage\n-------------\n"
-        "Extract all clusters (carfull this can take a while for a remote session):\n"
-        "  $ cblaster extract_clusters session.json -o example_directory\n\n"
-        "Extract cluster 1 trough 10 and cluster 25 (these numbers can be found in the summary file of the "
-        "'search' command):\n"
-        "  $ cblaster extract_clusters session.json -c 1-10 25 -o example_directory\n\n"
-        "Extract only from a specific organisms (regular expressions):\n"
-        "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o example_directory\n\n"
-        "Extract only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
-        "  $ cblaster extract_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o example_directory\n\n"
-        "Cameron Gilchrist, 2020",
+               "Extract all clusters (carfull this can take a while for a remote session):\n"
+               "  $ cblaster extract_clusters session.json -o example_directory\n\n"
+               "Extract cluster 1 trough 10 and cluster 25 (these numbers can be found in the summary file of the "
+               "'search' command):\n"
+               "  $ cblaster extract_clusters session.json -c 1-10 25 -o example_directory\n\n"
+               "Extract only from a specific organisms (regular expressions):\n"
+               "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o example_directory\n\n"
+               "Extract only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
+               "  $ cblaster extract_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o example_directory\n\n"
+               "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("session", help="cblaster session file")
+    parser.add_argument(
+        "session",
+        type=lambda x: full_path(x, os.R_OK),
+        help="cblaster session file"
+    )
 
-    fil = parser.add_argument_group("Filters")
-    fil.add_argument(
+    filter_parser = parser.add_argument_group("Filters")
+    filter_parser.add_argument(
         "-c",
         "--clusters",
         help="Cluster numbers/ ranges provided by the summary file of the 'search' command.",
         nargs="+"
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-st",
         "--score_threshold",
         help="Minimum score of a cluster to be included",
         type=float
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-or",
         "--organisms",
         help="Organism names (can be regex patterns)",
         nargs="+"
     )
-    fil.add_argument(
-        "-sf",
+    filter_parser.add_argument(
+        "-sc",
         "--scaffolds",
         help="Scaffold names/ranges e.g name:start-stop. Only clusters fully within the range are selected.",
         nargs="+"
@@ -502,6 +575,7 @@ def add_extract_clusters_subparser(subparsers):
     output.add_argument(
         "-o",
         "--output",
+        type=lambda x: full_path(x, os.W_OK, dir=True),
         help="Output directory for the clusters",
         required=True
     )
@@ -518,6 +592,13 @@ def add_extract_clusters_subparser(subparsers):
         help="The format of the resulting files. The options are genbank and bigscape",
         default="genbank"
     )
+    output.add_argument(
+        "-mec",
+        "--maximum_clusters",
+        type=int,
+        default=50,
+        help="The maximum amount of clusters that will be extracted. Ordered on score (def. 50)"
+    )
 
 
 def add_plot_clusters_subparser(subparsers):
@@ -526,52 +607,64 @@ def add_plot_clusters_subparser(subparsers):
         help="Plot clusters using clinker",
         description="Plot clusters of a session",
         epilog="Example usage\n-------------\n"
-        "Minimum working example:\n"
-        " $ cblaster plot_clusters session.json\n\n"
-        "Plot cluster 1 trough 10 and cluster 25 (these numbers can be\n"
-        "found in the summary file of the 'search' command):\n"
-        " $ cblaster plot_clusters session.json -c 1-10 25 -o plot.html\n\n"
-        "Plot only from specific organisms (regular expressions):\n"
-        " $ cblaster plot_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
-        "Plot only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
-        "  $ cblaster plot_clusters session.json -sf scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
-        "Cameron Gilchrist, 2020",
+               "Minimum working example:\n"
+               " $ cblaster plot_clusters session.json\n\n"
+               "Plot cluster 1 trough 10 and cluster 25 (these numbers can be"
+               "found in the summary file of the 'search' command):\n"
+               " $ cblaster plot_clusters session.json -c 1-10 25 -o plot.html\n\n"
+               "Plot only from specific organisms (regular expressions):\n"
+               " $ cblaster plot_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
+               "Plot only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
+               "  $ cblaster plot_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
+               "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.add_argument("session", help="cblaster session file")
+    parser.add_argument(
+        "session",
+        type=lambda x: full_path(x, os.R_OK),
+        help="cblaster session file"
+    )
 
-    fil = parser.add_argument_group("Filters when not using --files")
-    fil.add_argument(
+    filter_parser = parser.add_argument_group("Filters")
+    filter_parser.add_argument(
         "-c",
         "--clusters",
         help="Cluster numbers/ ranges provided by the summary file of the 'search' command.",
         nargs="+"
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-st",
         "--score_threshold",
         help="Minimum score of a cluster to be included",
         type=float
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-or",
         "--organisms",
         help="Organism names",
         nargs="+"
     )
-    fil.add_argument(
+    filter_parser.add_argument(
         "-sc",
         "--scaffolds",
         help="Scaffold names/ranges",
         nargs="+"
     )
 
-    output = parser.add_argument_group("General output options")
+    output = parser.add_argument_group("Output options")
     output.add_argument(
         "-o",
         "--output",
+        type=lambda x: full_path(x, os.W_OK),
         help="Location were to store the plot file."
+    )
+    output.add_argument(
+        "-mpc",
+        "--maximum_clusters",
+        type=int,
+        default=50,
+        help="The maximum amount of clusters that will be plotted. Ordered on score (def. 50)"
     )
 
 
@@ -579,9 +672,9 @@ def get_parser():
     parser = argparse.ArgumentParser(
         "cblaster",
         description="cblaster finds co-located sequence homologues.\n"
-        "Documentation available at https://cblaster.readthedocs.io\n"
-        "Type -h/--help after either subcommand for full description of"
-        " available arguments.",
+                    "Documentation available at https://cblaster.readthedocs.io\n"
+                    "Type -h/--help after either subcommand for full description of"
+                    " available arguments.",
         epilog="Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -617,9 +710,8 @@ def parse_args(args):
         return arguments
 
     if arguments.mode == "remote":
-        valid_dbs = ("nr", "refseq_protein", "swissprot", "pdbaa")
-        if arguments.database not in valid_dbs:
-            parser.error(f"Valid databases are: {', '.join(valid_dbs)}")
+        if arguments.database not in NCBI_DATABASES:
+            parser.error(f"Valid databases are: {', '.join(NCBI_DATABASES)}")
     else:
         for arg in ["entrez_query", "rid"]:
             if getattr(arguments, arg):
