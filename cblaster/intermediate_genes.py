@@ -23,6 +23,10 @@ def get_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
         cluster.intermediate_genes = intermediate_genes
 
 
+def get_remote_intermediate_genes(cluster_hierarchy, gene_distance):
+    pass
+
+
 def find_intermediate_genes(session, gene_distance=5000, max_clusters=100):
     LOG.info("Searching for intermediate genes")
     cluster_hierarchy = extract_cluster_hierarchies(session, max_clusters=max_clusters)
@@ -32,3 +36,5 @@ def find_intermediate_genes(session, gene_distance=5000, max_clusters=100):
         get_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance)
     elif session.params["mode"] == "remote":
         pass
+    else:
+        LOG.warning(f"{session.params['mode']} is not supported for intermediated genes.")
