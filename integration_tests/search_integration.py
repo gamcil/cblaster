@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 
 COUNT = 0
-TOTAL = 4
+TOTAL = 5
 
 
 def run_search_command(command, actual_expected=None):
@@ -19,7 +19,7 @@ def run_search_command(command, actual_expected=None):
     return_code = os.system(command)
     end_time = time.time()
     if return_code != 0:
-        raise SystemExit(f"Test search command '{command}' terminated with non zero exit status")
+        raise SystemExit(f"Command terminated with non zero exit status.")
     print(f"Command finished in {end_time - start_time:.3f} seconds.")
     if actual_expected is None:
         print()
@@ -80,12 +80,21 @@ if __name__ == '__main__':
         run_search_command(command3)
         os.remove(f"{out_dir}{os.sep}session.json")
 
+        # test query identifiers in local mode
+        command4 = f"cblaster -d search -m local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1" \
+                   f" AEK75502.1 -o {out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database.dmnd -ohh " \
+                   f"-ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                   f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
+                   f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
+        run_search_command(command4)
+        os.remove(f"{out_dir}{os.sep}session.json")
+
         # test local session with all options enabled
-        command4 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb " \
+        command5 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb " \
                    f"-s {test_file_dir}{os.sep}test_session_embl.json {test_file_dir}{os.sep}test_session_gbk.json " \
                    f"-db {test_file_dir}{os.sep}test_database.dmnd -o {out_dir}{os.sep}summary.txt"
         actual_vs_expected_files = [["summary.txt", "summary_local_session_combined.txt"]]
-        run_search_command(command4, actual_vs_expected_files)
+        run_search_command(command5, actual_vs_expected_files)
 
     # make sure to always remove the dir even on error
     finally:
