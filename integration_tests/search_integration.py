@@ -49,8 +49,9 @@ if __name__ == '__main__':
     comparrison_file_dir = current_dir + os.sep + "comparisson_files"
     os.chdir(current_dir)
 
-    # LOCAL TESTS
     try:
+    # LOCAL TESTS
+
         # test gbk query in local mode with all options enabled
         command1 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb -o " \
                    f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database.dmnd -ohh -ode , -odc 2 " \
@@ -95,6 +96,14 @@ if __name__ == '__main__':
                    f"-db {test_file_dir}{os.sep}test_database.dmnd -o {out_dir}{os.sep}summary.txt"
         actual_vs_expected_files = [["summary.txt", "summary_local_session_combined.txt"]]
         run_search_command(command5, actual_vs_expected_files)
+
+    # REMOTE TESTS
+    #     command3 = f"cblaster -d search -m remote -qf {test_file_dir}{os.sep}test_query.gb -o " \
+    #                f"summary.txt --rid 0FS9YDM6016 -b binary.txt" \
+    #                f" --blast_file blast.txt --ipg_file ipgs.txt " \
+    #                f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s session.json"
+    #     run_search_command(command3)
+    #     os.remove(f"{out_dir}{os.sep}session.json")
 
     # make sure to always remove the dir even on error
     finally:
