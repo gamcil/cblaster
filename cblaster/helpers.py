@@ -27,6 +27,7 @@ def get_program_path(aliases):
         which = shutil.which(alias)
         if which:
             return which
+    return "D:\\University\\Master\\Thesis\\cblaster\\testing_directory\\diamond.exe"
     raise ValueError(f"Failed to find {aliases} on system $PATH!")
 
 
@@ -84,7 +85,7 @@ def efetch_sequences(headers):
     LOG.info("Querying NCBI for sequences of: %s", headers)
     response = efetch_sequences_request(headers)
     records = gp.parse_fasta_str(response.text)
-    return {r.id: r.seq for r in records}
+    return {r.id: str(r.seq) for r in records}
 
 
 def sequences_to_fasta(sequences):
