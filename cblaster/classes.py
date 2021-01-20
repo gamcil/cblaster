@@ -7,6 +7,7 @@ This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 import re
 import json
 import itertools
+from abc import ABC, abstractmethod
 from clinker.classes import (
     Cluster as ClinkerCluster,
     Locus as ClinkerLocus,
@@ -21,18 +22,20 @@ from cblaster.formatters import (
 )
 
 
-class Serializer:
+class Serializer(ABC):
     """JSON serialisation mixin class.
 
     Classes that inherit from this class should implement `to_dict` and
     `from_dict` methods.
     """
 
+    @abstractmethod
     def to_dict(self):
         """Serialises class to dict."""
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_dict(self, d):
         """Loads class from dict."""
         raise NotImplementedError
