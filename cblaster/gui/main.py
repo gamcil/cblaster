@@ -1,7 +1,7 @@
 """A basic GUI for cblaster."""
 
-import sys
-import builtins
+import os
+import subprocess
 
 import PySimpleGUI as sg
 
@@ -40,13 +40,13 @@ def run_cblaster(values):
             query_ids=values["query_ids"],
             session_file=values["session_file"],
             mode=values["search_mode"],
-            gap=int(values["gap"]),
-            unique=int(values["unique"]),
-            min_hits=int(values["min_hits"]),
+            gap=values["gap"],
+            unique=values["unique"],
+            min_hits=values["min_hits"],
             require=values["require"],
-            min_identity=float(values["min_identity"]),
-            min_coverage=float(values["min_coverage"]),
-            max_evalue=float(values["max_evalue"]),
+            min_identity=values["min_identity"],
+            min_coverage=values["min_coverage"],
+            max_evalue=values["max_evalue"],
             recompute=values["recompute"],
         )
 
@@ -63,13 +63,11 @@ def run_cblaster(values):
             )
 
         if values["summary_gen"]:
-            summary = None
 
             if values["summary_text"]:
-                summary = values["summary_text"]
+                args["output"] = values["summary_text"]
 
             args.update(
-                output=summary,
                 output_decimals=values["summary_decimals"],
                 output_delimiter=values["summary_delimiter"],
                 output_hide_headers=values["summary_hide_headers"]
@@ -82,7 +80,7 @@ def run_cblaster(values):
                 binary_hide_headers=values["binary_hide_headers"],
                 binary_decimals=values["binary_decimals"],
                 binary_attr=values["binary_attr"],
-                binary_key=getattr(builtins, values["binary_key"]),
+                binary_key=values["binary_key"],
             )
 
         if values["figure_gen"]:
@@ -94,7 +92,7 @@ def run_cblaster(values):
             if isinstance(value, str) and value.startswith("e.g."):
                 args[arg] = ""
 
-        main.cblaster(**args)
+        run_cblaster_command(values["cblaster_tabs"], args)
 
     elif values["cblaster_tabs"] == "Makedb":
         main.makedb(
@@ -128,59 +126,71 @@ def run_cblaster(values):
         raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood' or 'Extract'")
 
 
-def cblaster_gui():
-    layout = [
-        [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
-        [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
-        [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
-        [sg.TabGroup([
-            [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
-            [sg.Tab("Neighbourhood", [[Column(gne.layout)]])],
-            [sg.Tab("Makedb", [[Column(makedb.layout)]])],
-            [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
-            [sg.Tab("Citation", [[Column(citation.layout)]])],
-        ], enable_events=True, key="cblaster_tabs"
-        )],
-        [sg.Button("Start", key="start_button", button_color=["white", "green"]),
-         sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
-    ]
+main_gui_layout = [
+    [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
+    [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
+    [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+    [sg.TabGroup([
+        [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
+        [sg.Tab("Neighbourhood", [[Column(gne.layout)]])],
+        [sg.Tab("Makedb", [[Column(makedb.layout)]])],
+        [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
+        [sg.Tab("Citation", [[Column(citation.layout)]])],
+    ], enable_events=True, key="cblaster_tabs"
+    )],
+    [sg.Button("Start", key="start_button", button_color=["white", "green"]),
+     sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
+]
 
-    window = sg.Window(
+
+def cblaster_gui():
+
+    main_window = sg.Window(
         "cblaster",
-        layout,
+        main_gui_layout,
         size=(600, 660),
         element_padding=(5, 5),
         element_justification="center",
         finalize=True
     )
-
     while True:
-        event, values = window.read()
+        event, values = main_window.read()
 
         if event in (None, "exit_button"):
             break
 
         # Disable binary & summary table, figure options if not enabled
         for key in ("browse", "text", "delimiter", "decimals", "hide_headers", "key", "attr"):
-            window[f"binary_{key}"].update(disabled=not values["binary_gen"])
+            main_window[f"binary_{key}"].update(disabled=not values["binary_gen"])
 
         for key in ("browse", "text", "decimals", "hide_headers", "delimiter"):
-            window[f"summary_{key}"].update(disabled=not values["summary_gen"])
+            main_window[f"summary_{key}"].update(disabled=not values["summary_gen"])
 
         for key in ("browse", "text"):
-            window[f"figure_{key}"].update(disabled=not values["figure_gen"])
+            main_window[f"figure_{key}"].update(disabled=not values["figure_gen"])
 
         # Disable start button when on citation tab
-        window["start_button"].update(
+        main_window["start_button"].update(
             disabled=values["cblaster_tabs"]
             not in ("Search", "Makedb", "Neighbourhood")
         )
 
-        if event:
-            if event == "start_button":
-                run_cblaster(values)
+        if event == "start_button":
+            run_cblaster(values)
 
-    window.close()
+    main_window.close()
+
+
+def run_cblaster_command(subcommand, arguments):
+    command = f"cblaster {subcommand.lower()}"
+    for key, value in arguments.items():
+        if value in ["", False]:
+            continue
+        elif value is True:
+            command += f" --{key}"
+        else:
+            command += f" --{key} {value}"
+    os.system(command)
 
 
 if __name__ == "__main__":
