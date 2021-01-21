@@ -38,6 +38,8 @@ def run_cblaster(values):
         args = dict(
             query_file=values["query_file"],
             query_ids=values["query_ids"],
+            query_profiles=values["query_profiles"].split(" "),
+
             session_file=values["session_file"],
             mode=values["search_mode"],
             gap=int(values["gap"]),
@@ -52,14 +54,32 @@ def run_cblaster(values):
 
         if values["search_mode"] == "remote":
             args.update(
-                database=values["database"],
+                database=[values["database"]],
                 entrez_query=values["entrez_query"],
                 rid=values["rid"]
             )
-        else:
+        elif values["search_mode"] == "local":
             args.update(
-                database=values["dmnd_database"],
+                database=[values["dmnd_database"]],
                 cpus=values["cpus"]
+            )
+        elif values["search_mode"] == "hmm":
+            args.update(
+                database=[values["fa database"]],
+                database_pfam=values["pfam database"]
+            )
+        elif values["search_mode"] == "combi_local":
+            args.update(
+                database=[values["fa database cl"], values["dmnd_database cl"]],
+                database_pfam=values["pfam database cl"],
+                cpus=values["cpus cl"]
+            )
+        elif values["search_mode"] == "combi_remote":
+            args.update(
+                database=[values["fa database cr"], values["database cr"]],
+                database_pfam=values["pfam database cr"],
+                entrez_query=values["entrez_query cr"],
+                rid=values["rid cr"]
             )
 
         if values["summary_gen"]:
