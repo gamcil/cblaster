@@ -29,7 +29,71 @@ remote_tab = sg.Tab("Remote", [
      sg.InputText(key="rid")],
 ], key="remote")
 
-search_tabgroup = sg.TabGroup([[remote_tab], [local_tab]], key="search_mode")
+hmm_tab = sg.Tab("Hmm", [
+    [TextLabel("FASTA Database"),
+     sg.InputText(
+         default_text="e.g cblaster.fasta",
+         key="fa database"
+     ),
+     sg.FileBrowse(key="fa database")],
+    [TextLabel("Pfam database"),
+     sg.InputText(
+         default_text='directory with \'Pfam-A.hmm.dat.gz\' in it',
+         key="pfam database"
+     ),
+     sg.FolderBrowse(key="pfam database")],
+], key="hmm")
+
+combi_local_tab = sg.Tab("Hmm and Local", [
+    [TextLabel("FASTA Database"),
+     sg.InputText(
+         default_text="e.g cblaster.fasta",
+         key="fa database cl"
+     ),
+     sg.FileBrowse(key="fa database cl")],
+    [TextLabel("Pfam database"),
+     sg.InputText(
+         default_text='directory with \'Pfam-A.hmm.dat.gz\' in it',
+         key="pfam database cl"
+     ),
+     sg.FolderBrowse(key="pfam database cl")],
+    [TextLabel("DIAMOND database"),
+     sg.InputText(
+         default_text="e.g. cblaster.dmnd",
+         size=(34, 1),
+         key="dmnd_database cl"
+     ),
+     sg.FileBrowse(key="dmnd_database cl")],
+    [TextLabel("Number of CPUs"),
+     sg.InputText(default_text="1", key="cpus cl")],
+], key="combi_local")
+
+combi_remote_tab = sg.Tab("Hmm and remote", [
+    [TextLabel("FASTA Database"),
+     sg.InputText(
+         default_text="e.g cblaster.fasta",
+         key="fa database cr"
+     ),
+     sg.FileBrowse(key="fa database cr")],
+    [TextLabel("Pfam database"),
+     sg.InputText(
+         default_text='e.g. directory with \'Pfam-A.hmm.dat.gz\' in it',
+         key="pfam database cr"
+     ),
+     sg.FolderBrowse(key="pfam database cr")],
+    [TextLabel("Database"),
+     sg.InputText(default_text="e.g. nr", key="database cr")],
+    [TextLabel("Entrez query"),
+     sg.InputText(
+         default_text='e.g. "Aspergillus"[organism]',
+         key="entrez_query cr"
+     )],
+    [TextLabel("Request Identifier (RID)"),
+     sg.InputText(key="rid cr")],
+], key="combi_remote")
+
+search_tabgroup = sg.TabGroup([[remote_tab], [local_tab], [hmm_tab], [combi_local_tab], [combi_remote_tab]],
+                              key="search_mode")
 
 search_frame = Frame(
     "Search",
@@ -39,8 +103,11 @@ search_frame = Frame(
             "Specify the search mode and databases to be used in the cblaster run."
             " In remote mode, the database value should correspond to a BLAST"
             " database hosted by the NCBI. In local mode, the database arguments"
-            " should refer to files generated using cblaster makedb.",
-            size=(71, 4))],
+            " should refer to files generated using cblaster makedb. When using any"
+            " of the hmm modes a local pfam databse will be saved at the given "
+            "location or extracted from there. The fasta database should refer to "
+            "the fasta file generated using cblaster makedb.",
+            size=(75, 7))],
         [search_tabgroup]
     ]
 )
@@ -52,15 +119,17 @@ input_frame = Frame(
         [sg.Text(
             "Specify the protein sequences that you want to search. These can"
             " be provided by either using a FASTA file or entering the NCBI"
-            " accessions of sequences. Alternatively, a session file generated"
-            " in a previous cblaster run can be loaded so that you do not have"
-            " to repeat a search.",
-            size=(71, 4),
+            " accessions of sequences. When running any of the HMM at least "
+            "one HMM profiles has to be defined. Alternatively, a session file"
+            " generated in a previous cblaster run can be loaded so that you "
+            "do not have to repeat a search.",
+            size=(71, 5),
         )],
         [TextLabel("File"),
          sg.InputText(size=(34, 1), key="query_file"),
          sg.FileBrowse(key="query_file")],
-        [TextLabel("Sequence IDs"), sg.InputText(key="query_ids")],
+        [TextLabel("Sequence IDs"), sg.InputText(key="query_ids", default_text="e.g. space separated values")],
+        [TextLabel("HMM profiles"), sg.InputText(key="query_profiles", default_text="e.g. space separated values")],
         [TextLabel("Session file"),
          sg.InputText(size=(34, 1), key="session_file"),
          sg.FileBrowse(key="session_file")],
