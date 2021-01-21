@@ -8,7 +8,7 @@ from queue import Queue, Empty
 import PySimpleGUI as sg
 
 from cblaster import __version__
-from cblaster.gui import search, makedb, citation, gne, extract, extract_clusters
+from cblaster.gui import search, makedb, citation, gne, extract, extract_clusters, plot_clusters
 
 
 sg.theme("Lightgrey1")
@@ -132,15 +132,27 @@ def run_cblaster(values, textbox):
             output=values["extract_clusters_output"],
             prefix=values["prefix"],
             format=values["output format"],
-            maximum_clusters=values["max clusters"],
-            clusters=values["clusters"],
-            score_threshold=values["score threshold"],
+            maximum_clusters=values["max clusters ec"],
+            clusters=values["clusters ec"],
+            score_threshold=values["score threshold ec"],
             organisms=values["organisms ec"],
             scaffolds=values["scaffolds ec"],
         )
         subcommand = "extract_clusters"
+    elif values["cblaster_tabs"] == "Plot Clusters":
+        args = dict(
+            blank1=values["plot_clusters_session"],
+            output=values["plot_clusters_output"],
+            maximum_clusters=values["max clusters pc"],
+            clusters=values["clusters pc"],
+            score_threshold=values["score threshold pc"],
+            organisms=values["organisms pc"],
+            scaffolds=values["scaffolds pc"],
+        )
+        subcommand = "plot_clusters"
     else:
-        raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood' or 'Extract'")
+        raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood', 'Extract', 'Extract Clusters' or"
+                         " 'Plot Clusters'")
 
     return create_cblaster_command(subcommand, args, textbox)
 
@@ -155,6 +167,7 @@ main_gui_layout = [
         [sg.Tab("Makedb", [[Column(makedb.layout)]])],
         [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
         [sg.Tab("Extract Clusters", [[Column(extract_clusters.layout, scrollable=True)]])],
+        [sg.Tab("Plot Clusters", [[Column(plot_clusters.layout, scrollable=True)]])],
         [sg.Tab("Citation", [[Column(citation.layout)]])],
     ], enable_events=True, key="cblaster_tabs"
     )],
@@ -194,7 +207,7 @@ def cblaster_gui():
         # Disable start button when on citation tab
         main_window["start_button"].update(
             disabled=values["cblaster_tabs"]
-            not in ("Search", "Makedb", "Neighbourhood", "Extract", "Extract Clusters")
+            not in ("Search", "Makedb", "Neighbourhood", "Extract", "Extract Clusters", "Plot Clusters")
         )
 
         if event == "start_button":
@@ -220,7 +233,7 @@ def create_command_window():
         [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
         [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
         [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
-        [sg.Multiline(key="textbox", size=(500, 20), disabled=True)],
+        [sg.Multiline(default_text="Welcome to cblaster", key="textbox", size=(500, 20), disabled=True)],
         [sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
     ]
     command_window = sg.Window(
@@ -255,11 +268,6 @@ class CommandThread(Thread):
         t.daemon = True  # thread dies with the program
         t.start()
         while popen.poll() is None:
-            if self.__finished.is_set():
-                # make sure to terminate before any of these possible calls is made to prevent error
-                popen.kill()
-                popen.wait()
-                return
             try:
                 line = self.stderr_queue.get_nowait()  # or q.get(timeout=.1)
             except Empty:
@@ -268,6 +276,10 @@ class CommandThread(Thread):
                 # prevent double newlines
                 str_line = line.decode("utf-8").replace(os.linesep, "")
                 self.textbox.update(self.textbox.get() + str_line)
+            if self.__finished.is_set():
+                popen.kill()
+                popen.wait()
+                return
 
         # make sure to call communicate to properly finish process
         output, error = popen.communicate()
