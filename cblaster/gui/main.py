@@ -1,6 +1,7 @@
 """A basic GUI for cblaster."""
 
 import os
+from threading import Thread
 import subprocess
 
 import PySimpleGUI as sg
@@ -22,7 +23,7 @@ def Column(layout, scrollable=False):
     )
 
 
-def run_cblaster(values):
+def run_cblaster(values, textbox):
     """Handles conversion of PySimpleGUI values to cblaster parameters.
 
     - Know which workflow tab we're on (search or makedb)
@@ -111,10 +112,10 @@ def run_cblaster(values):
             if isinstance(value, str) and value.startswith("e.g."):
                 args[arg] = ""
 
-        run_cblaster_command(values["cblaster_tabs"], args)
+        return create_cblaster_command(values["cblaster_tabs"], args, textbox)
 
     elif values["cblaster_tabs"] == "Makedb":
-        main.makedb(
+        args = dict(
             genbanks=values["makedb_genbanks"].split(";"),
             filename=values["makedb_filename"],
             indent=values["json_indent"]
@@ -172,6 +173,8 @@ def cblaster_gui():
         element_justification="center",
         finalize=True
     )
+    command_thread = None
+    command_window = None
     while True:
         event, values = main_window.read()
 
@@ -195,12 +198,67 @@ def cblaster_gui():
         )
 
         if event == "start_button":
-            run_cblaster(values)
+            main_window["start_button"].update(disabled=True)
+            command_window = create_command_window()
+            command_thread = run_cblaster(values, command_window["textbox"])
+            command_thread.start()
+        if command_window is not None:
+            event2, values2 = command_window.read()
+            if event2 in (None, "exit_button"):
+                if not command_thread.finished:
+                    command_thread.finished = True
+                command_window.close()
+                command_window = None
+                main_window["start_button"].update(disabled=False)
 
     main_window.close()
 
 
-def run_cblaster_command(subcommand, arguments):
+def create_command_window():
+    command_gui_layout = [
+        [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
+        [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
+        [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+        [sg.Multiline(key="textbox", size=(500, 20), disabled=True)],
+        [sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
+    ]
+    command_window = sg.Window(
+        "cblaster command",
+        command_gui_layout,
+        size=(500, 560),
+        element_padding=(5, 5),
+        element_justification="center",
+        finalize=True
+    )
+    return command_window
+
+
+class CommandThread(Thread):
+
+    def __init__(self, command, textbox):
+        super().__init__()
+        self.command = command
+        self.textbox = textbox
+        self.finished = False
+
+    def run(self):
+        popen = subprocess.Popen(self.command, stderr=subprocess.PIPE)
+
+        err_lines_iterator = iter(popen.stderr.readline, b"")
+        while popen.poll() is None:
+            for line in err_lines_iterator:
+                # prevent double newlines
+                str_line = line.decode("utf-8").replace(os.linesep, "")
+                self.textbox.update(self.textbox.get() + str_line)
+            if self.finished:
+                popen.terminate()
+                break
+        # make sure to call communicate to properly finish process
+        output, error = popen.communicate()
+        self.finished = True
+
+
+def create_cblaster_command(subcommand, arguments, textbox):
     command = f"cblaster {subcommand.lower()}"
     for key, value in arguments.items():
         if value in ["", False]:
@@ -209,7 +267,7 @@ def run_cblaster_command(subcommand, arguments):
             command += f" --{key}"
         else:
             command += f" --{key} {value}"
-    os.system(command)
+    return CommandThread(command, textbox)
 
 
 if __name__ == "__main__":
