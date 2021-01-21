@@ -1,14 +1,15 @@
 """A basic GUI for cblaster."""
 
 import os
-from threading import Thread
+from threading import Thread, Event
 import subprocess
+from queue import Queue, Empty
 
 import PySimpleGUI as sg
 
 from cblaster import __version__
 from cblaster import main, extract as cb_extract
-from cblaster.gui import search, makedb, citation, gne, extract
+from cblaster.gui import search, makedb, citation, gne, extract, extract_clusters
 
 
 sg.theme("Lightgrey1")
@@ -145,6 +146,19 @@ def run_cblaster(values, textbox):
             scaffolds=values["scaffolds"],
         )
         subcommand = values["cblaster_tabs"]
+    elif values["cblaster_tabs"] == "Extract Clusters":
+        args = dict(
+            blank1=values["extract_clusters_session"],
+            output=values["extract_clusters_output"],
+            prefix=values["prefix"],
+            format=values["output format"],
+            maximum_clusters=values["max clusters"],
+            clusters=values["clusters"],
+            score_threshold=values["score threshold"],
+            organisms=values["organisms ec"],
+            scaffolds=values["scaffolds ec"],
+        )
+        subcommand = "extract_clusters"
     else:
         raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood' or 'Extract'")
 
@@ -160,6 +174,7 @@ main_gui_layout = [
         [sg.Tab("Neighbourhood", [[Column(gne.layout)]])],
         [sg.Tab("Makedb", [[Column(makedb.layout)]])],
         [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
+        [sg.Tab("Extract Clusters", [[Column(extract_clusters.layout, scrollable=True)]])],
         [sg.Tab("Citation", [[Column(citation.layout)]])],
     ], enable_events=True, key="cblaster_tabs"
     )],
@@ -199,7 +214,7 @@ def cblaster_gui():
         # Disable start button when on citation tab
         main_window["start_button"].update(
             disabled=values["cblaster_tabs"]
-            not in ("Search", "Makedb", "Neighbourhood", "Extract")
+            not in ("Search", "Makedb", "Neighbourhood", "Extract", "Extract Clusters")
         )
 
         if event == "start_button":
@@ -210,8 +225,9 @@ def cblaster_gui():
         if command_window is not None:
             event2, values2 = command_window.read()
             if event2 in (None, "exit_button"):
-                if not command_thread.finished:
-                    command_thread.finished = True
+                if not command_thread.is_finished():
+                    command_thread.stop()
+                    command_thread.join()
                 command_window.close()
                 command_window = None
                 main_window["start_button"].update(disabled=False)
@@ -241,26 +257,47 @@ def create_command_window():
 class CommandThread(Thread):
 
     def __init__(self, command, textbox):
-        super().__init__()
+        super().__init__(daemon=True)
         self.command = command
         self.textbox = textbox
-        self.finished = False
+        self.stderr_queue = Queue()
+        self.__finished = Event()
+
+    def enqueue_output(self, out, queue):
+        for line in iter(out.readline, b''):
+            queue.put(line)
 
     def run(self):
-        popen = subprocess.Popen(self.command, stderr=subprocess.PIPE)
+        popen = subprocess.Popen(self.command, shell=False, stderr=subprocess.PIPE)
 
-        err_lines_iterator = iter(popen.stderr.readline, b"")
+        # this thread is neccesairy to be able to read stderr while also being able to terminate the subprocess
+        t = Thread(target=self.enqueue_output, args=(popen.stderr, self.stderr_queue))
+        t.daemon = True  # thread dies with the program
+        t.start()
         while popen.poll() is None:
-            for line in err_lines_iterator:
+            if self.__finished.is_set():
+                # make sure to terminate before any of these possible calls is made to prevent error
+                popen.kill()
+                popen.wait()
+                return
+            try:
+                line = self.stderr_queue.get_nowait()  # or q.get(timeout=.1)
+            except Empty:
+                continue
+            else:  # got line
                 # prevent double newlines
                 str_line = line.decode("utf-8").replace(os.linesep, "")
                 self.textbox.update(self.textbox.get() + str_line)
-            if self.finished:
-                popen.terminate()
-                break
+
         # make sure to call communicate to properly finish process
         output, error = popen.communicate()
-        self.finished = True
+        self.__finished.set()
+
+    def stop(self):
+        self.__finished.set()
+
+    def is_finished(self):
+        return self.__finished.is_set()
 
 
 def create_cblaster_command(subcommand, arguments, textbox):
