@@ -111,29 +111,31 @@ def run_cblaster(values, textbox):
         for arg, value in args.items():
             if isinstance(value, str) and value.startswith("e.g."):
                 args[arg] = ""
-
-        return create_cblaster_command(values["cblaster_tabs"], args, textbox)
+        subcommand = values["cblaster_tabs"]
 
     elif values["cblaster_tabs"] == "Makedb":
+        # TODO add all possible values
         args = dict(
-            genbanks=values["makedb_genbanks"].split(";"),
-            filename=values["makedb_filename"],
+            blank1=" ".join(values["makedb_genbanks"].split(";")),
+            name=values["makedb_filename"],
             indent=values["json_indent"]
         )
+        subcommand = values["cblaster_tabs"]
 
     elif values["cblaster_tabs"] == "Neighbourhood":
-        main.gne(
-            session=values["session"],
-            output=values["output"],
+        # TODO add all possible values
+        args = dict(
+            blank1=values["session"],
             max_gap=int(values["max_gap"]),
             samples=int(values["samples"]),
             scale=values["scale"],
+            output=values["output"],
         )
+        subcommand = "gne"
 
     elif values["cblaster_tabs"] == "Extract":
-        cb_extract.extract(
-            values["extract_session"],
-            in_cluster=values["in_cluster"],
+        args = dict(
+            blank1=values["extract_session"],
             delimiter=values["delimiter"],
             name_only=values["name_only"],
             download=values["download"],
@@ -142,8 +144,11 @@ def run_cblaster(values, textbox):
             organisms=values["organisms"],
             scaffolds=values["scaffolds"],
         )
+        subcommand = values["cblaster_tabs"]
     else:
         raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood' or 'Extract'")
+
+    return create_cblaster_command(subcommand, args, textbox)
 
 
 main_gui_layout = [
@@ -194,7 +199,7 @@ def cblaster_gui():
         # Disable start button when on citation tab
         main_window["start_button"].update(
             disabled=values["cblaster_tabs"]
-            not in ("Search", "Makedb", "Neighbourhood")
+            not in ("Search", "Makedb", "Neighbourhood", "Extract")
         )
 
         if event == "start_button":
@@ -265,6 +270,8 @@ def create_cblaster_command(subcommand, arguments, textbox):
             continue
         elif value is True:
             command += f" --{key}"
+        elif "blank" in key:
+            command += f" {value}"
         else:
             command += f" --{key} {value}"
     return CommandThread(command, textbox)
