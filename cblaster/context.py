@@ -114,7 +114,8 @@ def parse_IP_groups(results):
     Entry = namedtuple("Entry", fields)
     groups = defaultdict(list)
     for line in results:
-        if not line or line.startswith("Id\tSource") or line.isspace():
+        if not line or line.startswith("Id\tSource") or line.isspace() \
+                or "skipping" in line:
             continue
         ipg, *fields = line.strip("\n").split("\t")
         entry = Entry(*fields)
