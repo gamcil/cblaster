@@ -8,7 +8,6 @@ from queue import Queue, Empty
 import PySimpleGUI as sg
 
 from cblaster import __version__
-from cblaster import main, extract as cb_extract
 from cblaster.gui import search, makedb, citation, gne, extract, extract_clusters
 
 
