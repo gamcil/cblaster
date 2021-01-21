@@ -184,6 +184,9 @@ def cblaster(
             session.queries = list(session.sequences)
             session.params["query_file"] = query_file
 
+        sqlite_db = None
+        session.params["rid"] = rid
+
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
             sqlite_db = Path(database[0]).with_suffix(".sqlite3")
@@ -213,11 +216,6 @@ def cblaster(
                 blast_file=blast_file,
                 hitlist_size=hitlist_size,
             )
-            sqlite_db = None
-            session.params["rid"] = rid
-
-        if sqlite_db:
-            session.params["sqlite_db"] = sqlite_db
 
         elif mode == "hmm":
             results = hmmer.preform_hmmer(
@@ -247,6 +245,7 @@ def cblaster(
                 query_profiles=query_profiles,
                 database_pfam=database_pfam,
             )
+
             if entrez_query:
                 session.params["entrez_query"] = entrez_query
             rid, results_blast = remote.search(
@@ -261,6 +260,9 @@ def cblaster(
                 hitlist_size=hitlist_size,
             )
             results = results_blast + results_hmm
+
+        if sqlite_db:
+            session.params["sqlite_db"] = sqlite_db
 
         LOG.info("Found %i hits meeting score thresholds", len(results))
         LOG.info("Fetching genomic context of hits")

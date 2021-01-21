@@ -11,8 +11,8 @@ import urllib.error
 import logging
 
 from Bio import SearchIO
-from shutil import which
 from cblaster.classes import Hit
+from cblaster import helpers
 
 LOG = logging.getLogger(__name__)
 
@@ -99,8 +99,10 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
     for prof in ls_keys:
         command_run_hmmsearch = "hmmsearch -o {} {} {}".format(prof +
                             "_results.txt", path_pfam + prof + ".hmm", path_db)
-        subprocess.run(command_run_hmmsearch, stdout=subprocess.PIPE,
+        results = subprocess.run(command_run_hmmsearch, stdout=subprocess.PIPE,
                        shell=True)
+        if results.returncode != 0:
+            LOG.error("hmmsearch command did not work")
         temp_res.append(prof +"_results.txt")
     return temp_res
 
@@ -142,19 +144,18 @@ def preform_hmmer(database,
     """Main of running a hmmer search
 
     Args:
-        path_pfam: String, Path to pfam db
-        path_db: String, Path to seqeunce db, in fasta or gbk format
-        acc_profile: List, Pfam profiles needed to be searched
+        database_pfam: String, Path to pfam db
+        database: String, Path to seqeunce db, in fasta or gbk format
+        query_profiles: List, Pfam profiles needed to be searched
     Returns:
         hit_res: List of class objects with the hits
 
     """
     #1. Check if program exist else give error message and stop program
-    if which("hmmfetch") is None or which("hmmsearch") is None:
-        LOG.error("Hmmer could not be found in PATH")
+    helpers.get_program_path(["hmmfetch", "hmmsearch"])
 
     LOG.info("Starting hmmer search")
-    #2. run check_pfam_db
+    #2. run check_pfam_d
     check_pfam_db(database_pfam)
 
     #3. get_full_acc_number and run hmmfetch
@@ -164,6 +165,5 @@ def preform_hmmer(database,
     ls_res = run_hmmsearch(database_pfam, database, ls_keys)
 
     #5. Parse hmm output, needs to be the same as blast output
-    ls_res = ["PF00491.22_results.txt", "PF05593.15_results.txt"]
     hit_res = parse_hmmer_output(ls_res)
     return hit_res
