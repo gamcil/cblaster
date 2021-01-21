@@ -187,8 +187,8 @@ def add_searching_group(search):
         help="Database to be searched. This should be either a path to a local"
         " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
         " database name (def. nr)"
-        "For the hmm search mode a path to a local Fasta or genbanck database"
-        "is required",
+        " For the hmm search mode a path to a local Fasta or genbanck database"
+        " is required",
     )
     group.add_argument(
         "-cp",
@@ -198,12 +198,10 @@ def add_searching_group(search):
         " available cores will be used.",
     )
     group.add_argument(
-        "-db_pfam",
-        "--pfam",
         "-pfam",
         "--database_pfam",
         help="Path to Pfam database, if not present it will save db there"
-        "This option is required when running hmm or combi search mode",
+        " This option is required when running hmm or combi search mode",
     )
     group.add_argument(
         "-jdb",
