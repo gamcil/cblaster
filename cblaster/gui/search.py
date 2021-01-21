@@ -40,7 +40,7 @@ search_frame = Frame(
             " In remote mode, the database value should correspond to a BLAST"
             " database hosted by the NCBI. In local mode, the database arguments"
             " should refer to files generated using cblaster makedb.",
-            size=(71, 4))],
+            size=(60, 4))],
         [search_tabgroup]
     ]
 )
@@ -55,7 +55,7 @@ input_frame = Frame(
             " accessions of sequences. Alternatively, a session file generated"
             " in a previous cblaster run can be loaded so that you do not have"
             " to repeat a search.",
-            size=(71, 4),
+            size=(60, 4),
         )],
         [TextLabel("File"),
          sg.InputText(size=(34, 1), key="query_file"),
@@ -74,7 +74,7 @@ clustering_frame = Frame(
         [sg.Text(
              "Specify the conditions used when identifying clusters of hits on"
              " genomic scaffolds.",
-             size=(71, 1))],
+             size=(60, 1))],
         [TextLabel("Max. intergenic gap (bp)"),
          sg.InputText(default_text="20000", key="gap")],
         [TextLabel("Min. unique query hits"),
@@ -111,7 +111,7 @@ summary_frame = Frame(
             " end of each run. To save this table to a file, pick a file path"
             " using the option below. If no path is provided, the table will"
             " be printed in the terminal.",
-            size=(71, 3)
+            size=(60, 3)
         )],
         [TextLabel("Generate summary table"),
          sg.Checkbox("", key="summary_gen", default=True, enable_events=True)],
@@ -120,13 +120,13 @@ summary_frame = Frame(
         [sg.Text(
             "Character used to delimit values in the summary table. If no delimiter,"
             " is specified, the table will be generated in human-readable format.",
-            size=(71, 2)
+            size=(60, 2)
         )],
         [TextLabel("Hide headers"), sg.Checkbox("", key="summary_hide_headers")],
         [sg.Text(
             "Hide all headers in the summary table. This includes organism and scaffold"
             " headers, as well as headers in the hit table.",
-            size=(71, 2)
+            size=(60, 2)
         )],
         [TextLabel("Decimal places"),
          sg.Spin(
@@ -149,7 +149,7 @@ binary_frame = Frame(
             "The binary table will give you an overview of the absence/presence of"
             " query genes in the hit clusters identified in the search. To generate"
             " this table, please provide a file name below.",
-            size=(71, 3)
+            size=(60, 3)
         )],
         [TextLabel("Generate binary table"),
          sg.Checkbox("", default=False, enable_events=True, key="binary_gen")],
@@ -158,7 +158,7 @@ binary_frame = Frame(
         [sg.Text(
             "Character used to delimit values in the binary table. If no delimiter,"
             " is specified, the table will be generated in human-readable format.",
-            size=(71, 2)
+            size=(60, 2)
         )],
         [TextLabel("Hide headers"),
          sg.Checkbox("", key="binary_hide_headers", disabled=True)],
@@ -171,7 +171,7 @@ binary_frame = Frame(
             " the list of hits for a given query sequence (i.e. cell counts). 'sum'"
             " or 'max' can be used to give the sum or max of hit attributes specified"
             " using the option below (e.g. cumulative identity).",
-            size=(71, 4)
+            size=(60, 4)
         )],
         [TextLabel("Hit attribute"),
          sg.Drop(
@@ -183,7 +183,7 @@ binary_frame = Frame(
             "This specifies the type of score value of a hit to use when computing"
             " cell values in the binary table. By default, percentage identity will"
             " be used.",
-            size=(71, 2)
+            size=(60, 2)
         )],
         [TextLabel("Decimal places"),
          sg.Spin(
@@ -211,7 +211,7 @@ figure_frame = Frame(
             " at which point the figure can be manipulated and saved as SVG."
             " If a file path is specified, a static HTML file will be generated at"
             " that path.",
-            size=(71, 4)
+            size=(60, 4)
         )],
         [TextLabel("Output file"),
          sg.InputText(key="figure_text", disabled=True, size=(34, 1)),

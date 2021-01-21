@@ -286,7 +286,7 @@ def main():
     if args.subcommand == "makedb":
         database.makedb(
             args.paths,
-            args.filename,
+            database=args.name,
             cpus=args.cpus,
             batch=args.batch,
             force=args.force,

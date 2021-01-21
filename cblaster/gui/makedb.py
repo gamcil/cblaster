@@ -21,7 +21,7 @@ makedb_frame = sg.Frame(
             " search, then supply the DIAMOND and JSON files"
             " using the Database and JSON Database fields,"
             " respectively.",
-            size=(72, 6)
+            size=(60, 6)
         )],
         [TextLabel("Select genome files"),
          sg.InputText(size=(34, 1), key="genbanks"),
@@ -29,7 +29,7 @@ makedb_frame = sg.Frame(
         [sg.Text(
             "Both the JSON and DIAMOND databases will take the name"
             " specified here, albeit with their own file type suffixes.",
-            size=(73, 2)
+            size=(60, 2)
         )],
         [TextLabel("Database name"),
          sg.InputText(key="makedb_filename", size=(34, 1)),
