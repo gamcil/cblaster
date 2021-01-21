@@ -367,6 +367,7 @@ def main():
             organisms=args.organisms,
             scaffolds=args.scaffolds,
             format_=args.format,
+            max_clusters=args.maximum_clusters,
         )
 
     elif args.subcommand == "plot_clusters":
@@ -377,6 +378,7 @@ def main():
             organisms=args.organisms,
             scaffolds=args.scaffolds,
             plot_outfile=args.output,
+            max_clusters=args.maximum_clusters,
         )
 
 

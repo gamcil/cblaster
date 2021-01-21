@@ -164,6 +164,7 @@ def plot_clusters(
         organisms=None,
         scaffolds=None,
         plot_outfile=None,
+        max_clusters=50
 ):
     """Plot Cluster objects from a Session file
     Args:
@@ -174,13 +175,15 @@ def plot_clusters(
          these organisms are included
         scaffolds(list): clusters on these scaffolds are included
         plot_outfile (str): path to a file for the final plot
+        max_clusters (int): the maximum amount of clusters plotted regardless of filters
     """
     LOG.info("Starting generation of cluster plot with clinker.")
     with open(session, "r") as f:
         session = Session.from_json(f.read())
 
     # filter the cluster using the filter functions from extract_clusters modue
-    cluster_hierarchies = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds)
+    cluster_hierarchies = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds,
+                                                      max_clusters)
 
     cluster_hierarchies = list(cluster_hierarchies)
     # sort the clusters based on score
