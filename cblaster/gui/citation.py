@@ -1,7 +1,5 @@
 import PySimpleGUI as sg
 
-from cblaster.gui.parts import TextLabel
-
 
 sg.theme("Lightgrey1")
 
@@ -30,6 +28,11 @@ citation_frame = sg.Frame(
             "Acland, A. et al."
             " Database resources of the National Center for Biotechnology Information."
             " Nucleic Acids Res. 42, 7–17 (2014)",
+        ),
+        *get_citation(
+            "CLINKER",
+            "Gilchrist, C.L.M., Chooi, Y.-H., 2020."
+            " clinker & clustermap.js: Automatic generation of gene cluster comparison figures.",
         )
     ],
     title_color="blue",

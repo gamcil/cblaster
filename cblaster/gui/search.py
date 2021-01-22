@@ -14,7 +14,8 @@ local_tab = sg.Tab("Local", [
      ),
      sg.FileBrowse(key="dmnd_database")],
     [TextLabel("Number of CPUs"),
-     sg.InputText(default_text="1", key="cpus")],
+     sg.InputText(key="cpus")],
+    [sg.Text("If no value is supplied all available CPU's will be used.")]
 ], key="local")
 
 remote_tab = sg.Tab("Remote", [
@@ -206,8 +207,8 @@ figure_frame = Frame(
          sg.Checkbox("", key="figure_gen", default=False, enable_events=True)],
         [sg.Text(
             "This generates a visual representation of the binary table as a"
-            " cluster heatmap. If no file path is specified,"
-            " the figure will be served to an IP address and automatically opened,"
+            " cluster heatmap. If this is not"
+            " specified, the plot will be saved in a plot.html in the temporary folder,"
             " at which point the figure can be manipulated and saved as SVG."
             " If a file path is specified, a static HTML file will be generated at"
             " that path.",

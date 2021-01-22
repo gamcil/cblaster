@@ -9,10 +9,11 @@ sg.theme("Lightgrey1")
 plot_clusters_frame = sg.Frame(
     "Plot Clusters",
     layout=[
-        [sg.Text("This module allows you to extract clusters from a session.json file into a genbank file"
-                 " for each cluster. The genbank files can be formatted to include qualifiers to make them "
-                 "readable by bigscape.",
-                 size=(60, 4)
+        [sg.Text("This module allows for plotting of a subset of clusters using clinker. (see citation tab"
+                 " for more information) Running clinker using a cblaster session file is significantly"
+                 " faster then running clinker with separate genbank files extracted using the Extract"
+                 " Clusters module, because the all vs all allignment of clinker can be skipped.",
+                 size=(60, 5)
                  )],
         [TextLabel("Session file"),
          sg.InputText(size=(34, 1), key="plot_clusters_session"),

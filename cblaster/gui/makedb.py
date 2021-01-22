@@ -15,27 +15,43 @@ makedb_frame = sg.Frame(
             " files in GenBank or GFF3+FASTA formats. It will"
             " produce a formatted DIAMOND database (.dmnd)"
             " containing protein sequences in the supplied"
-            " genomes, as well as a JSON file which stores"
+            " genomes, as well as a sqlite3 file which stores"
             " genomic coordinates for these proteins. To use"
             " these files in a cblaster run, choose a local"
-            " search, then supply the DIAMOND and JSON files"
-            " using the Database and JSON Database fields,"
-            " respectively.",
-            size=(60, 6)
+            " search, then supply the DIAMOND (.dmnd) file"
+            " using the Database field.",
+            size=(60, 7)
         )],
         [TextLabel("Select genome files"),
          sg.InputText(size=(34, 1), key="genbanks"),
          sg.FilesBrowse(key="makedb_genbanks")],
         [sg.Text(
-            "Both the JSON and DIAMOND databases will take the name"
-            " specified here, albeit with their own file type suffixes.",
+            "Select on or more genbank/gff3 files.",
             size=(60, 2)
         )],
+
         [TextLabel("Database name"),
          sg.InputText(key="makedb_filename", size=(34, 1)),
          sg.FileSaveAs(key="makedb_filename")],
-        [TextLabel("JSON indent size"),
-         sg.Spin(list(range(0, 21)), initial_value=0, key="json_indent")],
+        [sg.Text(
+            "Both the sqlite3 and DIAMOND databases will take the name"
+            " specified here, albeit with their own file type suffixes.",
+            size=(60, 2)
+        )],
+
+        [TextLabel("Number of CPUs"),
+         sg.InputText(key="cpus db")],
+        [sg.Text("If no value is supplied all available CPU's will be used.")],
+
+        [TextLabel("Batch size"),
+         sg.InputText(key="batch size")],
+        [sg.Text("Number of genome files to parse before saving them in the local"
+                 " database. Useful when encountering memory issues with large/many"
+                 " files. By default, all genome files will be parsed at once.")],
+
+        [TextLabel("Force overwrite files"),
+         sg.Checkbox("", default=False, enable_events=True, key="force")],
+        [sg.Text("Overwrite pre-existing files, if any are present.")],
     ],
     title_color="blue",
     font="Arial 10 bold",
