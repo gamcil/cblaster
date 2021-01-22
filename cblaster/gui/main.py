@@ -1,6 +1,7 @@
 """A basic GUI for cblaster."""
 
 import os
+import tempfile
 from threading import Thread, Event
 import subprocess
 from queue import Queue, Empty
@@ -104,7 +105,7 @@ def run_cblaster(values, textbox):
             )
 
         if values["figure_gen"]:
-            plot = values["figure_text"] if values["figure_text"] else True
+            plot = values["figure_text"] if values["figure_text"] else f"{tempfile.gettempdir()}{os.sep}plot.html"
             args.update(plot=plot)
 
         # Overwrite any placeholder text
@@ -114,22 +115,27 @@ def run_cblaster(values, textbox):
         subcommand = values["cblaster_tabs"]
 
     elif values["cblaster_tabs"] == "Makedb":
-        # TODO add all possible values
         args = dict(
             blank1=" ".join(values["makedb_genbanks"].split(";")),
             name=values["makedb_filename"],
-            indent=values["json_indent"]
+            cpus=values["cpus db"],
+            batch=values["batch size"],
+            force=values["force"],
         )
         subcommand = values["cblaster_tabs"]
 
     elif values["cblaster_tabs"] == "Neighbourhood":
-        # TODO add all possible values
         args = dict(
-            blank1=values["session"],
+            blank1=values["session gne"],
             max_gap=int(values["max_gap"]),
             samples=int(values["samples"]),
             scale=values["scale"],
-            output=values["output"],
+            output=values["output gne"],
+            delimiter=values["delimiter gne"],
+            decimals=values["decimals gne"],
+            hide_headers=values["hide headers gne"],
+            plot=values["plot gne"] if values["plot gne"] else f"{tempfile.gettempdir()}{os.sep}plot.html"
+
         )
         subcommand = "gne"
 
@@ -182,8 +188,8 @@ main_gui_layout = [
     [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
     [sg.TabGroup([
         [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
-        [sg.Tab("Neighbourhood", [[Column(gne.layout)]])],
-        [sg.Tab("Makedb", [[Column(makedb.layout)]])],
+        [sg.Tab("Neighbourhood", [[Column(gne.layout, scrollable=True)]])],
+        [sg.Tab("Makedb", [[Column(makedb.layout, scrollable=True)]])],
         [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
         [sg.Tab("Extract Clusters", [[Column(extract_clusters.layout, scrollable=True)]])],
         [sg.Tab("Plot Clusters", [[Column(plot_clusters.layout, scrollable=True)]])],
@@ -249,19 +255,21 @@ def cblaster_gui():
 
 def create_command_window():
     command_gui_layout = [
-        [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
+        [sg.Text("cblaster command run", font="Arial 18 bold", pad=(0, 0))],
         [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
         [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
-        [sg.Multiline(default_text="Welcome to cblaster", key="textbox", size=(500, 20), disabled=True)],
+        [sg.Multiline(default_text="Welcome to cblaster", key="textbox", size=(500, 45),
+                      disabled=True, autoscroll=True)],
         [sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
     ]
     command_window = sg.Window(
         "cblaster command",
         command_gui_layout,
-        size=(500, 560),
+        location=(20, 20),
+        size=(800, 860),
         element_padding=(5, 5),
         element_justification="center",
-        finalize=True
+        finalize=True,
     )
     return command_window
 

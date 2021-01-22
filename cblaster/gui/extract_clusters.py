@@ -10,8 +10,8 @@ extract_clusters_frame = sg.Frame(
     "Extract Clusters",
     layout=[
         [sg.Text("This module allows you to extract clusters from a session.json file into a genbank file"
-                 " for each cluster. The genbank files can be formatted to include qualifiers to make them "
-                 "readable by bigscape.",
+                 " for each separate cluster. The genbank files can be formatted to include qualifiers "
+                 "to make them readable by bigscape.",
                  size=(60, 4)
                  )],
         [TextLabel("Session file"),
