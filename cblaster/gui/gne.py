@@ -16,7 +16,7 @@ gne_frame = sg.Frame(
             " you are not missing clusters due to a bad threshold value. However,"
             " it can also give you an idea of the approximate size of the"
             " 'neighbourhood' of your query proteins.",
-            size=(60, 5)
+            size=(60, 6)
         )],
         [TextLabel("Session file"),
          sg.InputText(size=(34, 1), key="session gne"),
@@ -30,7 +30,7 @@ gne_frame = sg.Frame(
          sg.FileSaveAs(key="output gne")],
         [sg.Text(
             "output file for the summary table.",
-            size=(60, 3)
+            size=(60, 1)
         )],
 
         [TextLabel("Delimiter"),
