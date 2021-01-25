@@ -1,5 +1,9 @@
 
-"""Simple testing functions simply making sure that certain commands can run with certain values"""
+"""Simple testing functions simply making sure that certain commands can run with certain values
+
+Warning: File comparissons and summary output rely heavily on diamond. These tests are made with diamond v 2.0.6
+earlier or later versions will probably produce slightly different results and the provided databases will only
+work with this exact version of diamond. That is why these versions are included"""
 
 import os
 import shutil
@@ -7,6 +11,7 @@ import time
 from pathlib import Path
 from tempfile import mkdtemp
 import platform
+import sys
 
 COUNT = 0
 TOTAL = 5
@@ -45,12 +50,19 @@ def compare_files(actual_file_path, expected_file_path):
 
 if __name__ == '__main__':
     os_name = platform.system().lower()
+    if os_name == "darwin":
+        raise SystemExit("Test for Mac OS are not yet configured.")
+
     out_dir = mkdtemp()
     # make sure the paths point the right way
     current_dir = str(Path(__file__).resolve().parent)
     test_file_dir = current_dir + os.sep + "test_files"
     comparrison_file_dir = current_dir + os.sep + "comparisson_files"
     os.chdir(current_dir)
+
+    # add diamond to path
+    old_path = os.environ["PATH"]
+    os.environ["PATH"] = f"{str(Path('./diamond_files').resolve().absolute())}{os.pathsep}{old_path}"
 
     try:
     # LOCAL TESTS
