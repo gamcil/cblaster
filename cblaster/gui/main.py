@@ -105,7 +105,8 @@ def run_cblaster(values, textbox):
             )
 
         if values["figure_gen"]:
-            plot = values["figure_text"] if values["figure_text"] else f"{tempfile.gettempdir()}{os.sep}plot.html"
+            plot = values["figure_text"] if values["figure_text"] else f"{tempfile.gettempdir()}{os.sep}" \
+                                                                       f"plot_search.html"
             args.update(plot=plot)
 
         # Overwrite any placeholder text
@@ -134,7 +135,7 @@ def run_cblaster(values, textbox):
             delimiter=values["delimiter gne"],
             decimals=values["decimals gne"],
             hide_headers=values["hide headers gne"],
-            plot=values["plot gne"] if values["plot gne"] else f"{tempfile.gettempdir()}{os.sep}plot.html"
+            plot=values["plot gne"] if values["plot gne"] else f"{tempfile.gettempdir()}{os.sep}plot_gne.html"
 
         )
         subcommand = "gne"
@@ -167,7 +168,8 @@ def run_cblaster(values, textbox):
     elif values["cblaster_tabs"] == "Plot Clusters":
         args = dict(
             blank1=values["plot_clusters_session"],
-            output=values["plot_clusters_output"],
+            output=values["plot_clusters_output"] if values["plot_clusters_output"]
+            else f"{tempfile.gettempdir()}{os.sep}plot_plot_clusters.html",
             maximum_clusters=values["max clusters pc"],
             clusters=values["clusters pc"],
             score_threshold=values["score threshold pc"],
