@@ -27,7 +27,7 @@ makedb_frame = sg.Frame(
          sg.FilesBrowse(key="makedb_genbanks")],
         [sg.Text(
             "Select on or more genbank/gff3 files.",
-            size=(60, 2)
+            size=(60, 1)
         )],
 
         [TextLabel("Database name"),

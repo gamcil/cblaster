@@ -27,7 +27,7 @@ extract_clusters_frame = sg.Frame(
          sg.FolderBrowse(key="extract_clusters_output")],
         [sg.Text(
             "Directory the extracted clusters will be saved in.",
-            size=(60, 2)
+            size=(60, 1)
         )],
 
         [TextLabel("Prefix"),
@@ -35,26 +35,26 @@ extract_clusters_frame = sg.Frame(
          ],
         [sg.Text(
             "Start of the name for each cluster file, the base name is cluster'clutser.number'",
-            size=(60, 2)
+            size=(60, 1)
         )],
 
         [TextLabel("Output format"),
          sg.Drop(key="output format", default_value="genbank", values=("genbank", "bigscape"))],
         [sg.Text(
             "The format of the resulting files. The options are genbank and bigscape.",
-            size=(60, 2)
+            size=(60, 1)
         )],
 
         [TextLabel("Clusters"), sg.InputText(key="clusters ec")],
         [sg.Text("Cluster numbers/ ranges provided by the summary file of the 'search' command. "
                  "For example to include clusters 1 to 4 use '1-4'. Multiple values can be"
                  " supplied separated by spaces.",
-                 size=(60, 2)
+                 size=(60, 3)
                  )],
 
         [TextLabel("Score threshold"), sg.InputText(key="score threshold ec")],
         [sg.Text("The minimum required score of a cluster in order to be extracted.",
-                 size=(60, 2)
+                 size=(60, 1)
                  )],
 
         [TextLabel("Organisms"), sg.InputText(key="organisms ec")],

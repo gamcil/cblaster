@@ -15,7 +15,7 @@ extract_frame = sg.Frame(
             " or the organisms and scaffolds they belong to. This module is designed"
             " to answer a question like: 'how can I get all of the methyltransferase"
             " sequences from homologous gene clusters in Aspergillus genomes?'",
-            size=(60, 4)
+            size=(60, 5)
         )],
 
         [TextLabel("Session file"),
