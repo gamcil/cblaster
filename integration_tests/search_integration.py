@@ -6,6 +6,7 @@ import shutil
 import time
 from pathlib import Path
 from tempfile import mkdtemp
+import platform
 
 COUNT = 0
 TOTAL = 5
@@ -35,13 +36,15 @@ def run_search_command(command, actual_expected=None):
 def compare_files(actual_file_path, expected_file_path):
     with open(out_dir + os.sep + actual_file_path, "r") as actual_file, \
             open(comparrison_file_dir + os.sep + expected_file_path, "r") as expected_file:
-        for actual_line, expected_line in zip(actual_file, expected_file):
+        for line_index, actual_expected in enumerate(zip(actual_file, expected_file)):
+            actual_line, expected_line = actual_expected
             if actual_line != expected_line:
-                raise AssertionError(f"Expected {expected_line} but got {actual_line}. File {expected_file_path}"
-                                     f" and {actual_file_path} do not match.")
+                raise AssertionError(f"File {actual_file_path} and {expected_file_path} do not match at line "
+                                     f"{line_index + 1}")
 
 
 if __name__ == '__main__':
+    os_name = platform.system().lower()
     out_dir = mkdtemp()
     # make sure the paths point the right way
     current_dir = str(Path(__file__).resolve().parent)
@@ -54,19 +57,18 @@ if __name__ == '__main__':
 
         # test gbk query in local mode with all options enabled
         command1 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb -o " \
-                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database.dmnd -ohh -ode , -odc 2 " \
-                   f"-osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
+                   f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
                    f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
                    f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
-        actual_vs_expected_files = [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"],
-                                    ["blast.txt", "blast_local_gbk.txt"], ["session.json", "session_local_gbk.json"]]
+        actual_vs_expected_files = [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]]
         run_search_command(command1, actual_vs_expected_files)
         os.remove(f"{out_dir}{os.sep}session.json")
 
         # test embl query in local mode with all options enabled
         command2 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.embl -o " \
-                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database.dmnd -ohh -ode , -odc 2 " \
-                   f"-osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
+                   f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
                    f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
                    f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
         run_search_command(command2)
@@ -74,8 +76,8 @@ if __name__ == '__main__':
 
         # test fasta query in local mode with all options enabled
         command3 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.fa -o " \
-                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database.dmnd -ohh -ode , -odc 2 " \
-                   f"-osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
+                   f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
                    f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
                    f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
         run_search_command(command3)
@@ -83,8 +85,9 @@ if __name__ == '__main__':
 
         # test query identifiers in local mode
         command4 = f"cblaster -d search -m local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1" \
-                   f" AEK75502.1 -o {out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database.dmnd -ohh " \
-                   f"-ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                   f" AEK75502.1 -o {out_dir}{os.sep}summary.txt -db " \
+                   f"{test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh -ode , -odc 2 -osc -b" \
+                   f" {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
                    f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
                    f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
         run_search_command(command4)
@@ -93,7 +96,7 @@ if __name__ == '__main__':
         # test local session with all options enabled
         command5 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb " \
                    f"-s {test_file_dir}{os.sep}test_session_embl.json {test_file_dir}{os.sep}test_session_gbk.json " \
-                   f"-db {test_file_dir}{os.sep}test_database.dmnd -o {out_dir}{os.sep}summary.txt"
+                   f"-db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -o {out_dir}{os.sep}summary.txt"
         actual_vs_expected_files = [["summary.txt", "summary_local_session_combined.txt"]]
         run_search_command(command5, actual_vs_expected_files)
 
