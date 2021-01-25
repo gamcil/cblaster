@@ -92,10 +92,12 @@ def diamond(
 
     results = subprocess.run(
         command,
-        stderr=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
-        check=True
+        stderr=subprocess.PIPE,
     )
+    if results.returncode != 0:
+        LOG.error(results.stderr.decode("utf-8"))
+        raise SystemExit(1)
 
     return results.stdout.decode().split("\n")
 
