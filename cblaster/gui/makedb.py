@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 
-from cblaster.gui.parts import TextLabel
+from cblaster.gui.parts import TextLabel, TEXT_WIDTH
 
 
 sg.theme("Lightgrey1")
@@ -20,14 +20,14 @@ makedb_frame = sg.Frame(
             " these files in a cblaster run, choose a local"
             " search, then supply the DIAMOND (.dmnd) file"
             " using the Database field.",
-            size=(60, 7)
+            size=(TEXT_WIDTH, 8)
         )],
         [TextLabel("Select genome files"),
          sg.InputText(size=(34, 1), key="genbanks"),
          sg.FilesBrowse(key="makedb_genbanks")],
         [sg.Text(
             "Select on or more genbank/gff3 files.",
-            size=(60, 1)
+            size=(TEXT_WIDTH, 1)
         )],
 
         [TextLabel("Database name"),
@@ -36,7 +36,7 @@ makedb_frame = sg.Frame(
         [sg.Text(
             "Both the sqlite3 and DIAMOND databases will take the name"
             " specified here, albeit with their own file type suffixes.",
-            size=(60, 2)
+            size=(TEXT_WIDTH, 2)
         )],
 
         [TextLabel("Number of CPUs"),
@@ -47,7 +47,8 @@ makedb_frame = sg.Frame(
          sg.InputText(key="batch size")],
         [sg.Text("Number of genome files to parse before saving them in the local"
                  " database. Useful when encountering memory issues with large/many"
-                 " files. By default, all genome files will be parsed at once.")],
+                 " files. By default, all genome files will be parsed at once.",
+                 size=(TEXT_WIDTH, 4))],
 
         [TextLabel("Force overwrite files"),
          sg.Checkbox("", default=False, enable_events=True, key="force")],

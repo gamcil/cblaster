@@ -190,7 +190,7 @@ def cblaster_gui():
         size=(600, 660),
         element_padding=(5, 5),
         element_justification="center",
-        finalize=True
+        finalize=True,
     )
     command_thread = None
     command_window = None
@@ -269,7 +269,7 @@ class CommandThread(Thread):
             queue.put(line)
 
     def run(self):
-        popen = subprocess.Popen(self.command, shell=False, stderr=subprocess.PIPE)
+        popen = subprocess.Popen(self.command, shell=True, stderr=subprocess.PIPE)
 
         # this thread is neccesairy to be able to read stderr while also being able to terminate the subprocess
         t = Thread(target=self.enqueue_output, args=(popen.stderr, self.stderr_queue))

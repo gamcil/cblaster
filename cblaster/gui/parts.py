@@ -4,6 +4,9 @@
 import PySimpleGUI as sg
 
 
+TEXT_WIDTH = 65
+
+
 def SectionLabel(text):
     return sg.Text(text, justification="l", font="Arial 12 bold")
 
