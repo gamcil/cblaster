@@ -176,7 +176,16 @@ filtering_frame = Frame(
         [TextLabel("Min. query coverage (%)"),
          sg.InputText(default_text="50", key="min_coverage")],
         [TextLabel("Recompute"),
-         sg.InputText(key="recompute")],
+         sg.Checkbox("", key="recompute_gen", enable_events=True),
+         sg.In(key="recompute_text", size=(28, 1), disabled=True, enable_events=True),
+         sg.FileSaveAs(key="recompute_browse", disabled=True)],
+        [sg.Text(
+            "Recompute previous search session using new thresholds. The filtered"
+            " session will be written to the file specified by this argument. If this"
+            " argument is specified with no value, the session will be filtered but"
+            " not saved (e.g. for plotting purposes).",
+            size=(TEXT_WIDTH, 3)
+        )],
     ],
 )
 
