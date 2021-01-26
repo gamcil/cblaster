@@ -49,7 +49,7 @@ def run_cblaster(values, textbox):
             min_identity=values["min_identity"],
             min_coverage=values["min_coverage"],
             max_evalue=values["max_evalue"],
-            recompute=values["recompute"],
+            recompute=values["recompute_text"] if values["recompute_text"] != "" else values["recompute_gen"]
         )
 
         if values["search_mode"] == "remote":
@@ -213,6 +213,9 @@ def cblaster_gui():
 
         for key in ("browse", "text"):
             main_window[f"figure_{key}"].update(disabled=not values["figure_gen"])
+
+        for key in ("browse", "text"):
+            main_window[f"recompute_{key}"].update(disabled=not values["recompute_gen"])
 
         # Disable start button when on citation tab
         main_window["start_button"].update(
