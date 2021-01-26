@@ -14,7 +14,8 @@ import platform
 import sys
 
 COUNT = 0
-TOTAL = 5
+TOTAL = 6
+RUN = {"local": False, "remote": True}
 
 
 def run_search_command(command, actual_expected=None):
@@ -65,60 +66,86 @@ if __name__ == '__main__':
     os.environ["PATH"] = f"{str(Path('./diamond_files').resolve().absolute())}{os.pathsep}{old_path}"
 
     try:
-    # LOCAL TESTS
+        # LOCAL TESTS
+        if RUN["local"]:
+            # test gbk query in local mode with all options enabled
+            command1 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb -o " \
+                       f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
+                       f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                       f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
+                       f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
+            actual_vs_expected_files = [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]]
+            run_search_command(command1, actual_vs_expected_files)
+            os.remove(f"{out_dir}{os.sep}session.json")
 
-        # test gbk query in local mode with all options enabled
-        command1 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb -o " \
-                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
-                   f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
-                   f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
-                   f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
-        actual_vs_expected_files = [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]]
-        run_search_command(command1, actual_vs_expected_files)
-        os.remove(f"{out_dir}{os.sep}session.json")
+            # test embl query in local mode with all options enabled
+            command2 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.embl -o " \
+                       f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
+                       f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                       f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
+                       f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
+            run_search_command(command2)
+            os.remove(f"{out_dir}{os.sep}session.json")
 
-        # test embl query in local mode with all options enabled
-        command2 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.embl -o " \
-                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
-                   f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
-                   f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
-                   f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
-        run_search_command(command2)
-        os.remove(f"{out_dir}{os.sep}session.json")
+            # test fasta query in local mode with all options enabled
+            command3 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.fa -o " \
+                       f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
+                       f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                       f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
+                       f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
+            run_search_command(command3)
+            os.remove(f"{out_dir}{os.sep}session.json")
 
-        # test fasta query in local mode with all options enabled
-        command3 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.fa -o " \
-                   f"{out_dir}{os.sep}summary.txt -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh" \
-                   f" -ode , -odc 2 -osc -b {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
-                   f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
-                   f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
-        run_search_command(command3)
-        os.remove(f"{out_dir}{os.sep}session.json")
+            # test query identifiers in local mode
+            command4 = f"cblaster -d search -m local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1" \
+                       f" AEK75502.1 -o {out_dir}{os.sep}summary.txt -db " \
+                       f"{test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh -ode , -odc 2 -osc -b" \
+                       f" {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+                       f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
+                       f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
+            run_search_command(command4)
+            os.remove(f"{out_dir}{os.sep}session.json")
 
-        # test query identifiers in local mode
-        command4 = f"cblaster -d search -m local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1" \
-                   f" AEK75502.1 -o {out_dir}{os.sep}summary.txt -db " \
-                   f"{test_file_dir}{os.sep}test_database_{os_name}.dmnd -ohh -ode , -odc 2 -osc -b" \
-                   f" {out_dir}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
-                   f" --blast_file {out_dir}{os.sep}blast.txt --ipg_file {out_dir}{os.sep}ipgs.txt " \
-                   f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {out_dir}{os.sep}session.json"
-        run_search_command(command4)
-        os.remove(f"{out_dir}{os.sep}session.json")
+            # test local session with all options enabled
+            command5 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb " \
+                       f"-s {test_file_dir}{os.sep}test_session_local_embl.json " \
+                       f"{test_file_dir}{os.sep}test_session_local_gbk.json -db" \
+                       f" {test_file_dir}{os.sep}test_database_{os_name}.dmnd -o {out_dir}{os.sep}summary.txt"
+            actual_vs_expected_files = [["summary.txt", "summary_local_gbk_embl_combined.txt"]]
+            run_search_command(command5, actual_vs_expected_files)
 
-        # test local session with all options enabled
-        command5 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb " \
-                   f"-s {test_file_dir}{os.sep}test_session_embl.json {test_file_dir}{os.sep}test_session_gbk.json " \
-                   f"-db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -o {out_dir}{os.sep}summary.txt"
-        actual_vs_expected_files = [["summary.txt", "summary_local_session_combined.txt"]]
-        run_search_command(command5, actual_vs_expected_files)
+            # test recompute
+            shutil.copyfile(f"{test_file_dir}{os.sep}test_session_local_gbk.json",
+                            f"{out_dir}{os.sep}test_session_local_gbk_copy.json")
+            command6 = f"cblaster -d search -m local -qf {test_file_dir}{os.sep}test_query.gb " \
+                       f"-s {out_dir}{os.sep}test_session_local_gbk_copy.json --recompute" \
+                       f" -db {test_file_dir}{os.sep}test_database_{os_name}.dmnd -o {out_dir}{os.sep}summary.txt " \
+                       f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {out_dir}{os.sep}binary.txt"
+            actual_vs_expected_files = [["summary.txt", "summary_local_gbk_recompute.txt"],
+                                        ["binary.txt", "binary_local_gbk_recompute.txt"]]
+            run_search_command(command6, actual_vs_expected_files)
 
-    # REMOTE TESTS
-    #     command3 = f"cblaster -d search -m remote -qf {test_file_dir}{os.sep}test_query.gb -o " \
-    #                f"summary.txt --rid 0FS9YDM6016 -b binary.txt" \
-    #                f" --blast_file blast.txt --ipg_file ipgs.txt " \
-    #                f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s session.json"
-    #     run_search_command(command3)
-    #     os.remove(f"{out_dir}{os.sep}session.json")
+    # REMOTE TESTS --> all remote tests are conducted with a session file because the runtime of remote runs can
+    # vary greatly
+        if RUN["remote"]:
+            # load a remote session and make summary and binary files
+            command1 = f"cblaster -d search -m remote -qf {test_file_dir}{os.sep}test_query.fa -s " \
+                       f"{test_file_dir}{os.sep}test_session_remote_fa.json" \
+                       f" -o {out_dir}{os.sep}summary.txt -b {out_dir}{os.sep}binary.txt"
+            actual_vs_expected_files = [["summary.txt", "summary_remote_fa.txt"],
+                                        ["binary.txt", "binary_remote_fa.txt"]]
+            run_search_command(command1, actual_vs_expected_files)
+
+            # recompute a remote session
+            shutil.copyfile(f"{test_file_dir}{os.sep}test_session_remote_fa.json",
+                            f"{out_dir}{os.sep}test_session_remote_fa_copy.json")
+            command2 = f"cblaster -d search -m remote -qf {test_file_dir}{os.sep}test_query.fa -s " \
+                       f"{out_dir}{os.sep}test_session_remote_fa_copy.json" \
+                       f" -o {out_dir}{os.sep}summary.txt -b {out_dir}{os.sep}binary.txt --recompute -g 50000 -u 7" \
+                       f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters"
+            actual_vs_expected_files = [["summary.txt", "summary_remote_fa_recompute.txt"],
+                                        ["binary.txt", "binary_remote_fa_recompute.txt"]]
+            run_search_command(command2, actual_vs_expected_files)
 
     # make sure to always remove the dir even on error
     finally:
