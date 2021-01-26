@@ -57,7 +57,8 @@ def run_cblaster(values, textbox):
             args.update(
                 database=[values["database"]],
                 entrez_query=values["entrez_query"],
-                rid=values["rid"]
+                rid=values["rid"],
+                hitlist_size=values["max_hits"],
             )
         elif values["search_mode"] == "local":
             args.update(
@@ -91,7 +92,8 @@ def run_cblaster(values, textbox):
             args.update(
                 output_decimals=values["summary_decimals"],
                 output_delimiter=values["summary_delimiter"],
-                output_hide_headers=values["summary_hide_headers"]
+                output_hide_headers=values["summary_hide_headers"],
+                sort_clusters=values["sort_clusters"],
             )
 
         if values["binary_gen"]:

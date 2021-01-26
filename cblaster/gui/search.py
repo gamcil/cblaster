@@ -21,13 +21,21 @@ local_tab = sg.Tab("Local", [
 remote_tab = sg.Tab("Remote", [
     [TextLabel("Database"),
      sg.InputText(default_text="e.g. nr", key="database")],
+
     [TextLabel("Entrez query"),
      sg.InputText(
          default_text='e.g. "Aspergillus"[organism]',
          key="entrez_query"
      )],
+
     [TextLabel("Request Identifier (RID)"),
      sg.InputText(key="rid")],
+
+    [TextLabel("Maximum hits"),
+     sg.InputText(default_text=5000, key="max_hits")],
+    [sg.Text("Maximum total hits to save from a remote BLAST search. Setting"
+             " this value too low may result in missed hits/clusters.",
+             size=(TEXT_WIDTH, 2))]
 ], key="remote")
 
 hmm_tab = sg.Tab("Hmm", [
@@ -205,6 +213,14 @@ summary_frame = Frame(
              key="summary_decimals",
              disabled=True
          )],
+
+        [TextLabel("Sort clusters"),  sg.Checkbox("", key="sort_clusters")],
+        [sg.Text(
+            "Sorts the clusters of the final output on score. This means that clusters of the same organism are not"
+            " neccesairily close together in the output",
+            size=(TEXT_WIDTH, 2)
+        )],
+
         [TextLabel("Output file"),
          sg.In(key="summary_text", size=(34, 1)),
          sg.FileSaveAs(key="summary_browse")],
