@@ -102,7 +102,7 @@ def setup():
 def test_commands(arguments):
     flags, command_names = filter_flags(arguments)
     commands = []
-    command_names = command_names if command_names else ["search", "makedb"]
+    command_names = command_names if command_names else ["search", "makedb", "gne"]
     for name in command_names:
         name = name.lower()
         if name == "search":
@@ -113,6 +113,8 @@ def test_commands(arguments):
             commands.extend(search_remote_commands())
         elif name == "makedb":
             commands.extend(makedb_commands())
+        elif name == "gne":
+            commands.extend(gne_commands())
         else:
             raise ValueError(f"No command named {name}.")
     for command in commands:
@@ -128,12 +130,6 @@ def filter_flags(arguments):
         else:
             command_names.append(item)
     return flags, command_names
-
-
-def prin_result_summary(commands):
-    table = ""
-    for command in commands:
-        row = ""
 
 
 def search_commands():
@@ -232,16 +228,37 @@ def search_remote_commands():
 def makedb_commands():
     global OUT_DIR, TEST_FILE_DIR
     commands = [
+        # using embl and gbk files
         CommandTest(
             f"cblaster -d makedb {TEST_FILE_DIR}{os.sep}test_query.gb"
             f" {TEST_FILE_DIR}{os.sep}test_query.embl -n {OUT_DIR}{os.sep}database -b 3 -c 100",
             "makedb gbk, embl files",
             [["database.fasta", "makedb_database_gbk_embl.fasta"]]
         ),
+        # using gff files
         CommandTest(
             f"cblaster -d makedb {TEST_FILE_DIR}{os.sep}test_gff_v_maris.fna"
             f" {TEST_FILE_DIR}{os.sep}test_gff_v_maris.gff -n {OUT_DIR}{os.sep}database -b 3 -c 100",
-            "makedb gbk, embl files"
+            "makedb gff files"
+        )
+    ]
+    return commands
+
+
+def gne_commands():
+    global OUT_DIR, TEST_FILE_DIR
+    commands = [
+        CommandTest(
+            f"cblaster gne {TEST_FILE_DIR}{os.sep}test_session_local_gbk.json --max_gap 200000 --samples 25"
+            f' --scale log -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 2',
+            "gne with local gbk session",
+            [["summary.txt", "gne_local_summary.txt"]]
+        ),
+        CommandTest(
+            f"cblaster gne {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json --max_gap 250000 --samples 10"
+            f' --scale linear -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 3',
+            "gne with remote fa session",
+            [["summary.txt", "gne_remote_summary.txt"]]
         )
     ]
     return commands

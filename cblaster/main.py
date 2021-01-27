@@ -66,8 +66,9 @@ def gne(
             decimals=decimals,
         )
         output.write(summary)
-
-    plot_gne(results, output=plot)
+    # make sure to not always serve the plot.
+    if plot:
+        plot_gne(results, output=plot if plot is not True else None)
     LOG.info("Done.")
 
 
