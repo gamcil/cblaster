@@ -473,8 +473,8 @@ function plot(data) {
 		const clickRemoveX = query => {
 			let newData = {
 				...data,
-				"queries": data.queries.filter(q => q !== query),
-				"matrix": data.matrix.filter(cell => cell.query !== query)
+				queries: data.queries.filter(q => q !== query),
+				matrix: data.matrix.filter(cell => cell.query !== query)
 			}
 			update(newData)
 		}
