@@ -295,6 +295,7 @@ class CommandThread(Thread):
             queue.put(line)
 
     def run(self):
+        # shell true for linux to properly function
         popen = subprocess.Popen(self.command, shell=True, stderr=subprocess.PIPE)
 
         # this thread is neccesairy to be able to read stderr while also being able to terminate the subprocess
@@ -303,7 +304,7 @@ class CommandThread(Thread):
         t.start()
         while popen.poll() is None:
             try:
-                line = self.stderr_queue.get_nowait()  # or q.get(timeout=.1)
+                line = self.stderr_queue.get_nowait()
             except Empty:
                 continue
             else:  # got line
@@ -314,7 +315,15 @@ class CommandThread(Thread):
                 popen.kill()
                 popen.wait()
                 return
-
+        # make sure the last stderr line is printed
+        try:
+            line = self.stderr_queue.get_nowait()
+        except Empty:
+            pass
+        else:  # got line
+            # prevent double newlines
+            str_line = line.decode("utf-8").replace(os.linesep, "")
+            self.textbox.update(self.textbox.get() + str_line)
         # make sure to call communicate to properly finish process
         output, error = popen.communicate()
         self.__finished.set()
