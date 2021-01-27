@@ -5,6 +5,7 @@ import argparse
 import builtins
 from pathlib import Path
 import os
+from multiprocessing import cpu_count
 
 from cblaster import __version__
 
@@ -63,6 +64,24 @@ def full_database_path(database, *acces_modes):
     return database
 
 
+def max_cpus(value):
+    """
+    Ensure that the cpu's do not go above the available amount. Setting to high cpu's will crash database creation
+    badly
+
+    Args:
+        value(int): number of cpu's as provided by the user
+    Returns:
+        value as an integer with 1 <= value <= multiprocessing.cpu_count()
+    """
+    try:
+        value = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid 'int' value: f")
+    value = max(1, min(value, cpu_count()))
+    return value
+
+
 def add_makedb_subparser(subparsers):
     makedb = subparsers.add_parser(
         "makedb",
@@ -84,7 +103,7 @@ def add_makedb_subparser(subparsers):
     makedb.add_argument(
         "-cp",
         "--cpus",
-        type=int,
+        type=max_cpus,
         help="Number of CPUs to use when parsing genome files. By default, all"
              " available cores will be used.",
     )

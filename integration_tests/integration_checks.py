@@ -5,13 +5,12 @@ earlier or later versions will probably produce slightly different results and t
 work with this exact version of diamond. That is why these versions are included"""
 
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
 from tempfile import mkdtemp
 import platform
-import argparse
-
 
 OUT_DIR = None
 CURRENT_DIR = None
@@ -19,17 +18,21 @@ TEST_FILE_DIR = None
 COMPARISSON_FILE_DIR = None
 OS_NAME = platform.system().lower()
 
+POSSIBLE_FLAGS = ["silent"]
+
 
 class CommandTest:
-    def __init__(self, command, compare_files=None):
+    def __init__(self, command, description, compare_files=None):
         self.command = command
         self.run_time = 0
+        self.description = description
+        self.return_code = None
         self.__actual_expected = compare_files if compare_files is not None else []
 
-    def run(self):
+    def run(self, silent=False):
         global OUT_DIR
         try:
-            self.__run_command()
+            self.__run_command(silent)
         finally:
             # delete all files but not the folder
             for file_name in os.listdir(OUT_DIR):
@@ -39,16 +42,24 @@ class CommandTest:
                 except Exception as e:
                     print(f"Failed to delete {file_path}. Reason:{e}")
 
-    def __run_command(self):
-        print(f"Running command: '{self.command}'")
+    def __run_command(self, silent=False):
+        print(f"Running command: '{self.description}'")
         start_time = time.time()
-        return_code = os.system(self.command)
+        kwargs = dict(stdout=subprocess.DEVNULL)
+        if silent:
+            kwargs["stderr"] = subprocess.DEVNULL
+        popen = subprocess.Popen(self.command, **kwargs)
+        stdout, stderer = popen.communicate()
         end_time = time.time()
-        if return_code != 0:
-            raise RuntimeError(f"Command terminated with non zero exit status.")
+        self.return_code = popen.returncode
+        if self.return_code != 0:
+            raise RuntimeError(f"WARNING: command {self.description} failed.")
         self.run_time = end_time - start_time
         print(f"Command finished in {self.run_time:.3f} seconds.")
         if not self.__actual_expected:
+            print()
+            return
+        if self.return_code != 0:
             print()
             return
         for actual_file_path, expected_file_path in self.__actual_expected:
@@ -56,7 +67,7 @@ class CommandTest:
                 self.compare_files(actual_file_path, expected_file_path)
             except FileNotFoundError:
                 raise AssertionError(
-                    f"File {actual_file_path} has not been created during the execution of: '{self.command}'.")
+                    f"File {actual_file_path} has not been created during the execution of: '{self.description}'.")
         print(f"All output files are as expected.\n")
 
     def compare_files(self, actual_file_path, expected_file_path):
@@ -88,7 +99,8 @@ def setup():
     os.environ["PATH"] = f"{str(Path('./diamond_files').resolve().absolute())}{os.pathsep}{old_path}"
 
 
-def test_commands(command_names):
+def test_commands(arguments):
+    flags, command_names = filter_flags(arguments)
     commands = []
     command_names = command_names if command_names else ["search", "makedb"]
     for name in command_names:
@@ -100,11 +112,28 @@ def test_commands(command_names):
         elif name == "search_remote":
             commands.extend(search_remote_commands())
         elif name == "makedb":
-            pass
+            commands.extend(makedb_commands())
         else:
             raise ValueError(f"No command named {name}.")
     for command in commands:
-        command.run()
+        command.run(flags["silent"])
+
+
+def filter_flags(arguments):
+    flags = {name: False for name in POSSIBLE_FLAGS}
+    command_names = []
+    for item in arguments:
+        if item in POSSIBLE_FLAGS:
+            flags[item] = True
+        else:
+            command_names.append(item)
+    return flags, command_names
+
+
+def prin_result_summary(commands):
+    table = ""
+    for command in commands:
+        row = ""
 
 
 def search_commands():
@@ -115,7 +144,7 @@ def search_commands():
 def search_local_commands():
     global OUT_DIR, TEST_FILE_DIR
 
-    commands = commands = [
+    commands = [
         # test gbk query in local mode with all options enabled
         CommandTest(
             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb -o "
@@ -123,6 +152,7 @@ def search_local_commands():
             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
             f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            "test gbk query local",
             [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]]
         ),
         # test embl query in local mode with all options enabled
@@ -131,7 +161,8 @@ def search_local_commands():
             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json"
+            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            "test embl query local"
         ),
         # test fasta query in local mode with all options enabled
         CommandTest(
@@ -139,7 +170,8 @@ def search_local_commands():
             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json"
+            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            "test fasta query local"
         ),
         # test query identifiers in local mode
         CommandTest(
@@ -148,7 +180,8 @@ def search_local_commands():
             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh -ode , -odc 2 -osc -b"
             f" {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json"
+            f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            "test query identifiers local"
         ),
         # test local session with all options enabled
         CommandTest(
@@ -156,6 +189,7 @@ def search_local_commands():
             f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl.json "
             f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk.json -db"
             f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt",
+            "test local session",
             [["summary.txt", "summary_local_gbk_embl_combined.txt"]]
         ),
         # test recompute a local session
@@ -164,6 +198,7 @@ def search_local_commands():
             f"-s {OUT_DIR}{os.sep}test_session_local_gbk_copy.json --recompute"
             f" -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt "
             f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {OUT_DIR}{os.sep}binary.txt",
+            "test recompute local",
             [["summary.txt", "summary_local_gbk_recompute.txt"], ["binary.txt", "binary_local_gbk_recompute.txt"]]
         )]
     return commands
@@ -178,6 +213,7 @@ def search_remote_commands():
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa.json"
             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt",
+            "load remote session",
             [["summary.txt", "summary_remote_fa.txt"], ["binary.txt", "binary_remote_fa.txt"]]
         ),
         # recompute a remote session
@@ -186,18 +222,35 @@ def search_remote_commands():
             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa.json"
             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt --recompute -g 50000 -u 7"
             f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters",
+            "recompute remote session",
             [["summary.txt", "summary_remote_fa_recompute.txt"], ["binary.txt", "binary_remote_fa_recompute.txt"]]
         )
     ]
     return commands
 
 
+def makedb_commands():
+    global OUT_DIR, TEST_FILE_DIR
+    commands = [
+        CommandTest(
+            f"cblaster -d makedb {TEST_FILE_DIR}{os.sep}test_query.gb"
+            f" {TEST_FILE_DIR}{os.sep}test_query.embl -n {OUT_DIR}{os.sep}database -b 3 -c 100",
+            "makedb gbk, embl files",
+            [["database.fasta", "makedb_database_gbk_embl.fasta"]]
+        ),
+        CommandTest(
+            f"cblaster -d makedb {TEST_FILE_DIR}{os.sep}test_gff_v_maris.fna"
+            f" {TEST_FILE_DIR}{os.sep}test_gff_v_maris.gff -n {OUT_DIR}{os.sep}database -b 3 -c 100",
+            "makedb gbk, embl files"
+        )
+    ]
+    return commands
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument()
     # run tests of all the requested commands by specifying the command name separated by spaces
-    arguments = sys.argv[1:]
+    cmd_arguments = sys.argv[1:]
     print("Running setup")
     setup()
     print("\nRunning tests:\n")
-    test_commands(arguments)
+    test_commands(cmd_arguments)
