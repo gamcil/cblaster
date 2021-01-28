@@ -30,7 +30,13 @@ citation_frame = sg.Frame(
             "Acland, A. et al."
             " Database resources of the National Center for Biotechnology Information."
             " Nucleic Acids Res. 42, 7–17 (2014)",
-        )
+        ),
+        *get_citation(
+            "HMMER",
+            "Eddy, S. R. "
+            " Accelerated Profile HMM Searches."
+            " PLOS Computational Biology, 7(10) (2011)",
+        ),
     ],
     title_color="blue",
     font="Arial 10 bold",
