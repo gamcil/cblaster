@@ -58,14 +58,15 @@ def gne(
         scale=scale
     )
     if output:
-        LOG.info("Writing GNE table to %s", output.name)
+        LOG.info("Writing GNE table to %s", output)
         summary = summarise_gne(
             results,
             hide_headers=hide_headers,
             delimiter=delimiter,
             decimals=decimals,
         )
-        output.write(summary)
+        with open(output, "w") as f:
+            f.write(summary)
     # make sure to not always serve the plot.
     if plot:
         plot_gne(results, output=plot if plot is not True else None)
@@ -349,7 +350,7 @@ def main():
     elif args.subcommand == "extract":
         extract.extract(
             args.session,
-            download=args.download,
+            extract_seqs=args.extract_sequences,
             output=args.output,
             queries=args.queries,
             organisms=args.organisms,

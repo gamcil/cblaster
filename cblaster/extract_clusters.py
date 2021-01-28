@@ -192,7 +192,7 @@ def database_fetch_sequences(sqlite_db, cluster_hierarchy):
     needed_ids = set([subject.name for cluster, _, _ in cluster_hierarchy for subject in cluster])
 
     prot_sequences = dict()
-    for name, translation, scaffold_accession in query_database_with_names(list(needed_ids), sqlite_db):
+    for name, translation in query_database_with_names(list(needed_ids), sqlite_db):
         prot_sequences[name] = translation
     return prot_sequences
 
@@ -212,16 +212,7 @@ def efetch_protein_sequences(cluster_hierarchy):
         sequence_names.update([subject.name for subject in cluster.subjects])
     sequence_names = list(sequence_names)
 
-    # request sequences in batces of MAX_REQUEST_SIZE every 0.34 seconds (no more then 3 requests per second)
-    sequences = dict()
-    passed_time = 0
-    for i in range(int(len(sequence_names) / MAX_REQUEST_SIZE) + 1):
-        if passed_time < MIN_TIME_BETWEEN_REQUEST:
-            time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
-        start_time = time.time()
-        subset_sequence_names = sequence_names[i * MAX_REQUEST_SIZE: (i + 1) * MAX_REQUEST_SIZE]
-        sequences.update(efetch_sequences(subset_sequence_names))
-        passed_time = time.time() - start_time
+    sequences = efetch_sequences(sequence_names)
     return sequences
 
 

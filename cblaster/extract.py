@@ -10,6 +10,7 @@ import re
 
 from cblaster.classes import Session
 from cblaster.helpers import efetch_sequences
+from cblaster.database import query_database_with_names
 
 
 LOG = logging.getLogger(__name__)
@@ -58,23 +59,8 @@ def parse_scaffolds(scaffolds):
 
 
 def out_of_bounds(subject, start, end):
-    """Tests if a subject overlaps with or is outside of a given range."""
-    return (
-        subject.end < start
-        or subject.start < start < subject.end
-        or subject.start < end < subject.end
-        or subject.start > end
-    )
-
-
-def flatten(array):
-    """Flattens a list of lists.
-    e.g. [[1, 2, 3], [4, 5, 6]] --> [1, 2, 3, 4, 5, 6]
-    """
-    flat = []
-    for element in array:
-        flat.extend(element)
-    return flat
+    """Check if the subject is completely outside of a given range"""
+    return subject.start < start or subject.end > end
 
 
 def record_to_fasta(record, delimiter=None, name_only=False):
@@ -107,16 +93,27 @@ def format_records(records, delimiter=None, to_fasta=False, name_only=False):
 
 def extract_records(
     session,
-    in_cluster=True,
     queries=None,
     organisms=None,
     scaffolds=None,
 ):
-    """Extracts subject sequence names from a session file."""
+    """Extracts subject sequence names from a session file given a list of filters
+
+    Args:
+        session (Session): cblaster session object
+        queries (List): a list of query sequences that a subject should match with in order to be included
+        organisms (List): a list of organism names that a subject should be part of in order to be included
+        scaffolds (List): a list of scaffold names and ranges that a subject should be part of in order to be included
+
+    Returns:
+        a List of dictionaries with relevant information from subject objects.
+    """
     if organisms:
         organisms = parse_organisms(organisms)
     if scaffolds:
         scaffolds = parse_scaffolds(scaffolds)
+    if queries:
+        queries = set(queries)
     records = []
     for organism in session.organisms:
         if organisms and not organism_matches(organism.name, organisms):
@@ -131,10 +128,8 @@ def extract_records(
             else:
                 start = None
                 end = None
-            if in_cluster:
-                subjects = flatten(cluster.subjects for cluster in scaffold.clusters)
-            else:
-                subjects = scaffold.subjects
+
+            subjects = scaffold.subjects
             for subject in subjects:
                 if (start and end) and out_of_bounds(subject, start, end):
                     continue
@@ -151,12 +146,39 @@ def extract_records(
     return records
 
 
+def extract_sequences(session, records):
+    """Collect sequences for the given list of records. Query the offline database for a local mode session
+    or query ncbi for a remote session.
+
+    Sequences are collected into the records value
+
+    Args:
+        session (Session): cblaster Session object
+        records (List): list of dictionaries with records requested by the user to be extracted
+    """
+    mode = session.params["mode"]
+    headers = [record.get("name") for record in records]
+    if mode == "remote":
+        LOG.info("Fetching %i sequences from NCBI", len(records))
+        sequences = efetch_sequences(headers)
+
+    elif mode == "local":
+        LOG.info("Fetching %i sequences from database", len(records))
+        database = session.params["sqlite_db"]
+        names_sequences = query_database_with_names(headers, database)
+        sequences = {name: sequence for name, sequence in names_sequences}
+
+    else:
+        raise NotImplementedError(f"Sessions generated with mode {mode} are not supported yet.")
+    for record in records:
+        record["sequence"] = sequences.get(record["name"])
+
+
 def extract(
     session,
-    in_cluster=True,
     delimiter=None,
     name_only=False,
-    download=False,
+    extract_seqs=False,
     output=None,
     queries=None,
     organisms=None,
@@ -164,10 +186,9 @@ def extract(
 ):
     """Extract subject sequences from a cblaster session.
 
-    Parameters:
-        session (Session): cblaster Session object
-        in_cluster: (bool): Only sequences in clusters are extracted
-        download (bool): Download hit sequences from NCBI
+    Args:
+        session (str): path to json file encoding a cblaster Session object
+        extract_seqs (bool): Put the sequences of the extracted proteins into a fasta file
         output (str): Output file name
         queries (list): Query sequence names
         organisms (list): Organism filtering regular expressions
@@ -183,24 +204,18 @@ def extract(
     LOG.info("Extracting subject sequences matching filters")
     records = extract_records(
         session,
-        in_cluster=in_cluster,
         queries=queries,
         organisms=organisms,
         scaffolds=scaffolds,
     )
 
-    if download:
-        LOG.info("Fetching %i sequences from NCBI", len(records))
-        headers = [record.get("name") for record in records]
-        sequences = efetch_sequences(headers)
-        for record in records:
-            record["sequence"] = sequences.get(record["name"])
+    if extract_seqs:
+        extract_sequences(session, records)
 
-    # FASTA format if downloading from NCBI, otherwise newline separated IDs
     text = format_records(
         records,
         delimiter=delimiter,
-        to_fasta=download,
+        to_fasta=extract_seqs,
         name_only=name_only,
     )
 
@@ -212,4 +227,3 @@ def extract(
         print(text)
 
     LOG.info("Done!")
-    return records
