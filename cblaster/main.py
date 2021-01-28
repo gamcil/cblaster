@@ -6,7 +6,7 @@ import sys
 
 from pathlib import Path
 
-import hmmer
+import hmm_search
 from cblaster import (
     context,
     database,
@@ -218,13 +218,13 @@ def cblaster(
             )
 
         elif mode == "hmm":
-            results = hmmer.preform_hmmer(
+            results = hmm_search.preform_hmmer(
                 database=database[0],
                 query_profiles=query_profiles,
                 database_pfam=database_pfam,
             )
         elif mode == "combi_local":
-            results_hmm = hmmer.preform_hmmer(
+            results_hmm = hmm_search.preform_hmmer(
                 database=database[0],
                 query_profiles=query_profiles,
                 database_pfam=database_pfam,
@@ -240,7 +240,7 @@ def cblaster(
             results = results_blast + results_hmm
 
         elif mode == "combi_remote":
-            results_hmm = hmmer.preform_hmmer(
+            results_hmm = hmm_search.preform_hmmer(
                 database=database[0],
                 query_profiles=query_profiles,
                 database_pfam=database_pfam,
