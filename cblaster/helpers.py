@@ -3,6 +3,7 @@
 import shutil
 import requests
 import logging
+import time
 
 from collections import OrderedDict
 from pathlib import Path
@@ -11,6 +12,9 @@ from cblaster import genome_parsers as gp
 
 
 LOG = logging.getLogger(__name__)
+# from https://www.ncbi.nlm.nih.gov/books/NBK25497/
+MAX_REQUEST_SIZE = 500
+MIN_TIME_BETWEEN_REQUEST = 0.34  # seconds
 
 
 def get_program_path(aliases):
@@ -73,18 +77,33 @@ def efetch_sequences(headers):
     """Retrieve protein sequences from NCBI for supplied accessions.
 
     This function uses EFetch from the NCBI E-utilities to retrieve the sequences for
-    all synthases specified in `headers`. It then calls `fasta.parse` to parse the
+    all synthases specified in `headers`. The calls to EFetch can not exceed 500 accessions
+    this means that the calls have to be limited. It then calls `fasta.parse` to parse the
     returned response; note that extra processing has to occur because the returned
     FASTA will contain a full sequence description in the header line after the
     accession.
 
-    Parameters:
+    Args:
         headers (list): Valid NCBI sequence identifiers (accession, GI, etc.).
+    Returns:
+        a dictionary of sequences keyed on header id
     """
     LOG.info("Querying NCBI for sequences of: %s", headers)
-    response = efetch_sequences_request(headers)
-    records = gp.parse_fasta_str(response.text)
-    return {r.id: str(r.seq) for r in records}
+    sequence_records = {}
+    passed_time = 0
+
+    # request sequences in batces of MAX_REQUEST_SIZE every 0.34 seconds (no more then 3 requests per second)
+    for i in range(int(len(headers) / MAX_REQUEST_SIZE) + 1):
+        if passed_time < MIN_TIME_BETWEEN_REQUEST:
+            time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
+        start_time = time.time()
+        subset_headers = headers[i * MAX_REQUEST_SIZE: (i + 1) * MAX_REQUEST_SIZE]
+        response = efetch_sequences_request(subset_headers)
+        records = gp.parse_fasta_str(response.text)
+        for record in records:
+            sequence_records[record.id] = str(record.seq)
+        passed_time = time.time() - start_time
+    return sequence_records
 
 
 def sequences_to_fasta(sequences):

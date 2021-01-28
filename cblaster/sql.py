@@ -29,8 +29,7 @@ WHERE
 NAME_QUERY = """\
 SELECT
     name,
-    translation,
-    scaffold
+    translation
 FROM
     gene
 WHERE

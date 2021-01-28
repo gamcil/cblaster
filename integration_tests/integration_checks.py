@@ -45,10 +45,10 @@ class CommandTest:
     def __run_command(self, silent=False):
         print(f"Running command: '{self.description}'")
         start_time = time.time()
-        kwargs = dict(stdout=subprocess.DEVNULL)
+        kwargs = dict()#stdout=subprocess.DEVNULL)
         if silent:
             kwargs["stderr"] = subprocess.DEVNULL
-        popen = subprocess.Popen(self.command, **kwargs)
+        popen = subprocess.Popen(self.command, shell=True, **kwargs)
         stdout, stderer = popen.communicate()
         end_time = time.time()
         self.return_code = popen.returncode
@@ -115,6 +115,8 @@ def test_commands(arguments):
             commands.extend(makedb_commands())
         elif name == "gne":
             commands.extend(gne_commands())
+        elif name == "extract":
+            commands.extend(extract_commands())
         else:
             raise ValueError(f"No command named {name}.")
     for command in commands:
@@ -259,6 +261,25 @@ def gne_commands():
             f' --scale linear -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 3',
             "gne with remote fa session",
             [["summary.txt", "gne_remote_summary.txt"]]
+        )
+    ]
+    return commands
+
+
+def extract_commands():
+    global OUT_DIR, TEST_FILE_DIR
+    commands = [
+        CommandTest(
+            f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_local_gbk.json -or GCA_0002041.* -q AEK75517.1 "
+            f"AEK75496.1 AEK75490.1 -o {OUT_DIR}{os.sep}summary.txt -sc CP002638.1:2562030-2619476 -de _ -es -no",
+            "local session extraction",
+            [["summary.txt", "extract_local_summary.txt"]]
+        ),
+        CommandTest(
+            f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json -o "
+            f"{OUT_DIR}{os.sep}summary.txt -de : -es -or Verrucosispora.*",
+            "remote session extraction",
+            [["summary.txt", "extract_remote_summary.txt"]]
         )
     ]
     return commands

@@ -444,7 +444,7 @@ def add_gne_output_group(parser):
     group.add_argument(
         "-o",
         "--output",
-        type=argparse.FileType("w"),
+        type=lambda x: full_path(x, os.W_OK),
         help="Write results to file",
     )
     group.add_argument(
@@ -547,16 +547,36 @@ def add_extract_subparser(subparsers):
     parser.add_argument("session", help="cblaster session file")
 
     fil = parser.add_argument_group("Filters")
-    fil.add_argument("-q", "--queries", help="IDs of query sequences", nargs="+")
-    fil.add_argument("-or", "--organisms", help="Organism names", nargs="+")
-    fil.add_argument("-sc", "--scaffolds", help="Scaffold names/ranges", nargs="+")
+    fil.add_argument(
+        "-q",
+        "--queries",
+        help="IDs of query sequences",
+        nargs="+"
+    )
+    fil.add_argument(
+        "-or",
+        "--organisms",
+        help="Organism names, accepts regular expressions",
+        nargs="+"
+    )
+    fil.add_argument(
+        "-sc",
+        "--scaffolds",
+        help="Scaffold names/ranges, in the form scaffold_name:start-stop",
+        nargs="+"
+    )
 
     out = parser.add_argument_group("Output")
-    out.add_argument("-o", "--output", help="Output file name")
     out.add_argument(
-        "-d",
-        "--download",
-        help="Fetch sequences from NCBI and write in FASTA format",
+        "-o",
+        "--output",
+        help="Output file name"
+    )
+    out.add_argument(
+        "-es",
+        "--extract_sequences",
+        help="Extract protein sequences for all extracted proteins. The resulting summary will"
+             "have a fasta format.",
         action="store_true",
     )
     out.add_argument(
@@ -565,7 +585,11 @@ def add_extract_subparser(subparsers):
         help="Do not save sequence descriptions (i.e. no genomic coordinates)",
         action="store_true",
     )
-    out.add_argument("-de", "--delimiter", help="Sequence description delimiter")
+    out.add_argument(
+        "-de",
+        "--delimiter",
+        help="Sequence description delimiter"
+    )
 
 
 def add_extract_clusters_subparser(subparsers):
@@ -580,9 +604,11 @@ def add_extract_clusters_subparser(subparsers):
                "'search' command):\n"
                "  $ cblaster extract_clusters session.json -c 1-10 25 -o example_directory\n\n"
                "Extract only from a specific organisms (regular expressions):\n"
-               "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o example_directory\n\n"
+               "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" "
+               "-o example_directory\n\n"
                "Extract only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
-               "  $ cblaster extract_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o example_directory\n\n"
+               "  $ cblaster extract_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o "
+               "example_directory\n\n"
                "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
