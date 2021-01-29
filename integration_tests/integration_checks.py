@@ -45,7 +45,7 @@ class CommandTest:
     def __run_command(self, silent=False):
         print(f"Running command: '{self.description}'")
         start_time = time.time()
-        kwargs = dict()#stdout=subprocess.DEVNULL)
+        kwargs = dict(stdout=subprocess.DEVNULL)
         if silent:
             kwargs["stderr"] = subprocess.DEVNULL
         popen = subprocess.Popen(self.command, shell=True, **kwargs)
@@ -123,6 +123,7 @@ def test_commands(arguments):
             raise ValueError(f"No command named {name}.")
     for command in commands:
         command.run(flags["silent"])
+    print("All tests passed!")
 
 
 def filter_flags(arguments):
@@ -186,8 +187,8 @@ def search_local_commands():
         # test local session with all options enabled
         CommandTest(
             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "
-            f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl.json "
-            f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk.json -db"
+            f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl_{OS_NAME}.json "
+            f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -db"
             f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt",
             "test local session",
             [["summary.txt", "summary_local_gbk_embl_combined.txt"]]
@@ -253,13 +254,13 @@ def gne_commands():
     global OUT_DIR, TEST_FILE_DIR
     commands = [
         CommandTest(
-            f"cblaster gne {TEST_FILE_DIR}{os.sep}test_session_local_gbk.json --max_gap 200000 --samples 25"
+            f"cblaster -d gne {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json --max_gap 200000 --samples 25"
             f' --scale log -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 2',
             "gne with local gbk session",
             [["summary.txt", "gne_local_summary.txt"]]
         ),
         CommandTest(
-            f"cblaster gne {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json --max_gap 250000 --samples 10"
+            f"cblaster -d gne {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json --max_gap 250000 --samples 10"
             f' --scale linear -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 3',
             "gne with remote fa session",
             [["summary.txt", "gne_remote_summary.txt"]]
@@ -272,8 +273,9 @@ def extract_commands():
     global OUT_DIR, TEST_FILE_DIR
     commands = [
         CommandTest(
-            f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_local_gbk.json -or GCA_0002041.* -q AEK75517.1 "
-            f"AEK75496.1 AEK75490.1 -o {OUT_DIR}{os.sep}summary.txt -sc CP002638.1:2562030-2619476 -de _ -es -no",
+            f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json "
+            f"-or GCA_0002041.* -q AEK75517.1 AEK75496.1 AEK75490.1 -o"
+            f" {OUT_DIR}{os.sep}summary.txt -sc CP002638.1:2562030-2619476 -de _ -es -no",
             "local session extraction",
             [["summary.txt", "extract_local_summary.txt"]]
         ),
@@ -291,7 +293,7 @@ def extract_clusters_commands():
     global OUT_DIR, TEST_FILE_DIR
     commands = [
         CommandTest(
-            f"cblaster extract_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk.json -c 1-2 4 -o {OUT_DIR}"
+            f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 1-2 4 -o {OUT_DIR}"
             f" -pf test_ -f genbank -mec 5",
             "local session cluster extraction",
             [["test_cluster1.gbk", "extract_clusters_cluster1_local_genbank.gbk"]]
@@ -299,7 +301,7 @@ def extract_clusters_commands():
         CommandTest(
             f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json -o {OUT_DIR} -or"
             f" Verrucosispora.* -sc KF826676.1:5000-30000 -st 20 -f bigscape",
-            "remote session extraction",
+            "remote session cluster extraction",
             [["cluster11.gbk", "extract_clusters_cluster11_remote_bigscape.gbk"]]
         )
     ]
