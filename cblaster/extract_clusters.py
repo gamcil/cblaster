@@ -63,6 +63,7 @@ def extract_cluster_hierarchies(
         max_clusters=50
 ):
     """Filter out selected clusters with their associated scaffold and organism
+
     Args:
         session (Session): A session object
         cluster_numbers (list): Numbers of clusters or a range of numbers eg 1-5
@@ -77,11 +78,6 @@ def extract_cluster_hierarchies(
     """
     # no filter options return all clusters
     selected_clusters = set()
-    if not cluster_numbers and not score_threshold and not organisms and not scaffolds:
-        for organism in session.organisms:
-            selected_clusters.update(get_organism_clusters(organism))
-        selected_clusters = sorted(list(selected_clusters), key=lambda x: x[0].score, reverse=True)[:max_clusters]
-        return selected_clusters
 
     # prepare the filters defined by the user
     if cluster_numbers:
@@ -93,53 +89,37 @@ def extract_cluster_hierarchies(
 
     # actually filter out the clusters
     for organism in session.organisms:
-        if organisms and organism_matches(organism.name, organisms):
-            selected_clusters.update(get_organism_clusters(organism))
+        if organisms and not organism_matches(organism.name, organisms):
             continue
         for scaffold in organism.scaffolds.values():
-            if scaffolds and scaffold.accession in scaffolds:
-                selected_clusters.update(get_scaffold_clusters(scaffold, organism.name, **scaffolds[scaffold.accession]))
+            if scaffolds and scaffold.accession not in scaffolds:
                 continue
             for cluster in scaffold.clusters:
-                if cluster_numbers and cluster.number in cluster_numbers or \
-                        (score_threshold and cluster.score >= score_threshold):
-                    selected_clusters.add((cluster, scaffold.accession, organism.name))
+                # filter on cluster number and score
+                if (not cluster_numbers or cluster.number in cluster_numbers) and \
+                        (not score_threshold or cluster.score >= score_threshold):
+                    # filter on scaffold range if applicable
+                    if not scaffolds or (cluster_in_range(scaffolds[scaffold.accession]["start"],
+                                                          scaffolds[scaffold.accession]["end"], cluster)):
+                        selected_clusters.add((cluster, scaffold.accession, organism.name))
     selected_clusters = sorted(list(selected_clusters), key=lambda x: x[0].score, reverse=True)[:max_clusters]
     return selected_clusters
 
 
-def get_organism_clusters(organism):
-    """Get all clusters of an organism
+def cluster_in_range(start, end, cluster):
+    """
+    Check if the cluster is within a given range
 
     Args:
-        organism (cblaster.Organism): cblaster Organism object
+        start (int): start of the range
+        end (int): end of the range
+        cluster (Cluster): cblaster cluster object
     Returns:
-        list of tuples in form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
+        boolean given if the cluster is inbetween the start and end value
     """
-    selected_clusters = []
-    for scaffold in organism.scaffolds.values():
-        selected_clusters.extend(get_scaffold_clusters(scaffold, organism.name))
-    return selected_clusters
-
-
-def get_scaffold_clusters(scaffold, organism_name, start=None, end=None):
-    """Get all clusters on a scaffold
-
-    Args:
-        scaffold (cblaster.Scaffold): cblaster scaffold object
-        organism_name(str): name of the organism the scaffold is from
-        start (int): start coordinate of cluster must be bigger then start
-        end (int): end coordiante of cluster must be smaller then stop
-    Returns:
-        list of tuples in form (cblaster.Cluster object, scaffold_accession of cluster, organism_name of cluster)
-    """
-    selected_clusters = []
-    for cluster in scaffold.clusters:
-        # check if the cluster is within the range given for the scaffold
-        if (start and start >= cluster.start) or (end and end <= cluster.end):
-            continue
-        selected_clusters.append((cluster, scaffold.accession, organism_name))
-    return selected_clusters
+    if start is end is None:
+        return True
+    return start <= cluster.start and end >= cluster.end
 
 
 def create_genbanks_from_clusters(
@@ -359,7 +339,7 @@ def extract_clusters(
     LOG.info(f"Extracted {len(cluster_hierarchy)} clusters.")
     if len(cluster_hierarchy) == 0:
         LOG.info("There are no clusters that meet the filtering criteria. Exiting...")
-        raise SystemExit
+        raise SystemExit(0)
     LOG.info(f"Writing genbank files")
     create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix, format_)
 
