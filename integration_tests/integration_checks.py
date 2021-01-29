@@ -102,7 +102,7 @@ def setup():
 def test_commands(arguments):
     flags, command_names = filter_flags(arguments)
     commands = []
-    command_names = command_names if command_names else ["search", "makedb", "gne"]
+    command_names = command_names if command_names else ["search", "makedb", "gne", "extract", "extract_clusters"]
     for name in command_names:
         name = name.lower()
         if name == "search":
@@ -117,6 +117,8 @@ def test_commands(arguments):
             commands.extend(gne_commands())
         elif name == "extract":
             commands.extend(extract_commands())
+        elif name == "extract_clusters":
+            commands.extend(extract_clusters_commands())
         else:
             raise ValueError(f"No command named {name}.")
     for command in commands:
@@ -280,6 +282,25 @@ def extract_commands():
             f"{OUT_DIR}{os.sep}summary.txt -de : -es -or Verrucosispora.*",
             "remote session extraction",
             [["summary.txt", "extract_remote_summary.txt"]]
+        )
+    ]
+    return commands
+
+
+def extract_clusters_commands():
+    global OUT_DIR, TEST_FILE_DIR
+    commands = [
+        CommandTest(
+            f"cblaster extract_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk.json -c 1-2 4 -o {OUT_DIR}"
+            f" -pf test_ -f genbank -mec 5",
+            "local session cluster extraction",
+            [["test_cluster1.gbk", "extract_clusters_cluster1_local_genbank.gbk"]]
+        ),
+        CommandTest(
+            f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json -o {OUT_DIR} -or"
+            f" Verrucosispora.* -sc KF826676.1:5000-30000 -st 20 -f bigscape",
+            "remote session extraction",
+            [["cluster11.gbk", "extract_clusters_cluster11_remote_bigscape.gbk"]]
         )
     ]
     return commands

@@ -628,7 +628,7 @@ def add_extract_clusters_subparser(subparsers):
     filter_parser.add_argument(
         "-st",
         "--score_threshold",
-        help="Minimum score of a cluster to be included",
+        help="Minimum score of a cluster in order to be included",
         type=float
     )
     filter_parser.add_argument(
@@ -655,7 +655,7 @@ def add_extract_clusters_subparser(subparsers):
     output.add_argument(
         "-pf",
         "--prefix",
-        help="Start of the name for each cluster file, the base name is cluster'clutser.number'",
+        help="Start of the name for each cluster file, the base name is 'cluster_clutser_number' e.g. cluster1",
         default=""
     )
     output.add_argument(
