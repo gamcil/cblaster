@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from Bio import SeqIO
 
 from clinker.classes import (
@@ -193,7 +194,6 @@ def plot_clusters(
 
     allignments = clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies)
     global_aligner = allignments_to_clinker_global_alligner(allignments)
-
     clinker_plot_clusters(global_aligner, plot_outfile, use_file_order=True)
     if plot_outfile:
         LOG.info(f"Plot file can be found at {plot_outfile}")

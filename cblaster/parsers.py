@@ -643,7 +643,7 @@ def add_extract_clusters_subparser(subparsers):
         default="genbank"
     )
     output.add_argument(
-        "-mec",
+        "-mc",
         "--maximum_clusters",
         type=int,
         default=50,
@@ -710,7 +710,7 @@ def add_plot_clusters_subparser(subparsers):
         help="Location were to store the plot file."
     )
     output.add_argument(
-        "-mpc",
+        "-mc",
         "--maximum_clusters",
         type=int,
         default=50,

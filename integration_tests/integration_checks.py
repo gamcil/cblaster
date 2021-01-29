@@ -102,7 +102,8 @@ def setup():
 def test_commands(arguments):
     flags, command_names = filter_flags(arguments)
     commands = []
-    command_names = command_names if command_names else ["search", "makedb", "gne", "extract", "extract_clusters"]
+    command_names = command_names if command_names else ["search", "makedb", "gne", "extract",
+                                                         "extract_clusters", "plot_clusters"]
     for name in command_names:
         name = name.lower()
         if name == "search":
@@ -119,6 +120,8 @@ def test_commands(arguments):
             commands.extend(extract_commands())
         elif name == "extract_clusters":
             commands.extend(extract_clusters_commands())
+        elif name == "plot_clusters":
+            commands.extend(plot_clusters_commands())
         else:
             raise ValueError(f"No command named {name}.")
     for command in commands:
@@ -212,7 +215,7 @@ def search_remote_commands():
     commands = [
         CommandTest(
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
-            f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa.json"
+            f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt",
             "load remote session",
             [["summary.txt", "summary_remote_fa.txt"], ["binary.txt", "binary_remote_fa.txt"]]
@@ -220,7 +223,7 @@ def search_remote_commands():
         # recompute a remote session
         CommandTest(
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
-            f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa.json"
+            f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt --recompute -g 50000 -u 7"
             f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters",
             "recompute remote session",
@@ -260,7 +263,7 @@ def gne_commands():
             [["summary.txt", "gne_local_summary.txt"]]
         ),
         CommandTest(
-            f"cblaster -d gne {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json --max_gap 250000 --samples 10"
+            f"cblaster -d gne {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json --max_gap 250000 --samples 10"
             f' --scale linear -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 3',
             "gne with remote fa session",
             [["summary.txt", "gne_remote_summary.txt"]]
@@ -280,7 +283,7 @@ def extract_commands():
             [["summary.txt", "extract_local_summary.txt"]]
         ),
         CommandTest(
-            f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json -o "
+            f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json -o "
             f"{OUT_DIR}{os.sep}summary.txt -de : -es -or Verrucosispora.*",
             "remote session extraction",
             [["summary.txt", "extract_remote_summary.txt"]]
@@ -293,16 +296,34 @@ def extract_clusters_commands():
     global OUT_DIR, TEST_FILE_DIR
     commands = [
         CommandTest(
-            f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 1-2 4 -o {OUT_DIR}"
-            f" -pf test_ -f genbank -mec 5",
+            f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 1-2 4 -o"
+            f" {OUT_DIR} -pf test_ -f genbank -mc 5",
             "local session cluster extraction",
             [["test_cluster1.gbk", "extract_clusters_cluster1_local_genbank.gbk"]]
         ),
         CommandTest(
-            f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa.json -o {OUT_DIR} -or"
+            f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json -o {OUT_DIR} -or"
             f" Verrucosispora.* -sc KF826676.1:5000-30000 -st 20 -f bigscape",
             "remote session cluster extraction",
             [["cluster11.gbk", "extract_clusters_cluster11_remote_bigscape.gbk"]]
+        )
+    ]
+    return commands
+
+
+def plot_clusters_commands():
+    # this check will open 2 plots that are deleter right after. There is unfortunately no way to stop this.
+    global OUT_DIR, TEST_FILE_DIR
+    commands = [
+        CommandTest(
+            f"cblaster -d plot_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 1-2 4 -o"
+            f" {OUT_DIR}{os.sep}plot.html -mc 5",
+            "local session cluster plot"
+        ),
+        CommandTest(
+            f"cblaster -d plot_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json -o"
+            f" {OUT_DIR}{os.sep}plot.html -mc 5 -or Verrucosispora.* -sc KF826676.1:5000-30000 -st 20",
+            "remote session cluster plot"
         )
     ]
     return commands
