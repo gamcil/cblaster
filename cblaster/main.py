@@ -382,17 +382,6 @@ def main():
             plot_outfile=args.output,
         )
 
-    elif args.subcommand == "plot_clusters":
-        plot_clusters.plot_clusters(
-            session=args.session,
-            cluster_numbers=args.clusters,
-            score_threshold=args.score_threshold,
-            organisms=args.organisms,
-            scaffolds=args.scaffolds,
-            plot_outfile=args.output,
-            max_clusters=args.maximum_clusters,
-        )
-
 
 if __name__ == "__main__":
     main()
