@@ -456,17 +456,17 @@ class Hit(Serializer):
 
         if "gb" in subject or "ref" in subject:
             subject = re.search(r"\|([A-Za-z0-9\._]+)\|", subject).group(1)
-
+        ## Made id & Coverage a None type, hmmer does not have those values
         self.subject = subject
         self.bitscore = float(bitscore)
-        self.identity = float(identity)
-        self.coverage = float(coverage)
+        self.identity = identity
+        self.coverage = coverage
         self.evalue = float(evalue)
 
     def __str__(self):
         return (
             f"Hit: {self.query} - {self.subject}:"
-            f" {self.identity:.2%}/{self.coverage:.2%}"
+            f" {self.identity}/{self.coverage:}"
         )
 
     def __key(self):

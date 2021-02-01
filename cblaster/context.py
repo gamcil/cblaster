@@ -114,7 +114,8 @@ def parse_IP_groups(results):
     Entry = namedtuple("Entry", fields)
     groups = defaultdict(list)
     for line in results:
-        if not line or line.startswith("Id\tSource") or line.isspace():
+        if not line or line.startswith("Id\tSource") or line.isspace() \
+                or "skipping" in line:
             continue
         ipg, *fields = line.strip("\n").split("\t")
         entry = Entry(*fields)
@@ -504,8 +505,8 @@ def search(
     min_hits=3,
     gap=20000,
     require=None,
+    ipg_file=None,
     query_sequence_order=None,
-    ipg_file=None
 ):
     """Gets the genomic context for a collection of Hit objects.
 
@@ -522,11 +523,13 @@ def search(
 
     Args:
         hits (list): Collection of Hit objects to find clusters in.
+        sqlite_db:
         require (list): Names of query sequences that must be represented in a cluster.
         unique (int): Unique query sequence threshold.
         min_hits (int): Minimum number of hits in a hit cluster.
         gap (int): Maximum intergenic distance (bp) between any two hits in a cluster.
         query_sequence_order (list): list of sequences of the order in the query file, is
+        ipg_file:
     Returns:
         Dictionary of Organism objects keyed on species name.
     """

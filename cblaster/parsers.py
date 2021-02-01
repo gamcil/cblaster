@@ -23,7 +23,7 @@ def add_makedb_subparser(subparsers):
         " .sqlite3 and .dmnd, respectively)",
     )
     makedb.add_argument(
-        "-c",
+        "-cp",
         "--cpus",
         type=int,
         help="Number of CPUs to use when parsing genome files. By default, all"
@@ -65,6 +65,12 @@ def add_input_group(search):
         "--query_ids",
         nargs="+",
         help="A collection of valid NCBI sequence identifiers to be searched",
+    )
+    group.add_argument(
+        "-qp",
+        "--query_profiles",
+        nargs="+",
+        help="A collection of valid Pfam profile identifiers to be searched",
     )
 
 
@@ -170,30 +176,40 @@ def add_searching_group(search):
         "-m",
         "--mode",
         help="cblaster search mode",
-        choices=["local", "remote"],
+        choices=["local", "remote", "hmm", "combi_local", "combi_remote"],
         default="remote",
     )
     group.add_argument(
         "-db",
         "--database",
         default="nr",
+        nargs="+",
         help="Database to be searched. This should be either a path to a local"
         " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
-        " database name (def. nr)",
+        " database name (def. nr)"
+        " For the hmm search mode a path to a local Fasta or genbanck database"
+        " is required",
     )
     group.add_argument(
-        "-c",
+        "-cp",
         "--cpus",
         type=int,
         help="Number of CPUs to use in local search. By default, all"
         " available cores will be used.",
     )
     group.add_argument(
+        "-pfam",
+        "--database_pfam",
+        help="Path to Pfam database, if not present it will save db there"
+        " This option is required when running hmm or combi search mode",
+    )
+    group.add_argument(
         "-jdb",
         "--json_db",
         help="Path to local JSON database created using cblaster makedb. If this"
         " argument is provided, genomic context will be fetched from this database"
-        " instead of through NCBI IPG.",
+        " instead of through NCBI IPG."
+        "Required for local, hmm and combi searches",
     )
     group.add_argument(
         "-eq",
