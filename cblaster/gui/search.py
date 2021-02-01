@@ -57,13 +57,15 @@ combi_local_tab = sg.Tab("Hmm and Local", [
     [TextLabel("FASTA Database"),
      sg.InputText(
          default_text="e.g cblaster.fasta",
-         key="fa database cl"
+         key="fa database cl",
+         size=(34, 1)
      ),
      sg.FileBrowse(key="fa database cl")],
     [TextLabel("Pfam database"),
      sg.InputText(
          default_text='directory with \'Pfam-A.hmm.dat.gz\' in it',
-         key="pfam database cl"
+         key="pfam database cl",
+         size=(34, 1)
      ),
      sg.FolderBrowse(key="pfam database cl")],
     [TextLabel("DIAMOND database"),
@@ -81,13 +83,15 @@ combi_remote_tab = sg.Tab("Hmm and remote", [
     [TextLabel("FASTA Database"),
      sg.InputText(
          default_text="e.g cblaster.fasta",
-         key="fa database cr"
+         key="fa database cr",
+         size=(34, 1)
      ),
      sg.FileBrowse(key="fa database cr")],
     [TextLabel("Pfam database"),
      sg.InputText(
          default_text='e.g. directory with \'Pfam-A.hmm.dat.gz\' in it',
-         key="pfam database cr"
+         key="pfam database cr",
+         size=(34, 1)
      ),
      sg.FolderBrowse(key="pfam database cr")],
     [TextLabel("Database"),

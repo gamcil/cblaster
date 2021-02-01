@@ -197,7 +197,7 @@ main_gui_layout = [
         [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
         [sg.Tab("Extract Clusters", [[Column(extract_clusters.layout, scrollable=True)]])],
         [sg.Tab("Plot Clusters", [[Column(plot_clusters.layout, scrollable=True)]])],
-        [sg.Tab("Citation", [[Column(citation.layout)]])],
+        [sg.Tab("Citation", [[Column(citation.layout, scrollable=True)]])],
     ], enable_events=True, key="cblaster_tabs"
     )],
     [sg.Button("Start", key="start_button", button_color=["white", "green"]),
