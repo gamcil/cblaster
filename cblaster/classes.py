@@ -496,11 +496,11 @@ class Hit(Serializer):
 
         if "gb" in subject or "ref" in subject:
             subject = re.search(r"\|([A-Za-z0-9\._]+)\|", subject).group(1)
-        ## Made id & Coverage a None type, hmmer does not have those values
+        # Made id & Coverage a None type, hmmer does not have those values
         self.subject = subject
         self.bitscore = float(bitscore)
-        self.identity = identity
-        self.coverage = coverage
+        self.identity = float(identity) if identity is not None else None
+        self.coverage = float(coverage) if coverage is not None else None
         self.evalue = float(evalue)
 
     def __str__(self):
@@ -510,7 +510,7 @@ class Hit(Serializer):
         )
 
     def __key(self):
-        return (self.query, self.bitscore, self.identity, self.coverage, self.evalue)
+        return self.query, self.bitscore, self.identity, self.coverage, self.evalue
 
     def __hash__(self):
         return hash(self.__key())

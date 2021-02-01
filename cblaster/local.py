@@ -29,8 +29,8 @@ def parse(results, min_identity=30, min_coverage=50, max_evalue=0.01):
     for row in results[:-1]:
         hit = Hit(*row.split("\t"))
         if (
-            hit.identity > min_identity
-            and hit.coverage > min_coverage
+            (hit.identity is None or hit.identity > min_identity) and
+            (hit.coverage is None or hit.coverage > min_coverage)
             and hit.evalue < max_evalue
         ):
             hits.append(hit)

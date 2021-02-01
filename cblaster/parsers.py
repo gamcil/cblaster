@@ -271,7 +271,7 @@ def add_searching_group(search):
     group.add_argument(
         "-db",
         "--database",
-        default="nr",
+        default=["nr"],
         nargs="+",
         type=lambda x: full_database_path(x, os.R_OK),
         help="Database to be searched. This should be either a path to a local"
@@ -784,7 +784,7 @@ def parse_args(args):
         return arguments
 
     if arguments.mode == "remote":
-        if arguments.database not in NCBI_DATABASES:
+        if arguments.database[0] not in NCBI_DATABASES:
             parser.error(f"Valid databases are: {', '.join(NCBI_DATABASES)}")
     else:
         for arg in ["entrez_query", "rid"]:
