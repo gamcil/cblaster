@@ -147,9 +147,16 @@ def get_data(session):
                 matrix.append(cells)
                 cluster_id += 1
 
-    # Generate input for linkage
-    linkage_matrix = generate_linkage_matrix(matrix)
-    hierarchy = transform_linkage_matrix(linkage_matrix)
+    # Only generate a linkage matrix if there is more than one result
+    if len(matrix) > 1:
+        linkage_matrix = generate_linkage_matrix(matrix)
+        hierarchy = transform_linkage_matrix(linkage_matrix)
+    else:
+        hierarchy = {
+            "name": 0,
+            "length": 0,
+            "children": []
+        }
 
     return {
         "queries": session.queries,
