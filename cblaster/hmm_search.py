@@ -3,6 +3,7 @@
 """
 Hmmfetch and hmmsearch implementation
 """
+
 import os
 import gzip
 import subprocess
@@ -15,6 +16,7 @@ from cblaster.classes import Hit
 from cblaster import helpers
 
 LOG = logging.getLogger(__name__)
+
 
 def check_pfam_db(path):
     """Check if Pfam-A db exists else download
@@ -74,10 +76,11 @@ def fetch_profiles(db_path, keys_ls):
     ls_keys = get_full_accession_number(db_path, keys_ls)
     if not ls_keys:
         LOG.error("No valid profiles could be selected")
+        return "no matches"
     else:
         for key in ls_keys:
-            command_fetch_profile = "hmmfetch -o {} {} {}".format(db_path +
-                              key + ".hmm", db_path + "Pfam-A.hmm.gz", key)
+            command_fetch_profile = "hmmfetch -o {} {} {}".\
+                format(db_path + key + ".hmm", db_path + "Pfam-A.hmm.gz", key)
             subprocess.run(command_fetch_profile, stdout=subprocess.PIPE,
                            shell=True)
     LOG.info("Profiles found: %s", ls_keys)
@@ -94,16 +97,15 @@ def run_hmmsearch(path_pfam, path_db, ls_keys):
     Return:
         temp_res: List, String of result file names
     """
-    LOG.info("Preforming hmmsearch")
+    LOG.info("Performing hmmsearch")
     temp_res = []
     for prof in ls_keys:
-        command_run_hmmsearch = "hmmsearch -o {} {} {}".format(prof +
-                            "_results.txt", path_pfam + prof + ".hmm", path_db)
-        results = subprocess.run(command_run_hmmsearch, stdout=subprocess.PIPE,
-                       shell=True)
+        command_run_hmmsearch = "hmmsearch -o {} {} {}".\
+            format(prof + "_results.txt", path_pfam + prof + ".hmm", path_db)
+        results = subprocess.run(command_run_hmmsearch, stdout=subprocess.PIPE, shell=True)
         if results.returncode != 0:
             LOG.error("hmmsearch command did not work")
-        temp_res.append(prof +"_results.txt")
+        temp_res.append(prof + "_results.txt")
     return temp_res
 
 
@@ -137,10 +139,11 @@ def parse_hmmer_output(file_list):
     return hit_info
 
 
-def preform_hmmer(database,
-                query_profiles,
-                database_pfam,
-                  ):
+def perform_hmmer(
+    database,
+    query_profiles,
+    database_pfam,
+):
     """Main of running a hmmer search
 
     Args:
@@ -151,19 +154,20 @@ def preform_hmmer(database,
         hit_res: List of class objects with the hits
 
     """
-    #1. Check if program exist else give error message and stop program
+    # 1. Check if program exist else give error message and stop program
     helpers.get_program_path(["hmmfetch", "hmmsearch"])
 
     LOG.info("Starting hmmer search")
-    #2. run check_pfam_d
+    # 2. run check_pfam_d
     check_pfam_db(database_pfam)
 
-    #3. get_full_acc_number and run hmmfetch
+    # 3. get_full_acc_number and run hmmfetch
     ls_keys = fetch_profiles(database_pfam, query_profiles)
+    if ls_keys == "no matches":
+        return []
 
-    #4. run hmmsearch
+    # 4. run hmmsearch
     ls_res = run_hmmsearch(database_pfam, database, ls_keys)
-
-    #5. Parse hmm output, needs to be the same as blast output
+    # 5. Parse hmm output, needs to be the same as blast output
     hit_res = parse_hmmer_output(ls_res)
     return hit_res

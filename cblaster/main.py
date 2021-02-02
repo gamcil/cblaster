@@ -79,7 +79,7 @@ def cblaster(
     query_ids=None,
     query_profiles=None,
     mode=None,
-    database=None,
+    databases=None,
     database_pfam=None,
     gap=20000,
     unique=3,
@@ -119,7 +119,7 @@ def cblaster(
         query_ids (list): NCBI protein sequence identifiers
         query_profiles(list): Pfam profile identifiers
         mode (str): Search mode ('local' or 'remote')
-        database (str): Search database (NCBI if remote, DIAMOND if local)
+        databases (str): Search database (NCBI if remote, DIAMOND if local)
         database_pfam (str): Path to pfam db or where to download it
         gap (int): Maximum gap (kilobase) between cluster hits
         unique (int): Minimum number of query sequences with hits in clusters
@@ -178,10 +178,11 @@ def cblaster(
             sequences=helpers.get_sequences(
                 query_file=query_file,
                 query_ids=query_ids,
+                query_profiles=query_profiles
             ),
             params={
                 "mode": mode,
-                "database": database,
+                "database": databases,
                 "min_identity": min_identity,
                 "min_coverage": min_coverage,
                 "max_evalue": max_evalue,
@@ -197,15 +198,33 @@ def cblaster(
 
         sqlite_db = None
         session.params["rid"] = rid
+        organisms = []
+
+        if mode in ("hmm", "combi_local", "combi_remote"):
+            results = hmm_search.perform_hmmer(
+                database=databases[0],
+                query_profiles=query_profiles,
+                database_pfam=database_pfam,
+            )
+            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
+            LOG.info("Fetching genomic context of hits")
+            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
+
+        # when running combi modes run a local or remote search right after the hmm search
+        if mode == "combi_local":
+            mode = "local"
+
+        elif mode == "combi_remote":
+            mode = "remote"
 
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
-            sqlite_db = Path(database[0]).with_suffix(".sqlite3")
+            sqlite_db = Path(databases[0]).with_suffix(".sqlite3")
             if not sqlite_db.exists():
                 LOG.error("Could not find matching SQlite3 database, exiting")
                 raise SystemExit
             results = local.search(
-                database[0],
+                databases[0],
                 sequences=session.sequences,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
@@ -213,6 +232,9 @@ def cblaster(
                 blast_file=blast_file,
                 cpus=cpus,
             )
+            LOG.info("Found %i hits meeting score thresholds for local search", len(results))
+            LOG.info("Fetching genomic context of hits")
+            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
             if entrez_query:
@@ -220,7 +242,7 @@ def cblaster(
             rid, results = remote.search(
                 sequences=session.sequences,
                 rid=rid,
-                database=database[0],
+                database=database,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
@@ -229,65 +251,14 @@ def cblaster(
                 hitlist_size=hitlist_size,
             )
             session.params["rid"] = rid
-        elif mode == "hmm":
-            results = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-        elif mode == "combi_local":
-            results_hmm = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-            results_blast = local.search(
-                database[1],
-                sequences=session.sequences,
-                min_identity=min_identity,
-                min_coverage=min_coverage,
-                max_evalue=max_evalue,
-                blast_file=blast_file,
-            )
-            results = results_blast + results_hmm
+            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
+            LOG.info("Fetching genomic context of hits")
+            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
 
-        elif mode == "combi_remote":
-            results_hmm = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-            if entrez_query:
-                session.params["entrez_query"] = entrez_query
-            rid, results_blast = remote.search(
-                sequences=session.sequences,
-                rid=rid,
-                database=database[1],
-                min_identity=min_identity,
-                min_coverage=min_coverage,
-                max_evalue=max_evalue,
-                entrez_query=entrez_query,
-                blast_file=blast_file,
-                hitlist_size=hitlist_size,
-            )
-            results = results_blast + results_hmm
+        session.organisms = organisms
 
         if sqlite_db:
             session.params["sqlite_db"] = str(sqlite_db)
-
-        LOG.info("Found %i hits meeting score thresholds", len(results))
-        LOG.info("Fetching genomic context of hits")
-
-        session.organisms = context.search(
-            results,
-            sqlite_db=sqlite_db,
-            unique=unique,
-            min_hits=min_hits,
-            gap=gap,
-            require=require,
-            ipg_file=ipg_file,
-            query_sequence_order=list(session.sequences)
-        )
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -326,6 +297,20 @@ def cblaster(
     return session
 
 
+def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session):
+    organisms = context.search(
+        results,
+        sqlite_db=sqlite_db,
+        unique=unique,
+        min_hits=min_hits,
+        gap=gap,
+        require=require,
+        ipg_file=ipg_file,
+        query_sequence_order=list(session.sequences)
+    )
+    return organisms
+
+
 def main():
     """cblaster entry point."""
     args = parsers.parse_args(sys.argv[1:])
@@ -348,7 +333,7 @@ def main():
             query_ids=args.query_ids,
             query_profiles=args.query_profiles,
             mode=args.mode,
-            database=args.database,
+            databases=args.database,
             database_pfam=args.database_pfam,
             gap=args.gap,
             unique=args.unique,

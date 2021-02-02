@@ -114,7 +114,6 @@ def sequences_to_fasta(sequences):
     )
 
 
-
 def get_project_root():
     return Path(__file__).resolve().parent
 

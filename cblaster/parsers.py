@@ -128,11 +128,8 @@ def add_gui_subparser(subparsers):
 
 
 def add_input_group(search):
-    group = (
-        search
-        .add_argument_group("Input")
-        .add_mutually_exclusive_group()
-    )
+    group = search.add_argument_group("Input")
+
     group.add_argument(
         "-qf",
         "--query_file",
@@ -782,6 +779,9 @@ def parse_args(args):
 
     if arguments.subcommand in ("gui", "makedb", "gne", "extract", "extract_clusters", "plot_clusters"):
         return arguments
+
+    if getattr(arguments, "query_file") and getattr(arguments, "query_ids"):
+        parser.error("'--query_file' and '--query_ids' are mutually exclusive")
 
     if arguments.mode == "remote":
         if arguments.database[0] not in NCBI_DATABASES:

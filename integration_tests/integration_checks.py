@@ -45,7 +45,7 @@ class CommandTest:
     def __run_command(self, silent=False):
         print(f"Running command: '{self.description}'")
         start_time = time.time()
-        kwargs = dict(stdout=subprocess.DEVNULL)
+        kwargs = dict()#stdout=subprocess.DEVNULL)
         if silent:
             kwargs["stderr"] = subprocess.DEVNULL
         popen = subprocess.Popen(self.command, shell=True, **kwargs)
@@ -108,22 +108,24 @@ def test_commands(arguments):
         name = name.lower()
         if name == "search":
             commands.extend(search_commands())
-        elif name == "search_local":
+        if name == "search_local":
             commands.extend(search_local_commands())
-        elif name == "search_remote":
+        if name == "search_remote":
             commands.extend(search_remote_commands())
-        elif name == "makedb":
+        if name == "search_hmm":
+            commands.extend(search_hmm_commands())
+        if name == "search_combi_local":
+            commands.extend(search_combi_local_command())
+        if name == "makedb":
             commands.extend(makedb_commands())
-        elif name == "gne":
+        if name == "gne":
             commands.extend(gne_commands())
-        elif name == "extract":
+        if name == "extract":
             commands.extend(extract_commands())
-        elif name == "extract_clusters":
+        if name == "extract_clusters":
             commands.extend(extract_clusters_commands())
-        elif name == "plot_clusters":
+        if name == "plot_clusters":
             commands.extend(plot_clusters_commands())
-        else:
-            raise ValueError(f"No command named {name}.")
     for command in commands:
         command.run(flags["silent"])
     print("All tests passed!")
@@ -142,7 +144,7 @@ def filter_flags(arguments):
 
 def search_commands():
     global OUT_DIR, TEST_FILE_DIR
-    return search_local_commands() + search_remote_commands()
+    return search_local_commands() + search_remote_commands() + search_hmm_commands() + search_combi_local_command()
 
 
 def search_local_commands():
@@ -228,6 +230,53 @@ def search_remote_commands():
             f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters",
             "recompute remote session",
             [["summary.txt", "summary_remote_fa_recompute.txt"], ["binary.txt", "binary_remote_fa_recompute.txt"]]
+        )
+    ]
+    return commands
+
+
+def search_hmm_commands():
+    global OUT_DIR, TEST_FILE_DIR, CURRENT_DIR
+    if OS_NAME == "windows":
+        print("Skipping hmm tests because the hmmer program is not supported on windows systems.")
+        return []
+    commands = [
+        CommandTest(
+            f"cblaster search -m hmm -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
+            f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -ohh -o {OUT_DIR}{os.sep}summary.txt"
+            f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
+            f"-g 25000 -u 2 -mh 3 -me 0.01 -s {OUT_DIR}{os.sep}session.json",
+            "hmm search"
+        ),
+        CommandTest(
+            f"cblaster search -m hmm -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
+            f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -o {OUT_DIR}{os.sep}summary.txt"
+            f" -b {OUT_DIR}{os.sep}binary.txt -s {TEST_FILE_DIR}{os.sep}test_session_hmm_fa.json",
+            "load hmm session"
+        )
+    ]
+    return commands
+
+
+def search_combi_local_command():
+    global OUT_DIR, TEST_FILE_DIR, CURRENT_DIR
+    if OS_NAME == "windows":
+        print("Skipping hmm tests because the hmmer program is not supported on windows systems.")
+        return []
+    commands = [
+        CommandTest(
+            f"cblaster search -m combi_local -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -qf"
+            f" {TEST_FILE_DIR}{os.sep}test_query.gb -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta "
+            f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh -o {OUT_DIR}{os.sep}summary.txt"
+            f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
+            f"-g 25000 -u 2 -mh 3 -me 0.01 -s {OUT_DIR}{os.sep}session.json",
+            "combi_local search"
+        ),
+        CommandTest(
+            f"cblaster search -m combi_local -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
+            f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -o {OUT_DIR}{os.sep}summary.txt"
+            f" -b {OUT_DIR}{os.sep}binary.txt -s {TEST_FILE_DIR}{os.sep}test_session_combi_local_fa.json",
+            "load hmm session"
         )
     ]
     return commands

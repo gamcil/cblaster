@@ -1,0 +1,1 @@
+{"queries": [], "sequences": {}, "params": {"mode": "hmm", "database": ["/mnt/d/University/Master/Thesis/cblaster/integration_tests/test_files/test_database_linux.fasta"], "min_identity": 30, "min_coverage": 50, "max_evalue": 0.01, "require": null, "rid": null}, "organisms": []}
