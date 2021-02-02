@@ -1,7 +1,5 @@
 import PySimpleGUI as sg
 
-from cblaster.gui.parts import TextLabel
-
 
 sg.theme("Lightgrey1")
 
@@ -37,6 +35,12 @@ citation_frame = sg.Frame(
             " Accelerated Profile HMM Searches."
             " PLOS Computational Biology, 7(10) (2011)",
         ),
+        *get_citation(
+
+            "CLINKER",
+            "Gilchrist, C.L.M., Chooi, Y.-H., 2020."
+            " clinker & clustermap.js: Automatic generation of gene cluster comparison figures.",
+        )
     ],
     title_color="blue",
     font="Arial 10 bold",

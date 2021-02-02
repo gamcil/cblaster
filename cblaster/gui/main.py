@@ -1,13 +1,15 @@
 """A basic GUI for cblaster."""
 
-import sys
-import builtins
+import os
+import tempfile
+from threading import Thread, Event
+import subprocess
+from queue import Queue, Empty
 
 import PySimpleGUI as sg
 
 from cblaster import __version__
-from cblaster import main, extract as cb_extract
-from cblaster.gui import search, makedb, citation, gne, extract
+from cblaster.gui import search, makedb, citation, gne, extract, extract_clusters, plot_clusters
 
 
 sg.theme("Lightgrey1")
@@ -22,7 +24,7 @@ def Column(layout, scrollable=False):
     )
 
 
-def run_cblaster(values):
+def run_cblaster(values, textbox):
     """Handles conversion of PySimpleGUI values to cblaster parameters.
 
     - Know which workflow tab we're on (search or makedb)
@@ -41,21 +43,22 @@ def run_cblaster(values):
             query_profiles=values["query_profiles"].split(" "),
             session_file=values["session_file"],
             mode=values["search_mode"],
-            gap=int(values["gap"]),
-            unique=int(values["unique"]),
-            min_hits=int(values["min_hits"]),
+            gap=values["gap"],
+            unique=values["unique"],
+            min_hits=values["min_hits"],
             require=values["require"],
-            min_identity=float(values["min_identity"]),
-            min_coverage=float(values["min_coverage"]),
-            max_evalue=float(values["max_evalue"]),
-            recompute=values["recompute"],
+            min_identity=values["min_identity"],
+            min_coverage=values["min_coverage"],
+            max_evalue=values["max_evalue"],
+            recompute=values["recompute_text"] if values["recompute_text"] != "" else values["recompute_gen"]
         )
 
         if values["search_mode"] == "remote":
             args.update(
                 database=[values["database"]],
                 entrez_query=values["entrez_query"],
-                rid=values["rid"]
+                rid=values["rid"],
+                hitlist_size=values["max_hits"],
             )
         elif values["search_mode"] == "local":
             args.update(
@@ -82,16 +85,15 @@ def run_cblaster(values):
             )
 
         if values["summary_gen"]:
-            summary = None
 
             if values["summary_text"]:
-                summary = values["summary_text"]
+                args["output"] = values["summary_text"]
 
             args.update(
-                output=summary,
                 output_decimals=values["summary_decimals"],
                 output_delimiter=values["summary_delimiter"],
-                output_hide_headers=values["summary_hide_headers"]
+                output_hide_headers=values["summary_hide_headers"],
+                sort_clusters=values["sort_clusters"],
             )
 
         if values["binary_gen"]:
@@ -101,40 +103,48 @@ def run_cblaster(values):
                 binary_hide_headers=values["binary_hide_headers"],
                 binary_decimals=values["binary_decimals"],
                 binary_attr=values["binary_attr"],
-                binary_key=getattr(builtins, values["binary_key"]),
+                binary_key=values["binary_key"],
             )
 
         if values["figure_gen"]:
-            plot = values["figure_text"] if values["figure_text"] else True
+            plot = values["figure_text"] if values["figure_text"] else f"{tempfile.gettempdir()}{os.sep}" \
+                                                                       f"plot_search.html"
             args.update(plot=plot)
 
         # Overwrite any placeholder text
         for arg, value in args.items():
             if isinstance(value, str) and value.startswith("e.g."):
                 args[arg] = ""
-
-        main.cblaster(**args)
+        subcommand = values["cblaster_tabs"]
 
     elif values["cblaster_tabs"] == "Makedb":
-        main.makedb(
-            genbanks=values["makedb_genbanks"].split(";"),
-            filename=values["makedb_filename"],
-            indent=values["json_indent"]
+        args = dict(
+            blank1=" ".join(values["makedb_genbanks"].split(";")),
+            name=values["makedb_filename"],
+            cpus=values["cpus db"],
+            batch=values["batch size"],
+            force=values["force"],
         )
+        subcommand = values["cblaster_tabs"]
 
     elif values["cblaster_tabs"] == "Neighbourhood":
-        main.gne(
-            session=values["session"],
-            output=values["output"],
+        args = dict(
+            blank1=values["session gne"],
             max_gap=int(values["max_gap"]),
             samples=int(values["samples"]),
             scale=values["scale"],
+            output=values["output gne"],
+            delimiter=values["delimiter gne"],
+            decimals=values["decimals gne"],
+            hide_headers=values["hide headers gne"],
+            plot=values["plot gne"] if values["plot gne"] else f"{tempfile.gettempdir()}{os.sep}plot_gne.html"
+
         )
+        subcommand = "gne"
 
     elif values["cblaster_tabs"] == "Extract":
-        cb_extract.extract(
-            values["extract_session"],
-            in_cluster=values["in_cluster"],
+        args = dict(
+            blank1=values["extract_session"],
             delimiter=values["delimiter"],
             name_only=values["name_only"],
             download=values["download"],
@@ -143,63 +153,200 @@ def run_cblaster(values):
             organisms=values["organisms"],
             scaffolds=values["scaffolds"],
         )
+        subcommand = values["cblaster_tabs"]
+    elif values["cblaster_tabs"] == "Extract Clusters":
+        args = dict(
+            blank1=values["extract_clusters_session"],
+            output=values["extract_clusters_output"],
+            prefix=values["prefix"],
+            format=values["output format"],
+            maximum_clusters=values["max clusters ec"],
+            clusters=values["clusters ec"],
+            score_threshold=values["score threshold ec"],
+            organisms=values["organisms ec"],
+            scaffolds=values["scaffolds ec"],
+        )
+        subcommand = "extract_clusters"
+    elif values["cblaster_tabs"] == "Plot Clusters":
+        args = dict(
+            blank1=values["plot_clusters_session"],
+            output=values["plot_clusters_output"] if values["plot_clusters_output"]
+            else f"{tempfile.gettempdir()}{os.sep}plot_plot_clusters.html",
+            maximum_clusters=values["max clusters pc"],
+            clusters=values["clusters pc"],
+            score_threshold=values["score threshold pc"],
+            organisms=values["organisms pc"],
+            scaffolds=values["scaffolds pc"],
+        )
+        subcommand = "plot_clusters"
     else:
-        raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood' or 'Extract'")
+        raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood', 'Extract', 'Extract Clusters' or"
+                         " 'Plot Clusters'")
+
+    return create_cblaster_command(subcommand, args, textbox)
+
+
+main_gui_layout = [
+    [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
+    [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
+    [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+    [sg.TabGroup([
+        [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
+        [sg.Tab("Neighbourhood", [[Column(gne.layout, scrollable=True)]])],
+        [sg.Tab("Makedb", [[Column(makedb.layout, scrollable=True)]])],
+        [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
+        [sg.Tab("Extract Clusters", [[Column(extract_clusters.layout, scrollable=True)]])],
+        [sg.Tab("Plot Clusters", [[Column(plot_clusters.layout, scrollable=True)]])],
+        [sg.Tab("Citation", [[Column(citation.layout, scrollable=True)]])],
+    ], enable_events=True, key="cblaster_tabs"
+    )],
+    [sg.Button("Start", key="start_button", button_color=["white", "green"]),
+     sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
+]
 
 
 def cblaster_gui():
-    layout = [
-        [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
-        [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
-        [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
-        [sg.TabGroup([
-            [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
-            [sg.Tab("Neighbourhood", [[Column(gne.layout)]])],
-            [sg.Tab("Makedb", [[Column(makedb.layout)]])],
-            [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
-            [sg.Tab("Citation", [[Column(citation.layout)]])],
-        ], enable_events=True, key="cblaster_tabs"
-        )],
-        [sg.Button("Start", key="start_button", button_color=["white", "green"]),
-         sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
-    ]
 
-    window = sg.Window(
+    main_window = sg.Window(
         "cblaster",
-        layout,
+        main_gui_layout,
         size=(600, 660),
         element_padding=(5, 5),
         element_justification="center",
-        finalize=True
+        finalize=True,
     )
-
+    command_thread = None
+    command_window = None
     while True:
-        event, values = window.read()
+        event, values = main_window.read()
 
         if event in (None, "exit_button"):
             break
 
         # Disable binary & summary table, figure options if not enabled
         for key in ("browse", "text", "delimiter", "decimals", "hide_headers", "key", "attr"):
-            window[f"binary_{key}"].update(disabled=not values["binary_gen"])
+            main_window[f"binary_{key}"].update(disabled=not values["binary_gen"])
 
         for key in ("browse", "text", "decimals", "hide_headers", "delimiter"):
-            window[f"summary_{key}"].update(disabled=not values["summary_gen"])
+            main_window[f"summary_{key}"].update(disabled=not values["summary_gen"])
 
         for key in ("browse", "text"):
-            window[f"figure_{key}"].update(disabled=not values["figure_gen"])
+            main_window[f"figure_{key}"].update(disabled=not values["figure_gen"])
+
+        for key in ("browse", "text"):
+            main_window[f"recompute_{key}"].update(disabled=not values["recompute_gen"])
 
         # Disable start button when on citation tab
-        window["start_button"].update(
+        main_window["start_button"].update(
             disabled=values["cblaster_tabs"]
-            not in ("Search", "Makedb", "Neighbourhood")
+            not in ("Search", "Makedb", "Neighbourhood", "Extract", "Extract Clusters", "Plot Clusters")
         )
 
-        if event:
-            if event == "start_button":
-                run_cblaster(values)
+        if event == "start_button":
+            main_window["start_button"].update(disabled=True)
+            command_window = create_command_window()
+            command_thread = run_cblaster(values, command_window["textbox"])
+            command_thread.start()
+        if command_window is not None:
+            event2, values2 = command_window.read()
+            if event2 in (None, "exit_button"):
+                if not command_thread.is_finished():
+                    command_thread.stop()
+                    command_thread.join()
+                command_window.close()
+                command_window = None
+                main_window["start_button"].update(disabled=False)
 
-    window.close()
+    main_window.close()
+
+
+def create_command_window():
+    command_gui_layout = [
+        [sg.Text("cblaster command run", font="Arial 18 bold", pad=(0, 0))],
+        [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
+        [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+        [sg.Multiline(default_text="Welcome to cblaster", key="textbox", size=(500, 45),
+                      disabled=True, autoscroll=True)],
+        [sg.Button("Exit", key="exit_button", button_color=["white", "red"])],
+    ]
+    command_window = sg.Window(
+        "cblaster command",
+        command_gui_layout,
+        location=(20, 20),
+        size=(800, 860),
+        element_padding=(5, 5),
+        element_justification="center",
+        finalize=True,
+    )
+    return command_window
+
+
+class CommandThread(Thread):
+
+    def __init__(self, command, textbox):
+        super().__init__(daemon=True)
+        self.command = command
+        self.textbox = textbox
+        self.stderr_queue = Queue()
+        self.__finished = Event()
+
+    def enqueue_output(self, out, queue):
+        for line in iter(out.readline, b''):
+            queue.put(line)
+
+    def run(self):
+        # shell true for linux to properly function
+        popen = subprocess.Popen(self.command, shell=True, stderr=subprocess.PIPE)
+
+        # this thread is neccesairy to be able to read stderr while also being able to terminate the subprocess
+        t = Thread(target=self.enqueue_output, args=(popen.stderr, self.stderr_queue))
+        t.daemon = True  # thread dies with the program
+        t.start()
+        while popen.poll() is None:
+            try:
+                line = self.stderr_queue.get_nowait()
+            except Empty:
+                continue
+            else:  # got line
+                # prevent double newlines
+                str_line = line.decode("utf-8").replace(os.linesep, "")
+                self.textbox.update(self.textbox.get() + str_line)
+            if self.__finished.is_set():
+                popen.kill()
+                popen.wait()
+                return
+        # make sure the last stderr line is printed
+        try:
+            line = self.stderr_queue.get_nowait()
+        except Empty:
+            pass
+        else:  # got line
+            # prevent double newlines
+            str_line = line.decode("utf-8").replace(os.linesep, "")
+            self.textbox.update(self.textbox.get() + str_line)
+        # make sure to call communicate to properly finish process
+        output, error = popen.communicate()
+        self.__finished.set()
+
+    def stop(self):
+        self.__finished.set()
+
+    def is_finished(self):
+        return self.__finished.is_set()
+
+
+def create_cblaster_command(subcommand, arguments, textbox):
+    command = f"cblaster {subcommand.lower()}"
+    for key, value in arguments.items():
+        if value in ["", False]:
+            continue
+        elif value is True:
+            command += f" --{key}"
+        elif "blank" in key:
+            command += f" {value}"
+        else:
+            command += f" --{key} {value}"
+    return CommandThread(command, textbox)
 
 
 if __name__ == "__main__":

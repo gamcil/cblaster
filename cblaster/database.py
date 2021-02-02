@@ -11,7 +11,7 @@ from multiprocessing import Pool
 
 from cblaster import helpers
 from cblaster import genome_parsers as gp
-from cblaster.sql import FASTA, INSERT, QUERY, SCHEMA
+from cblaster.sql import FASTA, INSERT, ID_QUERY, SCHEMA, NAME_QUERY
 
 
 LOG = logging.getLogger("cblaster")
@@ -67,7 +67,7 @@ def sqlite_to_fasta(path, database):
             fasta.write(record)
 
 
-def query_database(ids, database):
+def query_database_with_ids(ids, database):
     """Queries the cblaster SQLite3 database for a collection of gene IDs.
 
     Args:
@@ -77,10 +77,26 @@ def query_database(ids, database):
         list: Result tuples returned by the query
     """
     marks = ", ".join("?" for _ in ids)
-    query = QUERY.format(marks)
+    query = ID_QUERY.format(marks)
     with sqlite3.connect(database) as con:
         cur = con.cursor()
         return cur.execute(query, ids).fetchall()
+
+
+def query_database_with_names(names, database):
+    """Queries the cblaster SQLite3 database for a collection of gene IDs.
+
+    Args:
+        names (list): Names of genes being queried
+        database (str): Path to SQLite3 database
+    Returns:
+        list: Result tuples returned by the query
+    """
+    marks = ", ".join("?" for _ in names)
+    query = NAME_QUERY.format(marks)
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        return cur.execute(query, names).fetchall()
 
 
 def diamond_makedb(fasta, name):

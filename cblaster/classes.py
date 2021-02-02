@@ -6,6 +6,13 @@ This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 
 import re
 import json
+import itertools
+from abc import ABC, abstractmethod
+from clinker.classes import (
+    Cluster as ClinkerCluster,
+    Locus as ClinkerLocus,
+    Gene as ClinkerGene
+)
 
 from cblaster.formatters import (
     binary,
@@ -15,18 +22,20 @@ from cblaster.formatters import (
 )
 
 
-class Serializer:
+class Serializer(ABC):
     """JSON serialisation mixin class.
 
     Classes that inherit from this class should implement `to_dict` and
     `from_dict` methods.
     """
 
+    @abstractmethod
     def to_dict(self):
         """Serialises class to dict."""
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_dict(self, d):
         """Loads class from dict."""
         raise NotImplementedError
@@ -238,8 +247,8 @@ class Scaffold(Serializer):
         After clusters are added they are sorted based on score
 
         Args:
-            subject_lists (list): a list of lists Subject objects that
-            form clusters
+            subject_lists (list): a list of lists of Subject objects that are
+            form a clusters
             query_sequence_order (list): list of sequences of the order in the query file, is
             only provided if the query has a meningfull order (gbk, embl files).
         """
@@ -283,7 +292,9 @@ class Cluster(Serializer):
         These are not serialised for this cluster
         start (int): The start coordinate of the cluster on the parent scaffold
         end (int): The end coordinate of the cluster on the parent scaffold
+        number (int): number that is unique for each cluster in order to identify them
     """
+    NUMBER = itertools.count(1, 1)
 
     def __init__(
         self,
@@ -293,12 +304,14 @@ class Cluster(Serializer):
         score=None,
         start=None,
         end=None,
+        number=None,
     ):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
         self.score = score if score else self.calculate_score(query_sequence_order)
         self.start = start if start else self.subjects[0].start
         self.end = end if end else self.subjects[-1].end
+        self.number = number if number is not None else next(self.NUMBER)
 
     def __iter__(self):
         return iter(self.subjects)
@@ -334,7 +347,7 @@ class Cluster(Serializer):
 
         The score is based on accumulated blastbitscore, total amount of hits against the
         query and a synteny score if query sequence order is provided. If there are multiple
-        hits in a subject the hit with the top bitscore is selected for the caclulation.
+        hits in a subject the hit with the top bitscore is selected for the calculation.
 
         Args:
             query_sequence_order (list): list of sequences of the order in the query file, is
@@ -352,7 +365,33 @@ class Cluster(Serializer):
             "score": self.score,
             "start": self.start,
             "end": self.end,
+            "number": self.number,
         }
+
+    def to_clinker_cluster(self, scaffold_accession=""):
+        """Convert this cluster to a clinker format cluster
+
+        Args:
+            scaffold_accession (str): accession of the scaffold this cluster is located on
+
+        Returns:
+            A clinker.Cluster object
+        """
+        clinker_genes = []
+        # make sure subjects are sorted low to high
+        sorted_subjects = sorted(self.subjects, key=lambda x: (x.start, x.end))
+        for subject in sorted_subjects:
+            best_hit = max(subject.hits, key=lambda x: x.bitscore)
+            tooltip_dict = \
+                {"accession": subject.name, "identity": best_hit.identity, "bitscore": best_hit.bitscore,
+                 "coverage": best_hit.coverage, "e-value": best_hit.evalue if best_hit.evalue != 0 else "0.0"}
+            clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
+                                             end=subject.end, strand=1 if subject.strand == '+' else -1,
+                                             names=tooltip_dict))
+        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.start, end=self.end)
+        clinker_cluster = ClinkerCluster("Cluster {} with score {:.2f}".format(self.number, self.score),
+                                         [clinker_locus])
+        return clinker_cluster
 
     @classmethod
     def from_dict(cls, d, *subjects):
@@ -362,6 +401,7 @@ class Cluster(Serializer):
             score=d["score"],
             start=d["start"],
             end=d["end"],
+            number=d["number"],
         )
 
 
@@ -456,11 +496,11 @@ class Hit(Serializer):
 
         if "gb" in subject or "ref" in subject:
             subject = re.search(r"\|([A-Za-z0-9\._]+)\|", subject).group(1)
-        ## Made id & Coverage a None type, hmmer does not have those values
+        # Made id & Coverage a None type, hmmer does not have those values
         self.subject = subject
         self.bitscore = float(bitscore)
-        self.identity = identity
-        self.coverage = coverage
+        self.identity = float(identity) if identity is not None else None
+        self.coverage = float(coverage) if coverage is not None else None
         self.evalue = float(evalue)
 
     def __str__(self):
@@ -470,7 +510,7 @@ class Hit(Serializer):
         )
 
     def __key(self):
-        return (self.query, self.bitscore, self.identity, self.coverage, self.evalue)
+        return self.query, self.bitscore, self.identity, self.coverage, self.evalue
 
     def __hash__(self):
         return hash(self.__key())

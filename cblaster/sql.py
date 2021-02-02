@@ -11,7 +11,7 @@ CREATE TABLE gene (
 );\
 """
 
-QUERY = """\
+ID_QUERY = """\
 SELECT
     id,
     name,
@@ -24,6 +24,16 @@ FROM
     gene
 WHERE
     id IN ({})\
+"""
+
+NAME_QUERY = """\
+SELECT
+    name,
+    translation
+FROM
+    gene
+WHERE
+    name IN ({})\
 """
 
 FASTA = 'SELECT ">"||gene.id||"\n"||gene.translation||"\n" FROM gene'

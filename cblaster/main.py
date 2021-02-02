@@ -6,7 +6,7 @@ import sys
 
 from pathlib import Path
 
-import hmm_search
+
 from cblaster import (
     context,
     database,
@@ -15,11 +15,13 @@ from cblaster import (
     remote,
     parsers,
     extract,
+    extract_clusters,
+    plot_clusters,
+    hmm_search
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
-
 
 
 logging.basicConfig(
@@ -27,7 +29,9 @@ logging.basicConfig(
     format="[%(asctime)s] %(levelname)s - %(message)s",
     datefmt="%H:%M:%S"
 )
-LOG = logging.getLogger(__name__)
+# make sure to not configure a name otherwise a different logger instance is returned where the debug level is set
+# resulting in no debug information being printed
+LOG = logging.getLogger()
 
 
 def gne(
@@ -55,16 +59,18 @@ def gne(
         scale=scale
     )
     if output:
-        LOG.info("Writing GNE table to %s", output.name)
+        LOG.info("Writing GNE table to %s", output)
         summary = summarise_gne(
             results,
             hide_headers=hide_headers,
             delimiter=delimiter,
             decimals=decimals,
         )
-        output.write(summary)
-
-    plot_gne(results, output=plot)
+        with open(output, "w") as f:
+            f.write(summary)
+    # make sure to not always serve the plot.
+    if plot:
+        plot_gne(results, output=plot if plot is not True else None)
     LOG.info("Done.")
 
 
@@ -73,7 +79,7 @@ def cblaster(
     query_ids=None,
     query_profiles=None,
     mode=None,
-    database=None,
+    databases=None,
     database_pfam=None,
     gap=20000,
     unique=3,
@@ -86,6 +92,7 @@ def cblaster(
     output_hide_headers=False,
     output_delimiter=None,
     output_decimals=4,
+    output_sort_clusters=False,
     binary=None,
     binary_hide_headers=True,
     binary_delimiter=None,
@@ -112,8 +119,7 @@ def cblaster(
         query_ids (list): NCBI protein sequence identifiers
         query_profiles(list): Pfam profile identifiers
         mode (str): Search mode ('local' or 'remote')
-        json_db (str): JSON database created with cblaster makedb
-        database (list): Search database (NCBI if remote, DIAMOND & hmm if local)
+        databases (str): Search database (NCBI if remote, DIAMOND if local)
         database_pfam (str): Path to pfam db or where to download it
         gap (int): Maximum gap (kilobase) between cluster hits
         unique (int): Minimum number of query sequences with hits in clusters
@@ -126,6 +132,7 @@ def cblaster(
         output_hide_headers (bool): Hide headers in summary table
         output_delimiter (str): Delimiter used in summary table
         output_decimals (int): Total decimal places in hit scores in summary table
+        output_sort_clusters (bool): If the clusters in the final summary table need to sorted
         binary (str): Path to cblaster binary output file
         binary_hide_headers (bool): Hide headers in binary table
         binary_delimiter (str): Delimiter used in binary table
@@ -138,6 +145,10 @@ def cblaster(
         indent (int): Total spaces to indent JSON files
         plot (str): Path to cblaster plot HTML file
         recompute (str): Path to recomputed session JSON file
+        blast_file (str): path to file to save blast output
+        ipg_file (str): path to file to save ipg output
+        cpus (int): number of cpu's to use when blasting.
+        hitlist_size (int): Number of database sequences to keep
     Returns:
         Session: cblaster search Session object
     """
@@ -167,14 +178,15 @@ def cblaster(
             sequences=helpers.get_sequences(
                 query_file=query_file,
                 query_ids=query_ids,
-                query_profiles=query_profiles,
+                query_profiles=query_profiles
             ),
             params={
                 "mode": mode,
-                "database": database,
+                "database": databases,
                 "min_identity": min_identity,
                 "min_coverage": min_coverage,
                 "max_evalue": max_evalue,
+                "require": require,
             },
         )
 
@@ -186,21 +198,43 @@ def cblaster(
 
         sqlite_db = None
         session.params["rid"] = rid
+        organisms = []
+
+        if mode in ("hmm", "combi_local", "combi_remote"):
+            results = hmm_search.perform_hmmer(
+                database=databases[0],
+                query_profiles=query_profiles,
+                database_pfam=database_pfam,
+            )
+            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
+            LOG.info("Fetching genomic context of hits")
+            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
+
+        # when running combi modes run a local or remote search right after the hmm search
+        if mode == "combi_local":
+            mode = "local"
+
+        elif mode == "combi_remote":
+            mode = "remote"
 
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
-            sqlite_db = Path(database[0]).with_suffix(".sqlite3")
+            sqlite_db = Path(databases[0]).with_suffix(".sqlite3")
             if not sqlite_db.exists():
                 LOG.error("Could not find matching SQlite3 database, exiting")
                 raise SystemExit
             results = local.search(
-                database[0],
+                databases[0],
                 sequences=session.sequences,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
                 blast_file=blast_file,
+                cpus=cpus,
             )
+            LOG.info("Found %i hits meeting score thresholds for local search", len(results))
+            LOG.info("Fetching genomic context of hits")
+            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
             if entrez_query:
@@ -208,7 +242,7 @@ def cblaster(
             rid, results = remote.search(
                 sequences=session.sequences,
                 rid=rid,
-                database=database[0],
+                database=database,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
@@ -216,67 +250,15 @@ def cblaster(
                 blast_file=blast_file,
                 hitlist_size=hitlist_size,
             )
+            session.params["rid"] = rid
+            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
+            LOG.info("Fetching genomic context of hits")
+            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
 
-        elif mode == "hmm":
-            results = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-        elif mode == "combi_local":
-            results_hmm = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-            results_blast = local.search(
-                database[1],
-                sequences=session.sequences,
-                min_identity=min_identity,
-                min_coverage=min_coverage,
-                max_evalue=max_evalue,
-                blast_file=blast_file,
-            )
-            results = results_blast + results_hmm
-
-        elif mode == "combi_remote":
-            results_hmm = hmm_search.preform_hmmer(
-                database=database[0],
-                query_profiles=query_profiles,
-                database_pfam=database_pfam,
-            )
-
-            if entrez_query:
-                session.params["entrez_query"] = entrez_query
-            rid, results_blast = remote.search(
-                sequences=session.sequences,
-                rid=rid,
-                database=database[1],
-                min_identity=min_identity,
-                min_coverage=min_coverage,
-                max_evalue=max_evalue,
-                entrez_query=entrez_query,
-                blast_file=blast_file,
-                hitlist_size=hitlist_size,
-            )
-            results = results_blast + results_hmm
+        session.organisms = organisms
 
         if sqlite_db:
-            session.params["sqlite_db"] = sqlite_db
-
-        LOG.info("Found %i hits meeting score thresholds", len(results))
-        LOG.info("Fetching genomic context of hits")
-
-        session.organisms = context.search(
-            results,
-            sqlite_db=sqlite_db,
-            unique=unique,
-            min_hits=min_hits,
-            gap=gap,
-            require=require,
-            ipg_file=ipg_file,
-            query_sequence_order=list(session.sequences)
-        )
+            session.params["sqlite_db"] = str(sqlite_db)
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -304,6 +286,7 @@ def cblaster(
         hide_headers=output_hide_headers,
         delimiter=output_delimiter,
         decimals=output_decimals,
+        sort_clusters=output_sort_clusters,
     )
 
     if plot:
@@ -312,6 +295,20 @@ def cblaster(
 
     LOG.info("Done.")
     return session
+
+
+def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session):
+    organisms = context.search(
+        results,
+        sqlite_db=sqlite_db,
+        unique=unique,
+        min_hits=min_hits,
+        gap=gap,
+        require=require,
+        ipg_file=ipg_file,
+        query_sequence_order=list(session.sequences)
+    )
+    return organisms
 
 
 def main():
@@ -324,7 +321,7 @@ def main():
     if args.subcommand == "makedb":
         database.makedb(
             args.paths,
-            args.filename,
+            database=args.name,
             cpus=args.cpus,
             batch=args.batch,
             force=args.force,
@@ -336,7 +333,7 @@ def main():
             query_ids=args.query_ids,
             query_profiles=args.query_profiles,
             mode=args.mode,
-            database=args.database,
+            databases=args.database,
             database_pfam=args.database_pfam,
             gap=args.gap,
             unique=args.unique,
@@ -350,6 +347,7 @@ def main():
             output_hide_headers=args.output_hide_headers,
             output_delimiter=args.output_delimiter,
             output_decimals=args.output_decimals,
+            output_sort_clusters=args.sort_clusters,
             binary=args.binary,
             binary_hide_headers=args.binary_hide_headers,
             binary_delimiter=args.binary_delimiter,
@@ -387,7 +385,7 @@ def main():
     elif args.subcommand == "extract":
         extract.extract(
             args.session,
-            download=args.download,
+            extract_seqs=args.extract_sequences,
             output=args.output,
             queries=args.queries,
             organisms=args.organisms,
@@ -395,6 +393,30 @@ def main():
             name_only=args.name_only,
             delimiter=args.delimiter,
         )
+
+    elif args.subcommand == "extract_clusters":
+        extract_clusters.extract_clusters(
+            args.session,
+            args.output,
+            prefix=args.prefix,
+            cluster_numbers=args.clusters,
+            score_threshold=args.score_threshold,
+            organisms=args.organisms,
+            scaffolds=args.scaffolds,
+            format_=args.format,
+            max_clusters=args.maximum_clusters,
+        )
+
+    elif args.subcommand == "plot_clusters":
+        plot_clusters.plot_clusters(
+            session=args.session,
+            cluster_numbers=args.clusters,
+            score_threshold=args.score_threshold,
+            organisms=args.organisms,
+            scaffolds=args.scaffolds,
+            plot_outfile=args.output,
+        )
+
 
 if __name__ == "__main__":
     main()

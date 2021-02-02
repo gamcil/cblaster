@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 
-from cblaster.gui.parts import TextLabel, Frame
+from cblaster.gui.parts import TextLabel, Frame, TEXT_WIDTH
 
 
 sg.theme("Lightgrey1")
@@ -14,19 +14,28 @@ local_tab = sg.Tab("Local", [
      ),
      sg.FileBrowse(key="dmnd_database")],
     [TextLabel("Number of CPUs"),
-     sg.InputText(default_text="1", key="cpus")],
+     sg.InputText(key="cpus")],
+    [sg.Text("If no value is supplied all available CPU's will be used.")]
 ], key="local")
 
 remote_tab = sg.Tab("Remote", [
     [TextLabel("Database"),
      sg.InputText(default_text="e.g. nr", key="database")],
+
     [TextLabel("Entrez query"),
      sg.InputText(
          default_text='e.g. "Aspergillus"[organism]',
          key="entrez_query"
      )],
+
     [TextLabel("Request Identifier (RID)"),
      sg.InputText(key="rid")],
+
+    [TextLabel("Maximum hits"),
+     sg.InputText(default_text=5000, key="max_hits")],
+    [sg.Text("Maximum total hits to save from a remote BLAST search. Setting"
+             " this value too low may result in missed hits/clusters.",
+             size=(TEXT_WIDTH, 2))]
 ], key="remote")
 
 hmm_tab = sg.Tab("Hmm", [
@@ -48,13 +57,15 @@ combi_local_tab = sg.Tab("Hmm and Local", [
     [TextLabel("FASTA Database"),
      sg.InputText(
          default_text="e.g cblaster.fasta",
-         key="fa database cl"
+         key="fa database cl",
+         size=(34, 1)
      ),
      sg.FileBrowse(key="fa database cl")],
     [TextLabel("Pfam database"),
      sg.InputText(
          default_text='directory with \'Pfam-A.hmm.dat.gz\' in it',
-         key="pfam database cl"
+         key="pfam database cl",
+         size=(34, 1)
      ),
      sg.FolderBrowse(key="pfam database cl")],
     [TextLabel("DIAMOND database"),
@@ -72,13 +83,15 @@ combi_remote_tab = sg.Tab("Hmm and remote", [
     [TextLabel("FASTA Database"),
      sg.InputText(
          default_text="e.g cblaster.fasta",
-         key="fa database cr"
+         key="fa database cr",
+         size=(34, 1)
      ),
      sg.FileBrowse(key="fa database cr")],
     [TextLabel("Pfam database"),
      sg.InputText(
          default_text='e.g. directory with \'Pfam-A.hmm.dat.gz\' in it',
-         key="pfam database cr"
+         key="pfam database cr",
+         size=(34, 1)
      ),
      sg.FolderBrowse(key="pfam database cr")],
     [TextLabel("Database"),
@@ -107,7 +120,7 @@ search_frame = Frame(
             " of the hmm modes a local pfam databse will be saved at the given "
             "location or extracted from there. The fasta database should refer to "
             "the fasta file generated using cblaster makedb.",
-            size=(75, 7))],
+            size=(TEXT_WIDTH, 5))],
         [search_tabgroup]
     ]
 )
@@ -123,7 +136,7 @@ input_frame = Frame(
             "one HMM profiles has to be defined. Alternatively, a session file"
             " generated in a previous cblaster run can be loaded so that you "
             "do not have to repeat a search.",
-            size=(71, 5),
+            size=(TEXT_WIDTH, 4),
         )],
         [TextLabel("File"),
          sg.InputText(size=(34, 1), key="query_file"),
@@ -143,7 +156,7 @@ clustering_frame = Frame(
         [sg.Text(
              "Specify the conditions used when identifying clusters of hits on"
              " genomic scaffolds.",
-             size=(71, 1))],
+             size=(TEXT_WIDTH, 1))],
         [TextLabel("Max. intergenic gap (bp)"),
          sg.InputText(default_text="20000", key="gap")],
         [TextLabel("Min. unique query hits"),
@@ -167,7 +180,16 @@ filtering_frame = Frame(
         [TextLabel("Min. query coverage (%)"),
          sg.InputText(default_text="50", key="min_coverage")],
         [TextLabel("Recompute"),
-         sg.InputText(key="recompute")],
+         sg.Checkbox("", key="recompute_gen", enable_events=True),
+         sg.In(key="recompute_text", size=(28, 1), disabled=True, enable_events=True),
+         sg.FileSaveAs(key="recompute_browse", disabled=True)],
+        [sg.Text(
+            "Recompute previous search session using new thresholds. The filtered"
+            " session will be written to the file specified by this argument. If this"
+            " argument is specified with no value, the session will be filtered but"
+            " not saved (e.g. for plotting purposes).",
+            size=(TEXT_WIDTH, 3)
+        )],
     ],
 )
 
@@ -180,7 +202,7 @@ summary_frame = Frame(
             " end of each run. To save this table to a file, pick a file path"
             " using the option below. If no path is provided, the table will"
             " be printed in the terminal.",
-            size=(71, 3)
+            size=(TEXT_WIDTH, 3)
         )],
         [TextLabel("Generate summary table"),
          sg.Checkbox("", key="summary_gen", default=True, enable_events=True)],
@@ -189,13 +211,13 @@ summary_frame = Frame(
         [sg.Text(
             "Character used to delimit values in the summary table. If no delimiter,"
             " is specified, the table will be generated in human-readable format.",
-            size=(71, 2)
+            size=(TEXT_WIDTH, 2)
         )],
         [TextLabel("Hide headers"), sg.Checkbox("", key="summary_hide_headers")],
         [sg.Text(
             "Hide all headers in the summary table. This includes organism and scaffold"
             " headers, as well as headers in the hit table.",
-            size=(71, 2)
+            size=(TEXT_WIDTH, 2)
         )],
         [TextLabel("Decimal places"),
          sg.Spin(
@@ -204,6 +226,14 @@ summary_frame = Frame(
              key="summary_decimals",
              disabled=True
          )],
+
+        [TextLabel("Sort clusters"),  sg.Checkbox("", key="sort_clusters")],
+        [sg.Text(
+            "Sorts the clusters of the final output on score. This means that clusters of the same organism are not"
+            " neccesairily close together in the output",
+            size=(TEXT_WIDTH, 2)
+        )],
+
         [TextLabel("Output file"),
          sg.In(key="summary_text", size=(34, 1)),
          sg.FileSaveAs(key="summary_browse")],
@@ -218,7 +248,7 @@ binary_frame = Frame(
             "The binary table will give you an overview of the absence/presence of"
             " query genes in the hit clusters identified in the search. To generate"
             " this table, please provide a file name below.",
-            size=(71, 3)
+            size=(TEXT_WIDTH, 3)
         )],
         [TextLabel("Generate binary table"),
          sg.Checkbox("", default=False, enable_events=True, key="binary_gen")],
@@ -227,7 +257,7 @@ binary_frame = Frame(
         [sg.Text(
             "Character used to delimit values in the binary table. If no delimiter,"
             " is specified, the table will be generated in human-readable format.",
-            size=(71, 2)
+            size=(TEXT_WIDTH, 2)
         )],
         [TextLabel("Hide headers"),
          sg.Checkbox("", key="binary_hide_headers", disabled=True)],
@@ -240,7 +270,7 @@ binary_frame = Frame(
             " the list of hits for a given query sequence (i.e. cell counts). 'sum'"
             " or 'max' can be used to give the sum or max of hit attributes specified"
             " using the option below (e.g. cumulative identity).",
-            size=(71, 4)
+            size=(TEXT_WIDTH, 4)
         )],
         [TextLabel("Hit attribute"),
          sg.Drop(
@@ -252,7 +282,7 @@ binary_frame = Frame(
             "This specifies the type of score value of a hit to use when computing"
             " cell values in the binary table. By default, percentage identity will"
             " be used.",
-            size=(71, 2)
+            size=(TEXT_WIDTH, 2)
         )],
         [TextLabel("Decimal places"),
          sg.Spin(
@@ -275,12 +305,12 @@ figure_frame = Frame(
          sg.Checkbox("", key="figure_gen", default=False, enable_events=True)],
         [sg.Text(
             "This generates a visual representation of the binary table as a"
-            " cluster heatmap. If no file path is specified,"
-            " the figure will be served to an IP address and automatically opened,"
+            " cluster heatmap. If this is not"
+            " specified, the plot will be saved in a plot.html in the temporary folder,"
             " at which point the figure can be manipulated and saved as SVG."
             " If a file path is specified, a static HTML file will be generated at"
             " that path.",
-            size=(71, 4)
+            size=(TEXT_WIDTH, 4)
         )],
         [TextLabel("Output file"),
          sg.InputText(key="figure_text", disabled=True, size=(34, 1)),

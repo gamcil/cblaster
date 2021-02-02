@@ -324,7 +324,7 @@ def search(
         min_identity (float): Minimum percent identity
         min_coverage (float): Minimum percent query coverage
         max_evalue (float): Maximum e-value
-        blast_file (TextIOWrapper): file blast results are written to
+        blast_file (str): Path to file blast results are written to
     Returns:
         list: Hit objects corresponding to criteria passing BLAST hits
     """
@@ -352,9 +352,10 @@ def search(
     results = retrieve(rid)
 
     if blast_file:
-        LOG.info("Writing BLAST hit table to %s", blast_file.name)
+        LOG.info("Writing BLAST hit table to %s", blast_file)
         blast = "\n".join(results)
-        blast_file.write(blast)
+        with open(blast_file, "w") as f:
+            f.write(blast)
 
     # Parse results for hits
     LOG.info("Parsing results...")
