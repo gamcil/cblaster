@@ -265,7 +265,7 @@ def cblaster(
                 hitlist_size=hitlist_size,
             )
             session.params["rid"] = rid
-            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
+            LOG.info("Found %i hits meeting score thresholds for remote search", len(results))
             LOG.info("Fetching genomic context of hits")
             organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
 
