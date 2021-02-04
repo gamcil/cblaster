@@ -172,7 +172,7 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
 
     rows = []
 
-    general_information = f"Cluster {cluster.number} with score {cluster.score:.3f}:\n"
+    general_information = f"Cluster {cluster.number} with score {cluster.score:.{decimals}f}:\n"
     sorted_clusters = sorted(list(cluster.subjects) + list(cluster.intermediate_genes), key=lambda x: (x.start, x.end))
     for subject in sorted_clusters:
         values = subject.values(decimals)

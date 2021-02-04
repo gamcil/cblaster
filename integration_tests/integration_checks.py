@@ -157,7 +157,8 @@ def search_local_commands():
             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
+            f" -mic 2",
             "test gbk query local",
             [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]]
         ),
@@ -167,7 +168,8 @@ def search_local_commands():
             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
+            f" -mic 25",
             "test embl query local"
         ),
         # test fasta query in local mode with all options enabled
@@ -186,7 +188,8 @@ def search_local_commands():
             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh -ode , -odc 2 -osc -b"
             f" {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
+            f" -mic 2",
             "test query identifiers local"
         ),
         # test local session with all options enabled
@@ -194,7 +197,8 @@ def search_local_commands():
             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "
             f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl_{OS_NAME}.json "
             f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -db"
-            f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt",
+            f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt -ig -md 6000"
+            f" -mic 2",
             "test local session",
             [["summary.txt", "summary_local_gbk_embl_combined.txt"]]
         ),
@@ -203,7 +207,8 @@ def search_local_commands():
             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "
             f"-s {OUT_DIR}{os.sep}test_session_local_gbk_copy.json --recompute"
             f" -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt "
-            f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {OUT_DIR}{os.sep}binary.txt",
+            f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {OUT_DIR}{os.sep}binary.txt -ig -md 2500"
+            f" -mic 2",
             "test recompute local",
             [["summary.txt", "summary_local_gbk_recompute.txt"], ["binary.txt", "binary_local_gbk_recompute.txt"]]
         )]
@@ -218,7 +223,7 @@ def search_remote_commands():
         CommandTest(
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
-            f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt",
+            f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt -ig",
             "load remote session",
             [["summary.txt", "summary_remote_fa.txt"], ["binary.txt", "binary_remote_fa.txt"]]
         ),
