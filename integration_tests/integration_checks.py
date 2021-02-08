@@ -108,24 +108,26 @@ def test_commands(arguments):
         name = name.lower()
         if name == "search":
             commands.extend(search_commands())
-        if name == "search_local":
+        elif name == "search_local":
             commands.extend(search_local_commands())
-        if name == "search_remote":
+        elif name == "search_remote":
             commands.extend(search_remote_commands())
-        if name == "search_hmm":
+        elif name == "search_hmm":
             commands.extend(search_hmm_commands())
-        if name == "search_combi_local":
+        elif name == "search_combi_local":
             commands.extend(search_combi_local_command())
-        if name == "makedb":
+        elif name == "makedb":
             commands.extend(makedb_commands())
-        if name == "gne":
+        elif name == "gne":
             commands.extend(gne_commands())
-        if name == "extract":
+        elif name == "extract":
             commands.extend(extract_commands())
-        if name == "plot_clusters":
+        elif name == "plot_clusters":
             commands.extend(plot_clusters_commands())
-        if name == "extract_clusters":
+        elif name == "extract_clusters":
             commands.extend(extract_clusters_commands())
+        else:
+            print(f"Skipping unknown command class {name}")
 
     for command in commands:
         command.run(flags["silent"])
@@ -282,7 +284,7 @@ def search_combi_local_command():
             f"cblaster search -m combi_local -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -o {OUT_DIR}{os.sep}summary.txt"
             f" -b {OUT_DIR}{os.sep}binary.txt -s {TEST_FILE_DIR}{os.sep}test_session_combi_local_fa.json",
-            "load hmm session"
+            "load combi local hmm session"
         )
     ]
     return commands
