@@ -102,7 +102,9 @@ def extract_cluster_hierarchies(
                     if not scaffolds or (cluster_in_range(scaffolds[scaffold.accession]["start"],
                                                           scaffolds[scaffold.accession]["end"], cluster)):
                         selected_clusters.add((cluster, scaffold.accession, organism.name))
-    selected_clusters = sorted(list(selected_clusters), key=lambda x: x[0].score, reverse=True)[:max_clusters]
+    # make sure the sort is consistent and that same, scores, locations are always sorted in the same way.
+    selected_clusters = sorted(list(selected_clusters), key=lambda x: (x[0].score, - x[0].start,  - x[0].end, x[1]),
+                               reverse=True)[:max_clusters]
     return selected_clusters
 
 

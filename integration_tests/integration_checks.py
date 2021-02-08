@@ -45,7 +45,7 @@ class CommandTest:
     def __run_command(self, silent=False):
         print(f"Running command: '{self.description}'")
         start_time = time.time()
-        kwargs = dict()#stdout=subprocess.DEVNULL)
+        kwargs = dict(stdout=subprocess.DEVNULL)
         if silent:
             kwargs["stderr"] = subprocess.DEVNULL
         popen = subprocess.Popen(self.command, shell=True, **kwargs)
@@ -103,7 +103,7 @@ def test_commands(arguments):
     flags, command_names = filter_flags(arguments)
     commands = []
     command_names = command_names if command_names else ["search", "makedb", "gne", "extract",
-                                                         "extract_clusters", "plot_clusters"]
+                                                         "plot_clusters", "extract_clusters"]
     for name in command_names:
         name = name.lower()
         if name == "search":
@@ -122,10 +122,11 @@ def test_commands(arguments):
             commands.extend(gne_commands())
         if name == "extract":
             commands.extend(extract_commands())
-        if name == "extract_clusters":
-            commands.extend(extract_clusters_commands())
         if name == "plot_clusters":
             commands.extend(plot_clusters_commands())
+        if name == "extract_clusters":
+            commands.extend(extract_clusters_commands())
+
     for command in commands:
         command.run(flags["silent"])
     print("All tests passed!")
@@ -232,7 +233,7 @@ def search_remote_commands():
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt --recompute -g 50000 -u 7"
-            f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters",
+            f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters -ig -md 6000 -mic 3",
             "recompute remote session",
             [["summary.txt", "summary_remote_fa_recompute.txt"], ["binary.txt", "binary_remote_fa_recompute.txt"]]
         )

@@ -180,7 +180,7 @@ def cblaster(
             )
 
             if intermediate_genes:
-                find_intermediate_genes(session, intermediate_gene_distance)
+                find_intermediate_genes(session, intermediate_gene_distance, intermediate_max_clusters)
 
             if recompute is not True:
                 LOG.info("Writing recomputed session to %s", recompute)

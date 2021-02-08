@@ -75,7 +75,7 @@ def genes_from_feature_table(table_text):
 
     return intermediate_genes
 
-
+#https://www.ncbi.nlm.nih.gov/WebSub/html/help/feature-table.html
 def get_start_end_strand(start, end):
     start = int(start.replace("<", "").replace(">", ""))
     end = int(end.replace("<", "").replace(">", ""))
