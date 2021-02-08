@@ -295,14 +295,6 @@ def add_searching_group(search):
         " This option is required when running hmm or combi search mode",
     )
     group.add_argument(
-        "-jdb",
-        "--json_db",
-        help="Path to local JSON database created using cblaster makedb. If this"
-        " argument is provided, genomic context will be fetched from this database"
-        " instead of through NCBI IPG."
-        "Required for local, hmm and combi searches",
-    )
-    group.add_argument(
         "-eq",
         "--entrez_query",
         help="An NCBI Entrez search term for pre-search filtering of an NCBI database"

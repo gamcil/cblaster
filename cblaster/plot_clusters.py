@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
+
+"""Plot clusters from session files"""
+
+
 import logging
-from pathlib import Path
 from Bio import SeqIO
 
 from clinker.classes import (
