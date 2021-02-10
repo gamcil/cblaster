@@ -11,6 +11,7 @@ const constants = {
 	"showCounts": true,
 	"showCountBorders": true,
 	"xAxisOnTop": true,
+	"sorted": false
 }
 
 if (typeof data === 'undefined') {
@@ -224,7 +225,7 @@ function pruneHierarchy(node, label) {
 	return node.filter(child => {
 		if (child.children) {
 			child.children = pruneHierarchy(child.children, label)	
-			if (child.children.length === 0)
+			if (child.children.length === 0 && constants.sorted !== true)
 				return false
 		}
 		return child.name !== label
@@ -238,6 +239,7 @@ function getScaffoldString(data) {
 
 function plot(data) {
 	data.matrix = flattenArray(data.matrix);
+	constants.sorted = data.sort_clusters
 
   const originalData = JSON.parse(JSON.stringify(data))
 
@@ -491,7 +493,7 @@ function plot(data) {
 			g.selectAll("text").remove()
 			let text = g.append("text")
 			text.append("tspan")
-				.text(d => data.labels[d].name)
+				.text(d => data.labels[d].name + " (" + data.labels[d].score + " score)")
 				.attr("x", 10)
 				.attr("dy", constants.multiLineLabels ? "-0.1em": ".3em")
 				.attr("text-anchor", "start")
