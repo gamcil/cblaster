@@ -235,7 +235,7 @@ def search_remote_commands():
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt --recompute -g 50000 -u 7"
-            f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters -ig -md 6000 -mic 3",
+            f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters -ig -md 6000 -mic 3 -osc",
             "recompute remote session",
             [["summary.txt", "summary_remote_fa_recompute.txt"], ["binary.txt", "binary_remote_fa_recompute.txt"]]
         )
