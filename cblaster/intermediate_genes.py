@@ -8,7 +8,7 @@ import time
 import requests
 import re
 
-from cblaster.extract_clusters import extract_cluster_hierarchies
+from cblaster.extract_clusters import get_sorted_cluster_hierarchies
 from cblaster.database import query_database_for_intermediate_genes
 from cblaster.classes import Subject
 
@@ -50,7 +50,8 @@ def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
         gene_distance (int): the extra distance around a cluster to collect genes from
     """
     passed_time = 0
-    for cluster, scaffold_accession, _ in cluster_hierarchy:
+    for cluster, scaffold, _ in cluster_hierarchy:
+        scaffold_accession = scaffold.accession
         if passed_time < MIN_TIME_BETWEEN_REQUEST:
             time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
         search_start = max(0, cluster.start - gene_distance)
@@ -164,7 +165,7 @@ def find_intermediate_genes(session, gene_distance=5000, max_clusters=100):
     """
     LOG.info("Searching for intermediate genes")
 
-    cluster_hierarchy = extract_cluster_hierarchies(session, max_clusters=max_clusters)
+    cluster_hierarchy = get_sorted_cluster_hierarchies(session, max_clusters=max_clusters)
 
     if session.params["mode"] == "local":
         sqlite_db = session.params["sqlite_db"]
