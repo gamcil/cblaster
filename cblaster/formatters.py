@@ -80,12 +80,16 @@ def binary(
     decimals=4
 ):
     """Generates a binary summary table from a Session object."""
+    # prevent a circular import
+    from cblaster.extract_clusters import extract_cluster_hierarchies
+    sorted_cluster_hierarchy = extract_cluster_hierarchies(session, max_clusters=None)
     rows = [
         [
-            organism.full_name,
+            organism_name,
             accession,
             str(cluster.start),
             str(cluster.end),
+            ("{:." + str(decimals) + "f}").format(cluster.score),
             *[
                 set_decimals(value, decimals)
                 for value in get_cell_values(
@@ -96,12 +100,10 @@ def binary(
                 )
             ]
         ]
-        for organism in session.organisms
-        for accession, scaffold in organism.scaffolds.items()
-        for cluster in scaffold.clusters
+        for cluster, accession, organism_name in sorted_cluster_hierarchy
     ]
     if not hide_headers:
-        rows.insert(0, ["Organism", "Scaffold", "Start", "End", *session.queries])
+        rows.insert(0, ["Organism", "Scaffold", "Start", "End", "Score", *session.queries])
     if not delimiter:
         delimiter = "  "
         rows = humanise(rows)
@@ -171,8 +173,8 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
     rows = []
 
     general_information = f"Cluster {cluster.number} with score {cluster.score:.{decimals}f}:\n"
-
-    for subject in cluster:
+    sorted_clusters = sorted(list(cluster.subjects) + list(cluster.intermediate_genes), key=lambda x: (x.start, x.end))
+    for subject in sorted_clusters:
         values = subject.values(decimals)
         rows.extend(values)
     if not hide_headers:
@@ -197,8 +199,8 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
 def summary(session, hide_headers=False, delimiter=None, decimals=4, sort_clusters=False):
     if sort_clusters:
         sorted_clusters = sorted([cluster for organism in session.organisms for
-                                  scaffold in organism.scaffolds.values() for
-                                  cluster in scaffold.clusters], key=lambda x: x.score, reverse=True)
+                                 scaffold in organism.scaffolds.values() for
+                                 cluster in scaffold.clusters], key=lambda x: (x.score, x.start, x.end), reverse=True)
         return _summarise(
             sorted_clusters,
             summarise_cluster,

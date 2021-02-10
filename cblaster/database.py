@@ -11,7 +11,7 @@ from multiprocessing import Pool
 
 from cblaster import helpers
 from cblaster import genome_parsers as gp
-from cblaster.sql import FASTA, INSERT, ID_QUERY, SCHEMA, NAME_QUERY
+from cblaster.sql import FASTA, INSERT, ID_QUERY, SCHEMA, INCLUSIVE_NAME_QUERY, INTERMEDIATE_GENES_QUERY
 
 
 LOG = logging.getLogger("cblaster")
@@ -84,7 +84,7 @@ def query_database_with_ids(ids, database):
 
 
 def query_database_with_names(names, database):
-    """Queries the cblaster SQLite3 database for a collection of gene IDs.
+    """Queries the cblaster SQLite3 database for a collection of gene names.
 
     Args:
         names (list): Names of genes being queried
@@ -93,14 +93,34 @@ def query_database_with_names(names, database):
         list: Result tuples returned by the query
     """
     marks = ", ".join("?" for _ in names)
-    query = NAME_QUERY.format(marks)
+    query = INCLUSIVE_NAME_QUERY.format(marks)
     with sqlite3.connect(database) as con:
         cur = con.cursor()
         return cur.execute(query, names).fetchall()
 
 
+def query_database_for_intermediate_genes(names, start, end, database):
+    """Queries the cblaster SQLite3 database for a collection of intermediate genes.
+
+    These are the genes between start and stop that are not part of the names list
+
+    Args:
+        names (list): a list of names that are part of one cluster
+        start (int): the minimal start a gene can have to be considered intermediate
+        end (int): the maximum end a gene can have to be considered intermediate
+        database (str): Path to SQLite3 database
+    Returns:
+        list: Result tuples returned by the query
+    """
+    marks = ", ".join("?" for _ in names)
+    query = INTERMEDIATE_GENES_QUERY.format(marks)
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        return cur.execute(query, [*names, start, end]).fetchall()
+
+
 def diamond_makedb(fasta, name):
-    """Builds a DIAMOND database from JSON.
+    """Builds a DIAMOND database
 
     Args:
         fasta (str): Path to FASTA file containing protein sequences.
@@ -163,7 +183,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
-    path_groups = [paths[i : i + batch] for i in range(0, total_paths, batch)]
+    path_groups = [paths[i: i + batch] for i in range(0, total_paths, batch)]
     LOG.info(
         "Parsing %i genome files, in %i batches of %i",
         total_paths,

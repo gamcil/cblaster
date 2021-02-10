@@ -7,8 +7,6 @@ SOURCE      .
   ORGANISM  .
             .
 FEATURES             Location/Qualifiers
-     SOURCE          529017..568298
-                     /organism="GCA_000204155.1_ASM20415v1_genomic"
      CDS             1..768
                      /protein_id="VAB18032_07030"
                      /translation="MRTTAQATSWLRRYRPRPAATWRLVCFPYASGNATFYRQWAVRLP
@@ -16,6 +14,7 @@ FEATURES             Location/Qualifiers
                      AHRLEHGLGAPPRRLIVSGRPAPQHHRPGVKHLGSDEELWDELRRLGGTTDEALAHPEL
                      RSALMPTLRADYRLVETYRPTFGAPLSVPVTAITGDDDPEAHVPEVADWRRCTTGDFQL
                      RVLPGHHFYLIDRQAEVLDHLREALGLPAGQPH"
+                     /cluster_role="hit"
      CDS             19345..20553
                      /protein_id="VAB18032_07105"
                      /translation="MTLPDAVARPRIAAVDLACSDDPYPEYERLRAQGPVVRGEFGQWL
@@ -26,6 +25,7 @@ FEATURES             Location/Qualifiers
                      LRFDSPIQNAIRVAREPIEIGGHKIRTGRSVMLLLGAANRDPAVFDRPAELDLSRTPNP
                      HLGFGGGLHHCLGTALARLMGELTFTALATGFRDIAPDGDALRRQHGSLRSFERLPLAV
                      RSA"
+                     /cluster_role="hit_required"
      CDS             38017..39282
                      /protein_id="VAB18032_07205"
                      /translation="MSQMPVTRTTPTADIAHPATYALGVPHAEFERRRREEPVGWVPEP
@@ -36,6 +36,9 @@ FEATURES             Location/Qualifiers
                      EQLRGRWLGSPLPTATAVDEFLRVVTPIMQFRRTATQDTTLAGTRIAEGDKVVMFYVSA
                      NRDAAVFADPHRVDLERAPNPHLSFGVGPHFCLGAHLARMEMAALLDAIAPHLPRLAAT
                      GPVVRLESNFVNGIKSMPVGWT"
+                     /cluster_role="hit"
+     SOURCE          529017..568298
+                     /organism="GCA_000204155.1_ASM20415v1_genomic"
 ORIGIN
         1 cgtgaggacg accgcgcagg ccacatcctg gttgcgccgc taccggcccc gtccggccgc
        61 gacctggcgc ctggtctgct tcccgtacgc cagcggcaac gcgaccttct accggcagtg

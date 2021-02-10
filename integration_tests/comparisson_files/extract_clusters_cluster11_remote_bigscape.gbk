@@ -7,10 +7,6 @@ SOURCE      .
   ORGANISM  .
             .
 FEATURES             Location/Qualifiers
-     SOURCE          7869..20728
-                     /organism="Verrucosispora sp."
-     region          7869..20728
-                     /product="other"
      CDS             1..1289
                      /protein_id="AIS85730.1"
                      /translation="MVTTDCLHHHVDRLVDVVQPDHHLGCAQVAQPLPPRRRADRRHHR
@@ -21,6 +17,7 @@ FEATURES             Location/Qualifiers
                      RFGSRSGLFRELLAERATRIGEQISHGPPPLGPGAPPGDRLLAFLDALADLAATNATLL
                      AAHAMACAAGRHDDPTYRRWHEHLRQLVGQLRPDLDAGYVAHVLLGAFDAELVRRTIAD
                      GGVDRLRAAVRALARCLLPPGPERSCRPGP"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             1492..2387
                      /protein_id="AIS85731.1"
@@ -30,6 +27,7 @@ FEATURES             Location/Qualifiers
                      PAWVRTAVRLLRGDLAALHSQPPTGPDPVPVPVRAYVGDSDPLVGRADAVGWAAYTSSS
                      FRLRVLPGGHLFHLRSGDRLRADIAACLGELTSLPGGRPDGGASVDVEDRLAGHAAAEQ
                      RLDRVVDALPGVPPADR"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             2513..3090
                      /protein_id="AIS85732.1"
@@ -37,11 +35,13 @@ FEATURES             Location/Qualifiers
                      HVLVGADPRHPAITGVAALIAEADGLVIGTPIYKAAYSGLLKCLFDLLPQYALAGKTVL
                      PLATGGSRAHVLAIDYALRPVLTAMGAGHVLPGWFTLDTDLVVGDDGTLVVAPAAADAL
                      CEVVDRFAAALHRAVTSAPPDGTGRPGMR"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             3092..3252
                      /protein_id="AIS85733.1"
                      /translation="MRTDPTVFGQSDEGTVRLLRGSLPGSLRSVVTEAAALCPAQAITV
                      TGTADPPH"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             3306..4390
                      /protein_id="AIS85734.1"
@@ -52,6 +52,7 @@ FEATURES             Location/Qualifiers
                      AGAVAADPTRVGAVVEEILRHTAVADGVARFATRDTEVAGVRIAAGDAVVVALAAANRD
                      PGPFPDPDRFDPRRGGRQHVTFGHGPHQCIGANLARAELEIALSRLFTRLPTLALAVPV
                      EELGGKEAGGVQGVQRLPVTW"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             4490..6093
                      /protein_id="AIS85735.1"
@@ -65,6 +66,7 @@ FEATURES             Location/Qualifiers
                      DQVGLDPAMADRHPRTLSGGQRQRVAIARALARDPEVIVCDEPVSALDVSVQAQILDLF
                      ADIRADLGTALVLISHDLAVVHHVADRVLVMRAGTVVESGPVTEVFARPTHPYTAQLIA
                      ALPRPGDAYAAHPEGVA"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             6099..6958
                      /protein_id="AIS85736.1"
@@ -74,6 +76,7 @@ FEATURES             Location/Qualifiers
                      ARGQALVVRRSGYVSAAVVMGRSRVGIFFGHVLPNALPPVLAFAAVDVGTALMASASLS
                      FLGLGAQPPAPEWGSMLAEGRDYLDSAWGLTVFPGLVVTAAVIACYVVGADLRARFEGR
                      GTGGR"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             6947..7881
                      /protein_id="AIS85737.1"
@@ -83,7 +86,12 @@ FEATURES             Location/Qualifiers
                      LFPAAGAGGLEGLVLPAVTQAIGLVGIFTQVLRQSMEQALDEPFALSARARGTTETALR
                      LRHAARHALIPVLTLSGWILGALLSGAVVVETLFSRPGLGRTLVTAILGRDLPVVIGVV
                      VVAAALFTVINLVVDLLYRVVDPRLREWAA"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
+     SOURCE          7869..20728
+                     /organism="Verrucosispora sp."
+     region          7869..20728
+                     /product="other"
      CDS             7879..9494
                      /protein_id="AIS85738.1"
                      /translation="MRTTTRSTAILLLLVAATAACGTSAAQTGDAQPTTGGALTFATAV
@@ -96,6 +104,7 @@ FEATURES             Location/Qualifiers
                      QSQAKQVGIEIQYTLVDQGTIGDLIGKRALDLFDVSFTRSDPDILRYFFGTKSTLAEGG
                      GNIFGLDIPELDKLLTDGVSTLDPAQRQRIYSDAQRYVVENAVSLPVYVPTSLLGVARH
                      VHGVEFGANATPLFAGAWIAG"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             9583..10589
                      /protein_id="AIS85739.1"
@@ -105,6 +114,7 @@ FEATURES             Location/Qualifiers
                      PVWILGSSPGSARLAGSLGLPYAFAHQINPTLTATALQLYRKSFRPSAHLADPHAILSA
                      VVVVGENDEHAERLIAPYLLGQIGHRTVGRLDPFPNAAQAQQHSYTDAERAFVAERITS
                      QIVGGPETVRERVQRLHAETGANELMALTILPELEDRVRSYALLADAVRASIAV"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             10658..12084
                      /protein_id="AIS85740.1"
@@ -117,6 +127,7 @@ FEATURES             Location/Qualifiers
                      GALLIALSALVYTQAGPDTSQVLLTAAQLVTGFGLGLVGAPTMGSVYRTVAPEAVGGAT
                      GTLFILNQIGASLGVAVVALIVQSGLTDGRTPADSFDQAFWWTVAGGVIVALASRFLPG
                      RPQPVTPTPADAETAAA"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
      CDS             12208..12860
                      /protein_id="AIS85741.1"
@@ -124,6 +135,7 @@ FEATURES             Location/Qualifiers
                      KENLFRHVLAEIAARSNAKTLAALQTFPTDPQELRDHLNTVGLRLAECFVDEQSSALRR
                      LLHAEIARFPDLFDVVLDSGPNQATEALAGRLARLANAGYLTIEDPIRAARQFVALLTD
                      ELPAMTALGTRPINPDDLERAVTAGVDTFLRAFATPTDAPADPPAREAVGPLPD"
+                     /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
 ORIGIN
         1 ttacgggccc gggcggcatg atcgctcggg cccgggtggc agcaggcacc gtgcgagtgc

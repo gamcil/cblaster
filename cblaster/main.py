@@ -22,6 +22,7 @@ from cblaster import (
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
+from cblaster.intermediate_genes import find_intermediate_genes
 
 
 logging.basicConfig(
@@ -109,6 +110,9 @@ def cblaster(
     ipg_file=None,
     hitlist_size=None,
     cpus=None,
+    intermediate_genes=False,
+    intermediate_gene_distance=5000,
+    intermediate_max_clusters=100
 ):
     """Run cblaster.
 
@@ -148,7 +152,13 @@ def cblaster(
         blast_file (str): path to file to save blast output
         ipg_file (str): path to file to save ipg output
         cpus (int): number of cpu's to use when blasting.
+        intermediate_genes (bool): Signifies if intermediate genes have to be shown
         hitlist_size (int): Number of database sequences to keep
+        intermediate_gene_distance (int): the maximum allowed distance between the
+         edge of a cluster and an intermediate gene.
+        intermediate_max_clusters (int): the maximum amount of clusters for which intermediate
+         genes will be fetched, since this can become expensive for remote searches
+
     Returns:
         Session: cblaster search Session object
     """
@@ -168,6 +178,10 @@ def cblaster(
                 min_hits,
                 require,
             )
+
+            if intermediate_genes:
+                find_intermediate_genes(session, intermediate_gene_distance, intermediate_max_clusters)
+
             if recompute is not True:
                 LOG.info("Writing recomputed session to %s", recompute)
                 with open(recompute, "w") as fp:
@@ -251,7 +265,7 @@ def cblaster(
                 hitlist_size=hitlist_size,
             )
             session.params["rid"] = rid
-            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
+            LOG.info("Found %i hits meeting score thresholds for remote search", len(results))
             LOG.info("Fetching genomic context of hits")
             organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
 
@@ -259,6 +273,9 @@ def cblaster(
 
         if sqlite_db:
             session.params["sqlite_db"] = str(sqlite_db)
+
+        if intermediate_genes:
+            find_intermediate_genes(session, intermediate_gene_distance, intermediate_max_clusters)
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -279,8 +296,8 @@ def cblaster(
             decimals=binary_decimals,
         )
 
-    LOG.info("Writing summary to %s", "stdout" if output == sys.stdout else output)
-    results = session.format(
+    LOG.info("Writing summary to %s", "stdout" if output is None else output)
+    session.format(
         "summary",
         fp=open(output, "w") if output else sys.stdout,
         hide_headers=output_hide_headers,
@@ -363,6 +380,9 @@ def main():
             ipg_file=args.ipg_file,
             hitlist_size=args.hitlist_size,
             cpus=args.cpus,
+            intermediate_genes=args.intermediate_genes,
+            intermediate_gene_distance=args.max_distance,
+            intermediate_max_clusters=args.maximum_clusters,
         )
 
     elif args.subcommand == "gui":
@@ -415,6 +435,7 @@ def main():
             organisms=args.organisms,
             scaffolds=args.scaffolds,
             plot_outfile=args.output,
+            max_clusters=args.maximum_clusters,
         )
 
 

@@ -45,7 +45,7 @@ class CommandTest:
     def __run_command(self, silent=False):
         print(f"Running command: '{self.description}'")
         start_time = time.time()
-        kwargs = dict()#stdout=subprocess.DEVNULL)
+        kwargs = dict(stdout=subprocess.DEVNULL)
         if silent:
             kwargs["stderr"] = subprocess.DEVNULL
         popen = subprocess.Popen(self.command, shell=True, **kwargs)
@@ -103,29 +103,32 @@ def test_commands(arguments):
     flags, command_names = filter_flags(arguments)
     commands = []
     command_names = command_names if command_names else ["search", "makedb", "gne", "extract",
-                                                         "extract_clusters", "plot_clusters"]
+                                                         "plot_clusters", "extract_clusters"]
     for name in command_names:
         name = name.lower()
         if name == "search":
             commands.extend(search_commands())
-        if name == "search_local":
+        elif name == "search_local":
             commands.extend(search_local_commands())
-        if name == "search_remote":
+        elif name == "search_remote":
             commands.extend(search_remote_commands())
-        if name == "search_hmm":
+        elif name == "search_hmm":
             commands.extend(search_hmm_commands())
-        if name == "search_combi_local":
+        elif name == "search_combi_local":
             commands.extend(search_combi_local_command())
-        if name == "makedb":
+        elif name == "makedb":
             commands.extend(makedb_commands())
-        if name == "gne":
+        elif name == "gne":
             commands.extend(gne_commands())
-        if name == "extract":
+        elif name == "extract":
             commands.extend(extract_commands())
-        if name == "extract_clusters":
-            commands.extend(extract_clusters_commands())
-        if name == "plot_clusters":
+        elif name == "plot_clusters":
             commands.extend(plot_clusters_commands())
+        elif name == "extract_clusters":
+            commands.extend(extract_clusters_commands())
+        else:
+            print(f"Skipping unknown command class {name}")
+
     for command in commands:
         command.run(flags["silent"])
     print("All tests passed!")
@@ -157,7 +160,8 @@ def search_local_commands():
             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
+            f" -mic 2",
             "test gbk query local",
             [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]]
         ),
@@ -167,7 +171,8 @@ def search_local_commands():
             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
+            f" -mic 25",
             "test embl query local"
         ),
         # test fasta query in local mode with all options enabled
@@ -186,7 +191,8 @@ def search_local_commands():
             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh -ode , -odc 2 -osc -b"
             f" {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-            f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
+            f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
+            f" -mic 2",
             "test query identifiers local"
         ),
         # test local session with all options enabled
@@ -194,7 +200,8 @@ def search_local_commands():
             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "
             f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl_{OS_NAME}.json "
             f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -db"
-            f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt",
+            f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt -ig -md 6000"
+            f" -mic 2",
             "test local session",
             [["summary.txt", "summary_local_gbk_embl_combined.txt"]]
         ),
@@ -203,7 +210,8 @@ def search_local_commands():
             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "
             f"-s {OUT_DIR}{os.sep}test_session_local_gbk_copy.json --recompute"
             f" -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt "
-            f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {OUT_DIR}{os.sep}binary.txt",
+            f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {OUT_DIR}{os.sep}binary.txt -ig -md 2500"
+            f" -mic 2",
             "test recompute local",
             [["summary.txt", "summary_local_gbk_recompute.txt"], ["binary.txt", "binary_local_gbk_recompute.txt"]]
         )]
@@ -218,7 +226,7 @@ def search_remote_commands():
         CommandTest(
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
-            f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt",
+            f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt -ig",
             "load remote session",
             [["summary.txt", "summary_remote_fa.txt"], ["binary.txt", "binary_remote_fa.txt"]]
         ),
@@ -227,7 +235,7 @@ def search_remote_commands():
             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt --recompute -g 50000 -u 7"
-            f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters",
+            f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters -ig -md 6000 -mic 3",
             "recompute remote session",
             [["summary.txt", "summary_remote_fa_recompute.txt"], ["binary.txt", "binary_remote_fa_recompute.txt"]]
         )
@@ -276,7 +284,7 @@ def search_combi_local_command():
             f"cblaster search -m combi_local -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -o {OUT_DIR}{os.sep}summary.txt"
             f" -b {OUT_DIR}{os.sep}binary.txt -s {TEST_FILE_DIR}{os.sep}test_session_combi_local_fa.json",
-            "load hmm session"
+            "load combi local hmm session"
         )
     ]
     return commands

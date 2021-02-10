@@ -55,12 +55,12 @@ def parse_numbers(cluster_numbers):
 
 
 def extract_cluster_hierarchies(
-        session,
-        cluster_numbers=None,
-        score_threshold=None,
-        organisms=None,
-        scaffolds=None,
-        max_clusters=50
+    session,
+    cluster_numbers=None,
+    score_threshold=None,
+    organisms=None,
+    scaffolds=None,
+    max_clusters=50
 ):
     """Filter out selected clusters with their associated scaffold and organism
 
@@ -102,7 +102,9 @@ def extract_cluster_hierarchies(
                     if not scaffolds or (cluster_in_range(scaffolds[scaffold.accession]["start"],
                                                           scaffolds[scaffold.accession]["end"], cluster)):
                         selected_clusters.add((cluster, scaffold.accession, organism.name))
-    selected_clusters = sorted(list(selected_clusters), key=lambda x: x[0].score, reverse=True)[:max_clusters]
+    # make sure the sort is consistent and that same, scores, locations are always sorted in the same way.
+    selected_clusters = sorted(list(selected_clusters), key=lambda x: (x[0].score, - x[0].start,  - x[0].end, x[1]),
+                               reverse=True)[:max_clusters]
     return selected_clusters
 
 
@@ -148,7 +150,8 @@ def create_genbanks_from_clusters(
 
     # generate genbank files for all the required clusters
     for cluster, scaffold_accession, organism_name in cluster_hierarchy:
-        cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for subject in cluster.subjects}
+        cluster_prot_sequences = {subject.name: protein_sequences[subject.name] for
+                                  subject in list(cluster.subjects) + list(cluster.intermediate_genes)}
         cluster_nuc_sequence = nucleotide_sequences[cluster.number]
         with open(f"{output_dir}{os.sep}{prefix}cluster{cluster.number}.gbk", "w") as f:
             record = cluster_to_record(cluster, cluster_prot_sequences, cluster_nuc_sequence, organism_name,
@@ -169,10 +172,11 @@ def database_fetch_sequences(sqlite_db, cluster_hierarchy):
          nucleotide sequences keyed on scaffold_accessions
     """
     # get the names of all unique subjects in all clusters
-    needed_ids = set([subject.name for cluster, _, _ in cluster_hierarchy for subject in cluster])
+    subject_names = set([subject.name for cluster, _, _ in cluster_hierarchy for
+                         subject in list(cluster.subjects) + list(cluster.intermediate_genes)])
 
     prot_sequences = dict()
-    for name, translation in query_database_with_names(list(needed_ids), sqlite_db):
+    for name, translation in query_database_with_names(list(subject_names), sqlite_db):
         prot_sequences[name] = translation
     return prot_sequences
 
@@ -189,7 +193,7 @@ def efetch_protein_sequences(cluster_hierarchy):
     # first collect all names to do the fetching all at once
     sequence_names = set()
     for cluster, sc_name, or_name in cluster_hierarchy:
-        sequence_names.update([subject.name for subject in cluster.subjects])
+        sequence_names.update([subject.name for subject in list(cluster.subjects) + list(cluster.intermediate_genes)])
     sequence_names = list(sequence_names)
 
     sequences = efetch_sequences(sequence_names)
@@ -214,11 +218,12 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
         response = requests.post(
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
             params={"db": "sequences", "rettype": "fasta",
-                    "seq_start": str(cluster.start), "seq_stop": str(cluster.end),
+                    "seq_start": str(cluster.intermediate_start), "seq_stop": str(cluster.intermediate_end),
                     "strand": "1"},
             files={"id": scaffold_accession}
         )
-        LOG.info(f"Querying NCBI for sequence for {scaffold_accession} from {cluster.start} to {cluster.end}")
+        LOG.info(f"Querying NCBI for sequence for {scaffold_accession} from {cluster.intermediate_start}"
+                 f" to {cluster.intermediate_end}")
         LOG.debug(f"Efetch URL: {response.url}")
 
         if response.status_code != 200:
@@ -256,9 +261,9 @@ def cluster_to_record(
         a Bio.Seqrecord object
     """
     if generic_dna:
-        # Newer Biopython refuses second argument
         nuc_seq_obj = Seq(cluster_nuc_sequence, generic_dna)
     else:
+        # Newer Biopython refuses second argument
         nuc_seq_obj = Seq(cluster_nuc_sequence)
     # create the record
     record = SeqRecord(
@@ -282,22 +287,35 @@ def cluster_to_record(
         )
         record.features.append(region_feature)
 
-    subjects = {subject.name: subject for subject in cluster.subjects}
+    subjects = {subject.name: subject for subject in list(cluster.subjects) + list(cluster.intermediate_genes)}
     for name, sequence in cluster_prot_sequences.items():
         subject = subjects[name]
         qualifiers = {"protein_id": subject.name, "translation": sequence}
 
-        # add what genes are seen as core of the cluster by the user. If no required genes are specified select them all
-        if format_ == "bigscape":
+        top_hit = None
+        if len(subject.hits) > 0:
             top_hit = max(subject.hits, key=lambda x: x.bitscore)
+
+        # indicate the role of a gene in a cluster hit_required = hit with a required gene, hit = a hit with a non
+        # required gene and intermediate = an intermediate gene.
+        if top_hit is not None:
             if required_genes is None or top_hit.query in required_genes:
-                qualifiers["gene_kind"] = "biosynthetic"
+                qualifiers["cluster_role"] = "hit_required"
+                if format_ == "bigscape":
+                    qualifiers["gene_kind"] = "biosynthetic"
+            else:
+                qualifiers["cluster_role"] = "hit"
+        else:
+            qualifiers["cluster_role"] = "intermediate"
+
         cds_feature = SeqFeature(
-            FeatureLocation(start=subject.start - cluster.start, end=subject.end - cluster.start),
+            FeatureLocation(start=subject.start - cluster.intermediate_start,
+                            end=subject.end - cluster.intermediate_start),
             type="CDS",
             qualifiers=qualifiers
         )
         record.features.append(cds_feature)
+    record.features.sort(key=lambda x: (x.location.start, x.location.end))
     return record
 
 
@@ -313,7 +331,14 @@ def extract_clusters(
     max_clusters=50,
 ):
     """Extract Cluster objects from a Session file and write them to a file in a
-    specified format
+    specified format.
+
+    If Bigscape format is chosen there will be an additional 'gene_kind' qualifier telling what genes are part of
+    the core of the cluster. Genes that are flagged as required are considered core. If no genes are flagged as
+    required all genes are considered to be core genes.
+
+    An additional qualifier is provided called 'cluster_role'. This qualifier allows the identification between hits
+    found against required genes of the query, hits found agains any gene of the query and intermediate genes.
 
     Args:
         session (string): path to a session.json file

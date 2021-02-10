@@ -290,6 +290,7 @@ class Cluster(Serializer):
         of the parent scaffold
         subjects (list): Subject objects that are in this cluster. Note:
         These are not serialised for this cluster
+        intermediate_genes (list):
         start (int): The start coordinate of the cluster on the parent scaffold
         end (int): The end coordinate of the cluster on the parent scaffold
         number (int): number that is unique for each cluster in order to identify them
@@ -300,6 +301,7 @@ class Cluster(Serializer):
         self,
         indices=None,
         subjects=None,
+        intermediate_genes=None,
         query_sequence_order=None,
         score=None,
         start=None,
@@ -308,6 +310,7 @@ class Cluster(Serializer):
     ):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
+        self.intermediate_genes = intermediate_genes if intermediate_genes else []
         self.score = score if score else self.calculate_score(query_sequence_order)
         self.start = start if start else self.subjects[0].start
         self.end = end if end else self.subjects[-1].end
@@ -318,6 +321,16 @@ class Cluster(Serializer):
 
     def __len__(self):
         return len(self.subjects)
+
+    def __eq__(self, other):
+        if not isinstance(other, Cluster):
+            raise NotImplementedError("Expected Cluster object")
+        return (set(self.subjects) == set(other.subjects)
+                and self.score == other.score)
+
+    def __hash__(self):
+        # make sure to define a __hash__ when defining __eq__ to allow hashing of the object for sets, dicts etc.
+        return hash(id(self))
 
     def __calculate_synteny_score(self, query_sequence_order):
         if not query_sequence_order:
@@ -342,6 +355,22 @@ class Cluster(Serializer):
             max(hit.bitscore for hit in subject.hits) for subject in self.subjects
         )
 
+    @property
+    def intermediate_start(self):
+        """The start of the cluster taking the intermediate genes into account"""
+        if len(self.intermediate_genes) == 0:
+            return self.start
+        sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
+        return min(sorted_intermediate_genes[0].start, self.start)
+
+    @property
+    def intermediate_end(self):
+        """The end of the cluster taking the intermediate genes into account"""
+        if len(self.intermediate_genes) == 0:
+            return self.end
+        sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
+        return max(sorted_intermediate_genes[-1].end, self.end)
+
     def calculate_score(self, query_sequence_order=None):
         """Calculate the score of the current cluster
 
@@ -359,28 +388,16 @@ class Cluster(Serializer):
         bitscore = self.__calculate_bitscore()
         return bitscore / 10000 + len(self.subjects) + synteny_score
 
-    def to_dict(self):
-        return {
-            "indices": self.indices,
-            "score": self.score,
-            "start": self.start,
-            "end": self.end,
-            "number": self.number,
-        }
-
     def to_clinker_cluster(self, scaffold_accession=""):
         """Convert this cluster to a clinker format cluster
 
         Args:
             scaffold_accession (str): accession of the scaffold this cluster is located on
-
         Returns:
             A clinker.Cluster object
         """
         clinker_genes = []
-        # make sure subjects are sorted low to high
-        sorted_subjects = sorted(self.subjects, key=lambda x: (x.start, x.end))
-        for subject in sorted_subjects:
+        for subject in self.subjects:
             best_hit = max(subject.hits, key=lambda x: x.bitscore)
             tooltip_dict = \
                 {"accession": subject.name, "identity": best_hit.identity, "bitscore": best_hit.bitscore,
@@ -388,15 +405,32 @@ class Cluster(Serializer):
             clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
                                              end=subject.end, strand=1 if subject.strand == '+' else -1,
                                              names=tooltip_dict))
-        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.start, end=self.end)
-        clinker_cluster = ClinkerCluster("Cluster {} with score {:.2f}".format(self.number, self.score),
+        for gene in self.intermediate_genes:
+            tooltip_dict = {"accession": gene.name}
+            clinker_genes.append(ClinkerGene(label=gene.name, start=gene.start, end=gene.end,
+                                             strand=1 if gene.strand == '+' else -1, names=tooltip_dict))
+
+        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.intermediate_start,
+                                     end=self.intermediate_end)
+        clinker_cluster = ClinkerCluster("Cluster {} ({:.2f} score)".format(self.number, self.score),
                                          [clinker_locus])
         return clinker_cluster
+
+    def to_dict(self):
+        return {
+            "indices": self.indices,
+            "intermediate_genes": [gene.to_dict() for gene in self.intermediate_genes],
+            "score": self.score,
+            "start": self.start,
+            "end": self.end,
+            "number": self.number,
+        }
 
     @classmethod
     def from_dict(cls, d, *subjects):
         return cls(
             indices=d["indices"],
+            intermediate_genes=[Subject.from_dict(d) for d in d["intermediate_genes"]],
             subjects=subjects,
             score=d["score"],
             start=d["start"],
@@ -430,16 +464,18 @@ class Subject(Serializer):
         self.end = int(end) if end is not None else None
         self.strand = strand
 
+    def __key(self):
+        # make equals behaviour of higher classes consistent with different instances
+        return tuple(sorted(self.hits, key=lambda x: x.bitscore)), self.ipg, self.start, self.end, self.strand
+
     def __eq__(self, other):
         if not isinstance(other, Subject):
             raise NotImplementedError("Expected Subject object")
-        return (
-            set(self.hits) == set(other.hits)
-            and self.ipg == other.ipg
-            and self.start == other.start
-            and self.end == other.end
-            and self.strand == other.strand
-        )
+        return self.__key() == other.__key()
+
+    def __hash__(self):
+        # make sure that subjects can still be hashed
+        return hash(self.__key())
 
     def to_dict(self):
         return {
@@ -453,14 +489,26 @@ class Subject(Serializer):
 
     def values(self, decimals=4):
         records = []
-        for hit in self.hits:
-            record = (
-                *hit.values(decimals),
+        if len(self.hits) > 0:
+            for hit in self.hits:
+                record = (
+                    *hit.values(decimals),
+                    str(self.start),
+                    str(self.end),
+                    self.strand,
+                )
+                records.append(record)
+        # when deeling with intermediate genes
+        else:
+            records.append((
+                "intermediate", self.name,
+                "-", "-",
+                "-", "-",
                 str(self.start),
                 str(self.end),
-                self.strand,
-            )
-            records.append(record)
+                self.strand
+            ))
+
         return records
 
     @classmethod
