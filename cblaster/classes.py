@@ -455,8 +455,16 @@ class Subject(Serializer):
     """
 
     def __init__(
-        self, hits=None, name=None, ipg=None, start=None, end=None, strand=None
+        self,
+        id=None,
+        hits=None,
+        name=None,
+        ipg=None,
+        start=None,
+        end=None,
+        strand=None
     ):
+        self.id = id
         self.hits = hits if hits else []
         self.ipg = ipg
         self.name = name
@@ -466,7 +474,14 @@ class Subject(Serializer):
 
     def __key(self):
         # make equals behaviour of higher classes consistent with different instances
-        return tuple(sorted(self.hits, key=lambda x: x.bitscore)), self.ipg, self.start, self.end, self.strand
+        return (
+            self.id,
+            tuple(sorted(self.hits, key=lambda x: x.bitscore)),
+            self.ipg,
+            self.start,
+            self.end,
+            self.strand
+        )
 
     def __eq__(self, other):
         if not isinstance(other, Subject):
@@ -474,11 +489,11 @@ class Subject(Serializer):
         return self.__key() == other.__key()
 
     def __hash__(self):
-        # make sure that subjects can still be hashed
         return hash(self.__key())
 
     def to_dict(self):
         return {
+            "id": self.id,
             "hits": [hit.to_dict() for hit in self.hits],
             "name": self.name,
             "ipg": self.ipg,
@@ -488,32 +503,33 @@ class Subject(Serializer):
         }
 
     def values(self, decimals=4):
-        records = []
         if len(self.hits) > 0:
-            for hit in self.hits:
-                record = (
+            return [
+                (
                     *hit.values(decimals),
                     str(self.start),
                     str(self.end),
                     self.strand,
                 )
-                records.append(record)
-        # when deeling with intermediate genes
-        else:
-            records.append((
-                "intermediate", self.name,
-                "-", "-",
-                "-", "-",
-                str(self.start),
-                str(self.end),
-                self.strand
-            ))
+                for hit in self.hits
+            ]
 
-        return records
+        # If no hits, this is an intermediate
+        record = (
+            "intermediate",
+            self.name,
+            "-", "-",
+            "-", "-",
+            str(self.start),
+            str(self.end),
+            self.strand
+        )
+        return [record]
 
     @classmethod
     def from_dict(cls, d):
         return cls(
+            id=d.get("id"),
             hits=[Hit.from_dict(h) for h in d["hits"]],
             name=d.get("name"),
             ipg=d.get("ipg"),
