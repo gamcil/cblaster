@@ -74,13 +74,14 @@ INTERMEDIATE_GENES_QUERY = """\
 SELECT
     start_pos,
     end_pos,
+    id,
     name,
     strand
 FROM
     feature
 WHERE
     feature_type = \"gene\"
-    AND name NOT IN ({})
+    AND id NOT IN ({})
     AND scaffold = ?
     AND organism = ?
     AND start_pos >= ? AND end_pos <= ?\

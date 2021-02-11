@@ -93,7 +93,9 @@ def query_genes(ids, database):
     return _query(query, ids, database)
 
 
-def query_intermediate_genes(names, start, end, scaffold, organism, database):
+def query_intermediate_genes(
+    names, start, end, scaffold, organism, database, local=False
+):
     """Queries the cblaster SQLite3 database for a collection of intermediate genes.
 
     These are the genes between start and stop that are not part of the names list
