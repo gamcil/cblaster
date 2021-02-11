@@ -1,4 +1,4 @@
-LOCUS       CP002638.1             39283 bp    DNA              UNK 01-JAN-1980
+LOCUS       CP002638.1             39282 bp    DNA              UNK 01-JAN-1980
 DEFINITION  Genes for cluster 1 on scaffold CP002638.1.
 ACCESSION   CP002638
 VERSION     CP002638.1
@@ -694,5 +694,5 @@ ORIGIN
     39061 cgacccccac cgggtggacc tggagcgggc ccccaacccg catctcagct tcggggtggg
     39121 cccgcacttc tgcctgggcg cccacctcgc gcggatggag atggccgcgt tgctcgacgc
     39181 catcgccccg caccttcccc gacttgccgc cacgggcccg gtcgtccgac tggagtccaa
-    39241 ctttgtcaat ggcatcaagt cgatgcctgt gggctggacc tga
+    39241 ctttgtcaat ggcatcaagt cgatgcctgt gggctggacc tg
 //

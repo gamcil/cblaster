@@ -10,7 +10,7 @@ import re
 
 from cblaster.classes import Session
 from cblaster.helpers import efetch_sequences
-from cblaster.database import query_genes
+from cblaster.database import query_sequences
 
 
 LOG = logging.getLogger(__name__)
@@ -158,19 +158,21 @@ def extract_sequences(session, records):
         LOG.info("Fetching %i sequences from NCBI", len(records))
         headers = [record.get("name") for record in records]
         sequences = efetch_sequences(headers)
+        attr_name = "name"
     elif mode == "local":
         LOG.info("Fetching %i sequences from database", len(records))
         database = session.params["sqlite_db"]
         rowids = [record.get("id") for record in records]
         sequences = {
-            rowid: sequence for rowid, sequence in query_genes(rowids, database)
+            rowid: sequence for rowid, sequence in query_sequences(rowids, database)
         }
+        attr_name = "id"
     else:
         raise NotImplementedError(
             f"Sessions generated with mode {mode} are not supported yet."
         )
     for record in records:
-        record["sequence"] = sequences.get(record["name"])
+        record["sequence"] = sequences.get(record[attr_name])
 
 
 def extract(
