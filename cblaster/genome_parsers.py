@@ -227,6 +227,7 @@ def seqrecord_to_tuples(record, source):
             LOG.warning("Failed to find translation for %s, skipping", name)
             continue
         gene = (
+            "gene",
             str(name),
             int(start),
             int(end),
@@ -236,7 +237,19 @@ def seqrecord_to_tuples(record, source):
             str(source)  # organism name from source file name
         )
         genes.append(gene)
-    return genes
+
+    scaffold = (
+        "scaffold",
+        str(record.id),
+        0,
+        len(record.seq),
+        None,
+        str(record.seq),
+        str(record.id),
+        str(source),
+    )
+
+    return [scaffold, *genes]
 
 
 def organisms_to_tuples(organisms):

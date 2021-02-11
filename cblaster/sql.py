@@ -13,10 +13,11 @@ CREATE TABLE feature (
 );\
 """
 
+# Insert into the feature table
 INSERT = """\
 INSERT INTO feature (
-    name,
     feature_type,
+    name,
     start_pos,
     end_pos,
     strand,
@@ -28,18 +29,19 @@ VALUES
     (?, ?, ?, ?, ?, ?, ?, ?)\
 """
 
-# Base for querying scaffolds in feature table
 SCAFFOLD_QUERY = """\
 SELECT
-    substr(sequence, ?, ?)
+    substr(sequence, {}, {})
 FROM
     feature
 WHERE
-    feature_type = \"scaffold\"
+    feature_type = 'scaffold'
     AND name = ?
     AND organism = ?\
 """
 
+
+# Retrieve all information about genes
 GENE_QUERY = """\
 SELECT
     id,
@@ -54,6 +56,17 @@ FROM
 WHERE
     feature_type = \"gene\"
     AND id IN ({})\
+"""
+
+# Retrieve sequence of features in a list
+SEQUENCE_QUERY = """\
+SELECT
+    id,
+    sequence
+FROM
+    feature
+WHERE
+    id IN ({})\
 """
 
 # Query genes between some range not in a list
@@ -74,4 +87,4 @@ WHERE
 """
 
 # Write database sequences in FASTA format
-FASTA = 'SELECT ">"||gene.id||"\n"||gene.translation||"\n" FROM gene'
+FASTA = 'SELECT ">"||feature.id||"\n"||feature.sequence||"\n" FROM feature'

@@ -273,7 +273,7 @@ def query_local_DB(hits, db):
         strand,
         scaffold,
         organism
-    ) in database.query_database_with_ids(list(hit_dict), db):
+    ) in database.query_genes(list(hit_dict), db):
         if organism not in organisms:
             organisms[organism] = Organism(organism, "")
         if scaffold not in organisms[organism].scaffolds:

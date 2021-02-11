@@ -24,7 +24,7 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 from cblaster.classes import Session
 from cblaster.extract import organism_matches, parse_organisms, parse_scaffolds
 from cblaster.helpers import efetch_sequences
-from cblaster.database import query_genes, query_nucleotides
+from cblaster.database import query_sequences, query_nucleotides
 
 
 LOG = logging.getLogger(__name__)
@@ -149,27 +149,33 @@ def create_genbanks_from_clusters(
     if session.params["mode"] == "remote":
         proteins = efetch_protein_sequences(cluster_hierarchy)
         nucleotides = efetch_nucleotide_sequence(cluster_hierarchy)
+        name_attr = "name"
 
     elif session.params["mode"] == "local":
         sqlite_db = session.params["sqlite_db"]
         proteins = local_fetch_sequences(sqlite_db, cluster_hierarchy)
         nucleotides = local_fetch_nucleotide(sqlite_db, cluster_hierarchy)
+        name_attr = "id"
 
     else:
         raise NotImplementedError(f"No protocol for mode {session.params['mode']}")
 
     output_dir = Path(output_dir)
 
+    # Make the directory if it doesn't already exist
+    if not output_dir.is_dir():
+        output_dir.mkdir()
+
     # Generate genbank files for all the required clusters
     for cluster, scaffold_accession, organism_name in cluster_hierarchy:
         cluster_proteins = {
-            subject.name: proteins[subject.name]
-            for subject in [cluster.subjects, *cluster.intermediate_genes]
+            getattr(subject, name_attr): proteins[getattr(subject, name_attr)]
+            for subject in [*cluster.subjects, *cluster.intermediate_genes]
         }
         cluster_nucleotides = nucleotides[cluster.number]
 
         output_file = output_dir / f"{prefix}cluster{cluster.number}.gbk"
-        with output_file.open("w") as f:
+        with output_file.open("w") as fp:
             record = cluster_to_record(
                 cluster,
                 cluster_proteins,
@@ -179,7 +185,7 @@ def create_genbanks_from_clusters(
                 format_,
                 session.params["require"],
             )
-            SeqIO.write(record, f, "genbank")
+            SeqIO.write(record, fp, "genbank")
 
         LOG.debug(f"Created {output_file.name}.gb file for cluster {cluster.number}")
 
@@ -217,7 +223,7 @@ def local_fetch_sequences(sqlite_db, cluster_hierarchy):
         for cluster, _, _ in cluster_hierarchy
         for subject in [*cluster.subjects, *cluster.intermediate_genes]
     ]
-    return {id: translation for id, translation in query_genes(subject_ids, sqlite_db)}
+    return {id: translation for id, translation in query_sequences(subject_ids, sqlite_db)}
 
 
 def efetch_protein_sequences(cluster_hierarchy):

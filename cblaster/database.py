@@ -5,40 +5,15 @@ This module handles creation of local JSON databases for non-NCBI lookups.
 import logging
 import subprocess
 import sqlite3
-import collections
 
 from pathlib import Path
 from multiprocessing import Pool
 
-from cblaster import helpers
+from cblaster import helpers, sql
 from cblaster import genome_parsers as gp
-from cblaster.sql import (
-    FASTA,
-    INSERT,
-    ID_QUERY,
-    SCHEMA,
-    INTERMEDIATE_GENES_QUERY,
-    SCAFFOLD_QUERY,
-)
 
 
 LOG = logging.getLogger("cblaster")
-
-
-CblasterRow = collections.namedtuple(
-    "CblasterRow",
-    [
-        "id",
-        "name",
-        "feature_type",
-        "start_pos",
-        "end_pos",
-        "strand",
-        "sequence",
-        "scaffold",
-        "organism",
-    ],
-)
 
 
 def init_sqlite_db(path, force=False):
@@ -60,7 +35,7 @@ def init_sqlite_db(path, force=False):
     else:
         LOG.info("Initialising cblaster SQLite3 database to %s", path)
     with sqlite3.connect(path) as con:
-        con.executescript(SCHEMA)
+        con.executescript(sql.SCHEMA)
 
 
 def seqrecords_to_sqlite(tuples, database):
@@ -73,7 +48,7 @@ def seqrecords_to_sqlite(tuples, database):
     try:
         with sqlite3.connect(database) as con:
             cur = con.cursor()
-            cur.executemany(INSERT, tuples)
+            cur.executemany(sql.INSERT, tuples)
     except sqlite3.IntegrityError:
         LOG.exception("Failed to insert %i records", len(tuples))
 
@@ -87,14 +62,21 @@ def sqlite_to_fasta(path, database):
     """
     with sqlite3.connect(database) as con, open(path, "w") as fasta:
         cur = con.cursor()
-        for (record,) in cur.execute(FASTA):
+        for (record,) in cur.execute(sql.FASTA):
             fasta.write(record)
 
 
-def _query(query, values, database):
+def _query(query, values, database, fetch="all"):
     with sqlite3.connect(database) as con:
         cur = con.cursor()
-        return cur.execute(query, values).fetchall()
+        query = cur.execute(query, values)
+        return query.fetchall() if fetch == "all" else query.fetchone()
+
+
+def query_sequences(ids, database):
+    marks = ", ".join("?" for _ in ids)
+    query = sql.SEQUENCE_QUERY.format(marks)
+    return _query(query, ids, database)
 
 
 def query_genes(ids, database):
@@ -107,7 +89,7 @@ def query_genes(ids, database):
         list: Result tuples returned by the query
     """
     marks = ", ".join("?" for _ in ids)
-    query = ID_QUERY.format(marks)
+    query = sql.GENE_QUERY.format(marks)
     return _query(query, ids, database)
 
 
@@ -125,13 +107,14 @@ def query_intermediate_genes(names, start, end, scaffold, organism, database):
         list: Result tuples returned by the query
     """
     marks = ", ".join("?" for _ in names)
-    query = INTERMEDIATE_GENES_QUERY.format(marks)
+    query = sql.INTERMEDIATE_GENES_QUERY.format(marks)
     return _query(query, [*names, scaffold, organism, start, end], database)
 
 
 def query_nucleotides(scaffold, organism, start, end, database):
     """Queries a database for a """
-    return _query(SCAFFOLD_QUERY, [start, end - start, scaffold, organism], database)
+    query = sql.SCAFFOLD_QUERY.format(start, end - start)
+    return _query(query, [scaffold, organism], database, fetch="one")
 
 
 def diamond_makedb(fasta, name):
@@ -191,7 +174,6 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         else:
             raise RuntimeError("Existing files found but force=False")
 
-    LOG.info("Initialising SQLite3 database at %s", sqlite_path)
     init_sqlite_db(sqlite_path, force=force)
 
     paths = gp.find_files(paths)

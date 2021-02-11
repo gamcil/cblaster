@@ -295,6 +295,7 @@ class Cluster(Serializer):
         end (int): The end coordinate of the cluster on the parent scaffold
         number (int): number that is unique for each cluster in order to identify them
     """
+
     NUMBER = itertools.count(1, 1)
 
     def __init__(
@@ -329,7 +330,6 @@ class Cluster(Serializer):
                 and self.score == other.score)
 
     def __hash__(self):
-        # make sure to define a __hash__ when defining __eq__ to allow hashing of the object for sets, dicts etc.
         return hash(id(self))
 
     def __calculate_synteny_score(self, query_sequence_order):
@@ -352,24 +352,23 @@ class Cluster(Serializer):
 
     def __calculate_bitscore(self):
         return sum(
-            max(hit.bitscore for hit in subject.hits) for subject in self.subjects
+            max(hit.bitscore for hit in subject.hits)
+            for subject in self.subjects
         )
 
     @property
     def intermediate_start(self):
         """The start of the cluster taking the intermediate genes into account"""
-        if len(self.intermediate_genes) == 0:
+        if not self.intermediate_genes:
             return self.start
-        sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
-        return min(sorted_intermediate_genes[0].start, self.start)
+        return min(*[s.start for s in self.intermediate_genes], self.start)
 
     @property
     def intermediate_end(self):
         """The end of the cluster taking the intermediate genes into account"""
-        if len(self.intermediate_genes) == 0:
+        if not self.intermediate_genes:
             return self.end
-        sorted_intermediate_genes = sorted(self.intermediate_genes, key=lambda x: (x.start, x.end))
-        return max(sorted_intermediate_genes[-1].end, self.end)
+        return max(*[s.end for s in self.intermediate_genes], self.end)
 
     def calculate_score(self, query_sequence_order=None):
         """Calculate the score of the current cluster
