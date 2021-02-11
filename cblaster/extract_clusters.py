@@ -108,13 +108,13 @@ def get_sorted_cluster_hierarchies(
                     cluster,
                 ):
                     continue
-                selected_clusters.add((cluster, scaffold.accession, organism.name))
+                selected_clusters.add((cluster, scaffold, organism.name))
 
     # Make sure the sort is consistent and that same, scores, locations
     # are always sorted in the same way.
     return sorted(
         selected_clusters,
-        key=lambda x: (x[0].score, -x[0].start, -x[0].end, x[1]),
+        key=lambda x: (x[0].score, -x[0].start, -x[0].end, x[1].accession),
         reverse=True,
     )[:max_clusters]
 
@@ -167,7 +167,8 @@ def create_genbanks_from_clusters(
         output_dir.mkdir()
 
     # Generate genbank files for all the required clusters
-    for cluster, scaffold_accession, organism_name in cluster_hierarchy:
+    for cluster, scaffold, organism_name in cluster_hierarchy:
+        scaffold_accession = scaffold.accession
         cluster_proteins = {
             getattr(subject, name_attr): proteins[getattr(subject, name_attr)]
             for subject in [*cluster.subjects, *cluster.intermediate_genes]
@@ -196,7 +197,7 @@ def local_fetch_nucleotide(sqlite_db, cluster_hierarchy):
 
     for cluster, scaffold, organism in cluster_hierarchy:
         sequence, *_ = query_nucleotides(
-            scaffold,
+            scaffold.accession,
             organism,
             cluster.intermediate_start,
             cluster.intermediate_end,
