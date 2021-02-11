@@ -9,44 +9,42 @@ import requests
 import re
 
 from cblaster.extract_clusters import extract_cluster_hierarchies
-from cblaster.database import query_database_for_intermediate_genes
+from cblaster.database import query_intermediate_genes
 from cblaster.classes import Subject
 
 
 LOG = logging.getLogger(__name__)
-PROTEIN_NAME_IDENTIFIERS = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
 
 # from https://www.ncbi.nlm.nih.gov/books/NBK25497/
 MIN_TIME_BETWEEN_REQUEST = 0.34  # seconds
+PROTEIN_NAME_IDENTIFIERS = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
 
 
 def set_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
-    """
-    Add intermediate genes to all the clusters in the provided cluster_hierarchy using a sqlite database
+    """Adds intermediate genes to clusters in the cluster_hierarchy using a SQLite database
 
     Args:
         sqlite_db (str): path to the sqlite database
-        cluster_hierarchy (List): List of tuples with Cblaster cluster scaffold accession and organism name
+        cluster_hierarchy (List): Tuples with cblaster cluster scaffold accession and organism name
         gene_distance (int): the extra distance around a cluster to collect genes from
     """
-    for cluster, _, _ in cluster_hierarchy:
-        search_start, search_stop = cluster.start - gene_distance, cluster.end + gene_distance
-        cluster_ids = [subject.name for subject in cluster.subjects]
-
-        intermediate_genes = []
-        for start, end, name, strand in \
-                query_database_for_intermediate_genes(cluster_ids, search_start, search_stop, sqlite_db):
-            # generate an empty subject
-            intermediate_genes.append(Subject(name=name, start=start, end=end, strand="+" if strand == 1 else "-"))
-        cluster.intermediate_genes = intermediate_genes
+    for cluster, scaffold, organism in cluster_hierarchy:
+        search_start = cluster.start - gene_distance
+        search_stop = cluster.end + gene_distance
+        cluster_ids = [subject.id for subject in cluster.subjects]
+        cluster.intermediate_genes = [
+            Subject(name=name, start=start, end=end, strand="+" if strand == 1 else "-")
+            for start, end, name, strand in query_intermediate_genes(
+                cluster_ids, search_start, search_stop, scaffold, organism, sqlite_db,
+            )
+        ]
 
 
 def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
-    """
-    Add intermediate genes to all the clusters in the provided cluster_hierarchy using the NCBI and feature tables
+    """Adds intermediate genes to clusters in the cluster_hierarchy from NCBI feature tables.
 
     Args:
-        cluster_hierarchy (List): List of tuples with Cblaster cluster scaffold accession and organism name
+        cluster_hierarchy (List): Tuples with Cblaster cluster scaffold accession and organism name
         gene_distance (int): the extra distance around a cluster to collect genes from
     """
     passed_time = 0
@@ -58,34 +56,38 @@ def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
         start_time = time.time()
         response = requests.post(
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
-            params={"db": "nuccore", "rettype": "ft", "from": str(search_start), "to": str(search_stop)},
+            params={
+                "db": "nuccore",
+                "rettype": "ft",
+                "from": str(search_start),
+                "to": str(search_stop),
+            },
             files={"id": scaffold_accession}
         )
         LOG.info(f"Fetching intermediate genes from NCBI from {scaffold_accession}")
         LOG.debug(f"Efetch URL: {response.url}")
+
         if response.status_code != 200:
             raise requests.HTTPError(
                 f"Error fetching intermediate genes for NCBI [code {response.status_code}]."
             )
 
         subjects = genes_from_feature_table(response.text, search_start)
-        intermediate_genes = get_remote_intermediate_genes(subjects, cluster)
-        cluster.intermediate_genes = intermediate_genes
+        cluster.intermediate_genes = get_remote_intermediate_genes(subjects, cluster)
+
         passed_time = time.time() - start_time
 
 
 def genes_from_feature_table(table_text, search_start):
-    """
-    Extract all CDS regions from a feature table returned by NCBI
+    """Extracts all CDS regions from a feature table returned by NCBI.
 
-    Additional informatio for the feature table can be found here:
+    Additional information for the feature table can be found here:
     https://www.ncbi.nlm.nih.gov/WebSub/html/help/feature-table.html
 
     Args:
         table_text (str): The feature table in text format given by NCBI
-        search_start (int): the base pair start of the region were genes are returned from. Since the
-        location of genes provided is relative to the requested region.
-
+        search_start (int): The base pair start of the region where genes are returned from
+            since the location of genes provided is relative to the requested region.
     Returns:
         List of cblaster Subject objects containing the intermediate genes.
     """
@@ -97,7 +99,8 @@ def genes_from_feature_table(table_text, search_start):
             continue
         elif tabs[2] == "CDS":
             if name is not None:
-                intermediate_genes.append(Subject(name=name, start=start, end=end, strand=strand))
+                subject = Subject(name=name, start=start, end=end, strand=strand)
+                intermediate_genes.append(subject)
                 name = None
             start, end, strand = get_start_end_strand(tabs[0], tabs[1])
             start += search_start
@@ -108,8 +111,7 @@ def genes_from_feature_table(table_text, search_start):
 
 
 def get_start_end_strand(start, end):
-    """
-    Extract the start and end location from the start and end string.
+    """Extracts the start and end locations from the start and end string.
 
     The location can contain < and > which should be removed. Additionally
     if the end is smaller then the start the location is on the negative strand
@@ -163,14 +165,14 @@ def find_intermediate_genes(session, gene_distance=5000, max_clusters=100):
         expensive.
     """
     LOG.info("Searching for intermediate genes")
-
     cluster_hierarchy = extract_cluster_hierarchies(session, max_clusters=max_clusters)
 
     if session.params["mode"] == "local":
-        sqlite_db = session.params["sqlite_db"]
-        set_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance)
+        set_local_intermediate_genes(session.params["sqlite_db"], cluster_hierarchy, gene_distance)
     elif session.params["mode"] == "remote":
         set_remote_intermediate_genes(cluster_hierarchy, gene_distance)
     else:
-        LOG.warning(f"{session.params['mode']} is not supported for intermediated genes."
-                    f" Skipping intermediate genes addition")
+        LOG.warning(
+            f"{session.params['mode']} is not supported for intermediated genes."
+            f" Skipping intermediate genes addition"
+        )
