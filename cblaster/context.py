@@ -282,6 +282,7 @@ def query_local_DB(hits, db):
         for hit in hits:
             hit.subject = name
         subject = Subject(
+            id=rowid,
             name=name,
             hits=hits,
             start=int(start_pos),
