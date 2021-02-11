@@ -294,6 +294,7 @@ def cblaster(
             key=binary_key,
             attr=binary_attr,
             decimals=binary_decimals,
+            sort_clusters=output_sort_clusters
         )
 
     LOG.info("Writing summary to %s", "stdout" if output is None else output)
@@ -308,7 +309,7 @@ def cblaster(
 
     if plot:
         plot = None if plot is True else plot
-        plot_session(session, output=plot)
+        plot_session(session, output=plot, sort_clusters=output_sort_clusters)
 
     LOG.info("Done.")
     return session

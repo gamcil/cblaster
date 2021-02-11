@@ -77,16 +77,22 @@ def binary(
     delimiter=None,
     key=len,
     attr="identity",
-    decimals=4
+    decimals=4,
+    sort_clusters=False
 ):
     """Generates a binary summary table from a Session object."""
     # prevent a circular import
-    from cblaster.extract_clusters import extract_cluster_hierarchies
-    sorted_cluster_hierarchy = extract_cluster_hierarchies(session, max_clusters=None)
+    if sort_clusters:
+        from cblaster.extract_clusters import get_sorted_cluster_hierarchies
+        cluster_hierarchy = get_sorted_cluster_hierarchies(session, max_clusters=None)
+    else:
+        cluster_hierarchy = [(cluster, scaffold, organism.name)for organism in session.organisms
+                             for accession, scaffold in organism.scaffolds.items()
+                             for cluster in scaffold.clusters]
     rows = [
         [
             organism_name,
-            accession,
+            scaffold.accession,
             str(cluster.start),
             str(cluster.end),
             ("{:." + str(decimals) + "f}").format(cluster.score),
@@ -100,7 +106,7 @@ def binary(
                 )
             ]
         ]
-        for cluster, accession, organism_name in sorted_cluster_hierarchy
+        for cluster, scaffold, organism_name in cluster_hierarchy
     ]
     if not hide_headers:
         rows.insert(0, ["Organism", "Scaffold", "Start", "End", "Score", *session.queries])
