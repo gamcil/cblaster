@@ -62,7 +62,7 @@ def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
                 "from": str(search_start),
                 "to": str(search_stop),
             },
-            files={"id": scaffold_accession}
+            files={"id": scaffold_accession},
         )
         LOG.info(f"Fetching intermediate genes from NCBI from {scaffold_accession}")
         LOG.debug(f"Efetch URL: {response.url}")
@@ -168,7 +168,9 @@ def find_intermediate_genes(session, gene_distance=5000, max_clusters=100):
     cluster_hierarchy = extract_cluster_hierarchies(session, max_clusters=max_clusters)
 
     if session.params["mode"] == "local":
-        set_local_intermediate_genes(session.params["sqlite_db"], cluster_hierarchy, gene_distance)
+        set_local_intermediate_genes(
+            session.params["sqlite_db"], cluster_hierarchy, gene_distance
+        )
     elif session.params["mode"] == "remote":
         set_remote_intermediate_genes(cluster_hierarchy, gene_distance)
     else:

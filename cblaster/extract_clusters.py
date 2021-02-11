@@ -12,6 +12,7 @@ from pathlib import Path
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+
 # make sure that pre and post 1.78 biopython are valid
 try:
     from Bio.Alphabet import generic_dna
@@ -50,7 +51,9 @@ def parse_numbers(cluster_numbers):
             else:
                 chosen_cluster_numbers.add(int(number))
         except ValueError:
-            LOG.warning(f"Cannot extract cluster '{number}': number is not a valid integer")
+            LOG.warning(
+                f"Cannot extract cluster '{number}': number is not a valid integer"
+            )
     return chosen_cluster_numbers
 
 
@@ -60,7 +63,7 @@ def extract_cluster_hierarchies(
     score_threshold=None,
     organisms=None,
     scaffolds=None,
-    max_clusters=50
+    max_clusters=50,
 ):
     """Filter out selected clusters with their associated scaffold and organism
 
@@ -102,7 +105,7 @@ def extract_cluster_hierarchies(
                 if scaffolds and not cluster_in_range(
                     scaffolds[scaffold.accession]["start"],
                     scaffolds[scaffold.accession]["end"],
-                    cluster
+                    cluster,
                 ):
                     continue
                 selected_clusters.add((cluster, scaffold.accession, organism.name))
@@ -112,7 +115,7 @@ def extract_cluster_hierarchies(
     return sorted(
         selected_clusters,
         key=lambda x: (x[0].score, -x[0].start, -x[0].end, x[1]),
-        reverse=True
+        reverse=True,
     )[:max_clusters]
 
 
@@ -132,11 +135,7 @@ def cluster_in_range(start, end, cluster):
 
 
 def create_genbanks_from_clusters(
-    session,
-    cluster_hierarchy,
-    output_dir,
-    prefix,
-    format_
+    session, cluster_hierarchy, output_dir, prefix, format_
 ):
     """Create genbank files for each selected cluster
 
@@ -178,9 +177,9 @@ def create_genbanks_from_clusters(
                 organism_name,
                 scaffold_accession,
                 format_,
-                session.params["require"]
+                session.params["require"],
             )
-            SeqIO.write(record, f, 'genbank')
+            SeqIO.write(record, f, "genbank")
 
         LOG.debug(f"Created {output_file.name}.gb file for cluster {cluster.number}")
 
@@ -218,10 +217,7 @@ def local_fetch_sequences(sqlite_db, cluster_hierarchy):
         for cluster, _, _ in cluster_hierarchy
         for subject in [*cluster.subjects, *cluster.intermediate_genes]
     ]
-    return {
-        id: translation
-        for id, translation in query_genes(subject_ids, sqlite_db)
-    }
+    return {id: translation for id, translation in query_genes(subject_ids, sqlite_db)}
 
 
 def efetch_protein_sequences(cluster_hierarchy):
@@ -264,9 +260,9 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
                 "rettype": "fasta",
                 "seq_start": str(cluster.intermediate_start),
                 "seq_stop": str(cluster.intermediate_end),
-                "strand": "1"
+                "strand": "1",
             },
-            files={"id": scaffold_accession}
+            files={"id": scaffold_accession},
         )
         LOG.info(
             f"Querying NCBI for sequence of {scaffold_accession}"
@@ -295,7 +291,7 @@ def cluster_to_record(
     scaffold_accession,
     format_,
     required_genes,
-    mode="remote"
+    mode="remote",
 ):
     """Convert a cblaster.Cluster object into a Bio.Seqrecord object
 
@@ -321,12 +317,12 @@ def cluster_to_record(
         id=scaffold_accession,
         name=scaffold_accession,
         annotations={"molecule_type": "DNA"},
-        description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}"
+        description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}",
     )
     source_feature = SeqFeature(
         FeatureLocation(start=cluster.start, end=cluster.end),
         type="SOURCE",
-        qualifiers={"organism": organism_name}
+        qualifiers={"organism": organism_name},
     )
     record.features.append(source_feature)
 
@@ -334,7 +330,7 @@ def cluster_to_record(
         region_feature = SeqFeature(
             FeatureLocation(start=cluster.start, end=cluster.end),
             type="region",
-            qualifiers={"product": "other"}
+            qualifiers={"product": "other"},
         )
         record.features.append(region_feature)
 
@@ -369,13 +365,9 @@ def cluster_to_record(
         # Build the SeqFeature object corresponding to the CDS
         location = FeatureLocation(
             start=subject.start - cluster.intermediate_start,
-            end=subject.end - cluster.intermediate_start
+            end=subject.end - cluster.intermediate_start,
         )
-        cds_feature = SeqFeature(
-            location,
-            type="CDS",
-            qualifiers=qualifiers
-        )
+        cds_feature = SeqFeature(location, type="CDS", qualifiers=qualifiers)
         record.features.append(cds_feature)
 
     record.features.sort(key=lambda x: x.location.start)
@@ -430,7 +422,7 @@ def extract_clusters(
         score_threshold,
         organisms,
         scaffolds,
-        max_clusters
+        max_clusters,
     )
 
     LOG.info(f"Extracted {len(cluster_hierarchy)} clusters.")
@@ -439,7 +431,13 @@ def extract_clusters(
         raise SystemExit(0)
 
     LOG.info("Writing genbank files")
-    create_genbanks_from_clusters(session, cluster_hierarchy, output_dir, prefix, format_)
+    create_genbanks_from_clusters(
+        session,
+        cluster_hierarchy,
+        output_dir,
+        prefix,
+        format_,
+    )
 
     LOG.info(f"Clusters have been written to {output_dir}")
     LOG.info("Done!")

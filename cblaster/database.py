@@ -5,16 +5,40 @@ This module handles creation of local JSON databases for non-NCBI lookups.
 import logging
 import subprocess
 import sqlite3
+import collections
 
 from pathlib import Path
 from multiprocessing import Pool
 
 from cblaster import helpers
 from cblaster import genome_parsers as gp
-from cblaster.sql import FASTA, INSERT, ID_QUERY, SCHEMA, INCLUSIVE_NAME_QUERY, INTERMEDIATE_GENES_QUERY
+from cblaster.sql import (
+    FASTA,
+    INSERT,
+    ID_QUERY,
+    SCHEMA,
+    INTERMEDIATE_GENES_QUERY,
+    SCAFFOLD_QUERY,
+)
 
 
 LOG = logging.getLogger("cblaster")
+
+
+CblasterRow = collections.namedtuple(
+    "CblasterRow",
+    [
+        "id",
+        "name",
+        "feature_type",
+        "start_pos",
+        "end_pos",
+        "strand",
+        "sequence",
+        "scaffold",
+        "organism",
+    ],
+)
 
 
 def init_sqlite_db(path, force=False):
@@ -67,7 +91,13 @@ def sqlite_to_fasta(path, database):
             fasta.write(record)
 
 
-def query_database_with_ids(ids, database):
+def _query(query, values, database):
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        return cur.execute(query, values).fetchall()
+
+
+def query_genes(ids, database):
     """Queries the cblaster SQLite3 database for a collection of gene IDs.
 
     Args:
@@ -78,28 +108,10 @@ def query_database_with_ids(ids, database):
     """
     marks = ", ".join("?" for _ in ids)
     query = ID_QUERY.format(marks)
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        return cur.execute(query, ids).fetchall()
+    return _query(query, ids, database)
 
 
-def query_database_with_names(names, database):
-    """Queries the cblaster SQLite3 database for a collection of gene names.
-
-    Args:
-        names (list): Names of genes being queried
-        database (str): Path to SQLite3 database
-    Returns:
-        list: Result tuples returned by the query
-    """
-    marks = ", ".join("?" for _ in names)
-    query = INCLUSIVE_NAME_QUERY.format(marks)
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        return cur.execute(query, names).fetchall()
-
-
-def query_database_for_intermediate_genes(names, start, end, database):
+def query_intermediate_genes(names, start, end, scaffold, organism, database):
     """Queries the cblaster SQLite3 database for a collection of intermediate genes.
 
     These are the genes between start and stop that are not part of the names list
@@ -114,9 +126,12 @@ def query_database_for_intermediate_genes(names, start, end, database):
     """
     marks = ", ".join("?" for _ in names)
     query = INTERMEDIATE_GENES_QUERY.format(marks)
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        return cur.execute(query, [*names, start, end]).fetchall()
+    return _query(query, [*names, scaffold, organism, start, end], database)
+
+
+def query_nucleotides(scaffold, organism, start, end, database):
+    """Queries a database for a """
+    return _query(SCAFFOLD_QUERY, [start, end - start, scaffold, organism], database)
 
 
 def diamond_makedb(fasta, name):
@@ -183,7 +198,8 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
-    path_groups = [paths[i: i + batch] for i in range(0, total_paths, batch)]
+    path_groups = [paths[i : i + batch] for i in range(0, total_paths, batch)]
+
     LOG.info(
         "Parsing %i genome files, in %i batches of %i",
         total_paths,
