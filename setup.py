@@ -43,7 +43,7 @@ setup(
         "scipy",
         "PySimpleGUI",
         "Biopython",
-        "clinker"
+        "clinker",
         "gffutils",
     ],
     tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],

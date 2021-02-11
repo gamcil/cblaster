@@ -137,7 +137,10 @@ def get_sequences(query_file=None, query_ids=None, query_profiles=None):
             sequences = OrderedDict((r.id, str(r.seq)) for r in organism["records"])
         else:
             genes = gp.organisms_to_tuples([organism])
-            sequences = OrderedDict((gene[0], gene[4]) for gene in genes)
+            sequences = OrderedDict(
+                (gene[1], gene[5])
+                for gene in genes if gene[0] != "scaffold"
+            )
     elif query_ids:
         sequences = efetch_sequences(query_ids)
     elif query_profiles:

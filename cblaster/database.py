@@ -9,9 +9,8 @@ import sqlite3
 from pathlib import Path
 from multiprocessing import Pool
 
-from cblaster import helpers
+from cblaster import helpers, sql
 from cblaster import genome_parsers as gp
-from cblaster.sql import FASTA, INSERT, ID_QUERY, SCHEMA, INCLUSIVE_NAME_QUERY, INTERMEDIATE_GENES_QUERY
 
 
 LOG = logging.getLogger("cblaster")
@@ -36,7 +35,7 @@ def init_sqlite_db(path, force=False):
     else:
         LOG.info("Initialising cblaster SQLite3 database to %s", path)
     with sqlite3.connect(path) as con:
-        con.executescript(SCHEMA)
+        con.executescript(sql.SCHEMA)
 
 
 def seqrecords_to_sqlite(tuples, database):
@@ -49,7 +48,7 @@ def seqrecords_to_sqlite(tuples, database):
     try:
         with sqlite3.connect(database) as con:
             cur = con.cursor()
-            cur.executemany(INSERT, tuples)
+            cur.executemany(sql.INSERT, tuples)
     except sqlite3.IntegrityError:
         LOG.exception("Failed to insert %i records", len(tuples))
 
@@ -63,11 +62,24 @@ def sqlite_to_fasta(path, database):
     """
     with sqlite3.connect(database) as con, open(path, "w") as fasta:
         cur = con.cursor()
-        for (record,) in cur.execute(FASTA):
+        for (record,) in cur.execute(sql.FASTA):
             fasta.write(record)
 
 
-def query_database_with_ids(ids, database):
+def _query(query, values, database, fetch="all"):
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        query = cur.execute(query, values)
+        return query.fetchall() if fetch == "all" else query.fetchone()
+
+
+def query_sequences(ids, database):
+    marks = ", ".join("?" for _ in ids)
+    query = sql.SEQUENCE_QUERY.format(marks)
+    return _query(query, ids, database)
+
+
+def query_genes(ids, database):
     """Queries the cblaster SQLite3 database for a collection of gene IDs.
 
     Args:
@@ -77,29 +89,13 @@ def query_database_with_ids(ids, database):
         list: Result tuples returned by the query
     """
     marks = ", ".join("?" for _ in ids)
-    query = ID_QUERY.format(marks)
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        return cur.execute(query, ids).fetchall()
+    query = sql.GENE_QUERY.format(marks)
+    return _query(query, ids, database)
 
 
-def query_database_with_names(names, database):
-    """Queries the cblaster SQLite3 database for a collection of gene names.
-
-    Args:
-        names (list): Names of genes being queried
-        database (str): Path to SQLite3 database
-    Returns:
-        list: Result tuples returned by the query
-    """
-    marks = ", ".join("?" for _ in names)
-    query = INCLUSIVE_NAME_QUERY.format(marks)
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        return cur.execute(query, names).fetchall()
-
-
-def query_database_for_intermediate_genes(names, start, end, database):
+def query_intermediate_genes(
+    names, start, end, scaffold, organism, database, local=False
+):
     """Queries the cblaster SQLite3 database for a collection of intermediate genes.
 
     These are the genes between start and stop that are not part of the names list
@@ -113,10 +109,14 @@ def query_database_for_intermediate_genes(names, start, end, database):
         list: Result tuples returned by the query
     """
     marks = ", ".join("?" for _ in names)
-    query = INTERMEDIATE_GENES_QUERY.format(marks)
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        return cur.execute(query, [*names, start, end]).fetchall()
+    query = sql.INTERMEDIATE_GENES_QUERY.format(marks)
+    return _query(query, [*names, scaffold, organism, start, end], database)
+
+
+def query_nucleotides(scaffold, organism, start, end, database):
+    """Queries a database for a """
+    query = sql.SCAFFOLD_QUERY.format(start, end - start)
+    return _query(query, [scaffold, organism], database, fetch="one")
 
 
 def diamond_makedb(fasta, name):
@@ -176,14 +176,14 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         else:
             raise RuntimeError("Existing files found but force=False")
 
-    LOG.info("Initialising SQLite3 database at %s", sqlite_path)
     init_sqlite_db(sqlite_path, force=force)
 
     paths = gp.find_files(paths)
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
-    path_groups = [paths[i: i + batch] for i in range(0, total_paths, batch)]
+    path_groups = [paths[i : i + batch] for i in range(0, total_paths, batch)]
+
     LOG.info(
         "Parsing %i genome files, in %i batches of %i",
         total_paths,
