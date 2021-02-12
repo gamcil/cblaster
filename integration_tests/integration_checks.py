@@ -10,7 +10,6 @@ from pathlib import Path
 import platform
 import pytest
 
-
 CURRENT_DIR = None
 TEST_FILE_DIR = None
 COMPARISSON_FILE_DIR = None
@@ -43,9 +42,10 @@ def run_command(command):
     return popen.returncode, stderr, stdout
 
 
-def confirm_files_present(files, directory):
-    for file in os.listdir(directory):
-        assert file in files
+def confirm_files_present(expected_files, directory):
+    presen_files = os.listdir(directory)
+    for file in expected_files:
+        assert file in presen_files
 
 
 def compare_file_pairs(file_pairs, out_dir):
@@ -56,9 +56,10 @@ def compare_file_pairs(file_pairs, out_dir):
 def compare_files(actual_file_path, expected_file_path, out_dir):
     with open(out_dir.join(actual_file_path), "r") as actual_file, \
             open(COMPARISSON_FILE_DIR + os.sep + expected_file_path, "r") as expected_file:
-        for line_index, actual_expected in enumerate(zip(actual_file, expected_file)):
-            actual_line, expected_line = actual_expected
-            assert actual_line == expected_line
+        try:
+            assert actual_file.read() == expected_file.read()
+        except AssertionError as e:
+            raise type(e)(str(e) + f" {actual_file.name} and {expected_file.name} dont match.")
 
 
 def test_gbk_query_local_search(tmpdir):
@@ -71,83 +72,81 @@ def test_gbk_query_local_search(tmpdir):
         f" -mic 2 -p {str(tmpdir.join('plot.html'))}"
     return_code, sdterr, stdout = run_command(command)
     assert return_code == 0
-    expected_files = {"binary.txt", "blast.txt", "ipgs.txt", "session.json", "plot.html", "summary.txt"}
+    expected_files = {"binary.txt", "blast.txt", "session.json", "plot.html", "summary.txt"}
     confirm_files_present(expected_files, tmpdir)
     compare_file_pairs([["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]], tmpdir)
 
 
-def test_test():
-    assert 0
+def test_embl_query_local_search(tmpdir):
+    command = \
+        f"cblaster -d --testing search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.embl -o " \
+        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh" \
+        f" -ode , -odc 2 -osc -b {str(tmpdir.join('binary.txt'))} -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+        f" --blast_file {str(tmpdir.join('blast.txt'))} --ipg_file {str(tmpdir.join('ipgs.txt'))} " \
+        f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {str(tmpdir.join('session.json'))} -ig -md 6000" \
+        f" -mic 2 -p {str(tmpdir.join('plot.html'))}"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"binary.txt", "blast.txt", "session.json", "plot.html", "summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
 
-#
-# def search_local_commands():
-#     global OUT_DIR, TEST_FILE_DIR
-#
-#     commands = [
-#         # test gbk query in local mode with all options enabled
-#         CommandTest(
-#             f"..{os.sep}cblaster{os.sep}main.py -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb -o "
-#             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
-#             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
-#             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-#             f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
-#             f" -mic 2",
-#             "test gbk query local",
-#             [["summary.txt", "summary_local_gbk.txt"], ["binary.txt", "binary_local_gbk.txt"]]
-#         ),
-#         # test embl query in local mode with all options enabled
-#         CommandTest(
-#             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.embl -o "
-#             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
-#             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
-#             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-#             f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
-#             f" -mic 25",
-#             "test embl query local"
-#         ),
-#         # test fasta query in local mode with all options enabled
-#         CommandTest(
-#             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.fa -o "
-#             f"{OUT_DIR}{os.sep}summary.txt -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh"
-#             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
-#             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-#             f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json",
-#             "test fasta query local"
-#         ),
-#         # test query identifiers in local mode
-#         CommandTest(
-#             f"cblaster -d search -m local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1"
-#             f" AEK75502.1 -o {OUT_DIR}{os.sep}summary.txt -db "
-#             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh -ode , -odc 2 -osc -b"
-#             f" {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
-#             f" --blast_file {OUT_DIR}{os.sep}blast.txt --ipg_file {OUT_DIR}{os.sep}ipgs.txt "
-#             f"-g 25000 -u 2 -mh 3 -me 0.01 -mi 30 -mc 50 -s {OUT_DIR}{os.sep}session.json -ig -md 6000"
-#             f" -mic 2",
-#             "test query identifiers local"
-#         ),
-#         # test local session with all options enabled
-#         CommandTest(
-#             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "
-#             f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl_{OS_NAME}.json "
-#             f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -db"
-#             f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt -ig -md 6000"
-#             f" -mic 2",
-#             "test local session",
-#             [["summary.txt", "summary_local_gbk_embl_combined.txt"]]
-#         ),
-#         # test recompute a local session
-#         CommandTest(
-#             f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "
-#             f"-s {OUT_DIR}{os.sep}test_session_local_gbk_copy.json --recompute"
-#             f" -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {OUT_DIR}{os.sep}summary.txt "
-#             f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {OUT_DIR}{os.sep}binary.txt -ig -md 2500"
-#             f" -mic 2",
-#             "test recompute local",
-#             [["summary.txt", "summary_local_gbk_recompute.txt"], ["binary.txt", "binary_local_gbk_recompute.txt"]]
-#         )]
-#     return commands
-#
-#
+
+def test_fasta_query_local_search(tmpdir):
+    command = \
+        f"cblaster -d --testing search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.fa -o " \
+        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh" \
+        f" -ode , -odc 2 -osc -b {str(tmpdir.join('binary.txt'))} -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+        f" --blast_file {str(tmpdir.join('blast.txt'))} --ipg_file {str(tmpdir.join('ipgs.txt'))} " \
+        f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {str(tmpdir.join('session.json'))} " \
+        f"-p {str(tmpdir.join('plot.html'))}"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"binary.txt", "blast.txt", "session.json", "plot.html", "summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+
+
+def test_query_ids_local_search(tmpdir):
+    command = \
+        f"cblaster -d --testing search -m local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1 -o " \
+        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh" \
+        f" -ode , -odc 2 -osc -b {str(tmpdir.join('binary.txt'))} -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
+        f" --blast_file {str(tmpdir.join('blast.txt'))} --ipg_file {str(tmpdir.join('ipgs.txt'))} " \
+        f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {str(tmpdir.join('session.json'))} -ig -md 6000" \
+        f" -mic 2 -p {str(tmpdir.join('plot.html'))}"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"binary.txt", "blast.txt", "session.json", "plot.html", "summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+
+
+def test_load_session_local_search(tmpdir):
+    command = \
+        f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "\
+        f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl_{OS_NAME}.json " \
+        f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -db" \
+        f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {str(tmpdir.join('summary.txt'))} -ig -md 6000" \
+        f" -mic 2"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt", "summary_local_gbk_embl_combined.txt"]], tmpdir)
+
+
+def test_recompute_session_local_search(tmpdir):
+    command = \
+        f"cblaster -d --testing search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb " \
+        f"-s {str(tmpdir.join('session.json'))} --recompute" \
+        f" -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {str(tmpdir.join('summary.txt'))} " \
+        f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {str(tmpdir.join('binary.txt'))} -ig -md 2500" \
+        f" -mic 2 -p {str(tmpdir.join('plot.html'))}"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"binary.txt", "session.json", "plot.html", "summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt", "summary_local_gbk_recompute.txt"],
+                        ["binary.txt", "binary_local_gbk_recompute.txt"]], tmpdir)
+
 # def search_remote_commands():
 #     global OUT_DIR, TEST_FILE_DIR
 #
