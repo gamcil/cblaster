@@ -54,12 +54,18 @@ def gne(
 
     LOG.info("Computing gene neighbourhood statistics")
     results = context.estimate_neighbourhood(
-        session, max_gap=max_gap, samples=samples, scale=scale
+        session,
+        max_gap=max_gap,
+        samples=samples,
+        scale=scale
     )
     if output:
         LOG.info("Writing GNE table to %s", output)
         summary = summarise_gne(
-            results, hide_headers=hide_headers, delimiter=delimiter, decimals=decimals,
+            results,
+            hide_headers=hide_headers,
+            delimiter=delimiter,
+            decimals=decimals,
         )
         with open(output, "w") as f:
             f.write(summary)
