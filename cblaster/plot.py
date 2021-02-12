@@ -103,7 +103,7 @@ def flag_duplicate_cells(cells):
             cells[index]["flag"] = number
 
 
-def get_data(session, sort_clusters=False):
+def get_data(session, sort_clusters=False, max_clusters=None):
     matrix = []
     labels = {}
     counts = {
@@ -115,7 +115,7 @@ def get_data(session, sort_clusters=False):
         "organisms": 0
     }
     if sort_clusters:
-        cluster_hierarchy = get_sorted_cluster_hierarchies(session, max_clusters=None) # TODO add the proper argument here later
+        cluster_hierarchy = get_sorted_cluster_hierarchies(session, max_clusters=max_clusters)
     else:
         cluster_hierarchy = [(cluster, scaffold, organism.name)for organism in session.organisms
                              for accession, scaffold in organism.scaffolds.items()
@@ -279,8 +279,8 @@ def serve_html(data, chart="heatmap"):
             httpd.shutdown()
 
 
-def plot_session(session, output=None, sort_clusters=False):
-    data = get_data(session, sort_clusters)
+def plot_session(session, output=None, sort_clusters=False, max_clusters=None):
+    data = get_data(session, sort_clusters, max_clusters)
     if output:
         LOG.info(f"Saving cblaster plot HTML to: {output}")
         save_html(data, output)
