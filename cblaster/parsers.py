@@ -782,6 +782,10 @@ def get_parser():
     parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     parser.add_argument("-d", "--debug", help="Print debugging information", action="store_true")
     parser.add_argument(
+        "--testing",
+        action="store_true",
+        help="Turn this argument on when running tests to suppress certain actions like opening plots")
+    parser.add_argument(
         "-i",
         "--indent",
         help="Total spaces to use as indent in JSON file (def. None)",

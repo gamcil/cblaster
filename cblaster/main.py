@@ -113,7 +113,8 @@ def cblaster(
     cpus=None,
     intermediate_genes=False,
     intermediate_gene_distance=5000,
-    intermediate_max_clusters=100
+    intermediate_max_clusters=100,
+    testing=False,
 ):
     """Run cblaster.
 
@@ -160,6 +161,7 @@ def cblaster(
          edge of a cluster and an intermediate gene.
         intermediate_max_clusters (int): the maximum amount of clusters for which intermediate
          genes will be fetched, since this can become expensive for remote searches
+        testing (bool): flag to make sure certain code does not run when testing
 
     Returns:
         Session: cblaster search Session object
@@ -311,7 +313,13 @@ def cblaster(
 
     if plot:
         plot = None if plot is True else plot
-        plot_session(session, output=plot, sort_clusters=output_sort_clusters, max_clusters=max_plot_clusters)
+        plot_session(
+            session,
+            output=plot,
+            sort_clusters=output_sort_clusters,
+            max_clusters=max_plot_clusters,
+            testing=testing
+        )
 
     LOG.info("Done.")
     return session
@@ -386,6 +394,7 @@ def main():
             intermediate_genes=args.intermediate_genes,
             intermediate_gene_distance=args.max_distance,
             intermediate_max_clusters=args.maximum_clusters,
+            testing=args.testing,
         )
 
     elif args.subcommand == "gui":
