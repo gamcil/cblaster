@@ -328,6 +328,26 @@ FEATURES             Location/Qualifiers
                      ALFDACLGAREALLVPAALQPERATRVAPVLAGLAPATTATTPQQDWPRRLAGRGAAE
                      QHRLLLELVRSTIVEVLGHSSVAAVAPDRGLMDLGFDSLTAVELAGRLGADTGVRTPS
                      TVVFDHPTPTALAHYLRHELVGEEAADDEKPHELDEVSDEDLFALIDTELGER"
+     CDS             complement(2621..3836)
+                     /gene="abyX"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="cytochrome P450"
+                     /protein_id="AEK75493.1"
+                     /translation="MTDVQLPAFPMTRTCPHQPPEGYAALRENGPLAQVRLVGDRTAW
+                     VVTDHDVARTLLVDPRLSSDRLRPDFPVLVPRMSAAKLVPLVGMDPPVHTQRRRMLIA
+                     AFTVHRTQQMRPEIEEIVSARLDAVLQEGPPVDLVPTLALPVPSTVICRLLGVPYADH
+                     DFFESQTQRMVLGSSTAQEAAGAAAALTEYVDTLIGEKQTKPGEGLLDELIASHLDTG
+                     QITRRDLAETVMFLLVAGHETTANMITMSIVGLLENPEQLDRLRSDWSLLPNAVEELL
+                     RYLSVADEIQRVVAEPIEVAGHVLRVGDAVYLPAAASNRDPAAFPDPDALDVSRRARH
+                     HLAFGYGIHQCLGQNLARAELEVTLRALFERLPTLALAEPLSSLPVKPGGSVQGVYRL
+                     PVTW"
+     CDS             complement(2621..3836)
+                     /gene="abyX"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="cytochrome P450"
+                     /protein_id="AEK75493.1"
      gene            32476..43413
                      /gene="abyB2"
      CDS             32476..43413
@@ -1607,4 +1627,3 @@ ORIGIN
     59221 cgccgacggc ggcggcgacc ggctccgcgc agccgtaagg gcactcgcac ggtgcctgct
     59281 gccacccggg cccgagcgat catgccgccc gggcccgtaa
 //
-
