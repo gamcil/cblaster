@@ -57,7 +57,7 @@ def parse_numbers(cluster_numbers):
     return chosen_cluster_numbers
 
 
-def extract_cluster_hierarchies(
+def get_sorted_cluster_hierarchies(
     session,
     cluster_numbers=None,
     score_threshold=None,
@@ -76,8 +76,8 @@ def extract_cluster_hierarchies(
         max_clusters (int, None): the maximum amount of clusters extracted regardless of filters.
             You can set the value to None to extract all clusters
     Returns:
-        List of tuples of in the form (cblaster.Cluster object, scaffold_accession of cluster,
-            organism_name of cluster) sorted on cluster score
+        List of tuples of in the form (cblaster.Cluster object, cblaster.Scaffold object of cluster,
+         organism_name of cluster) sorted on cluster score
     """
     # No filter options return all clusters
     selected_clusters = set()
@@ -108,13 +108,13 @@ def extract_cluster_hierarchies(
                     cluster,
                 ):
                     continue
-                selected_clusters.add((cluster, scaffold.accession, organism.name))
+                selected_clusters.add((cluster, scaffold, organism.name))
 
     # Make sure the sort is consistent and that same, scores, locations
     # are always sorted in the same way.
     return sorted(
         selected_clusters,
-        key=lambda x: (x[0].score, -x[0].start, -x[0].end, x[1]),
+        key=lambda x: (x[0].score, -x[0].start, -x[0].end, x[1].accession),
         reverse=True,
     )[:max_clusters]
 
@@ -141,7 +141,7 @@ def create_genbanks_from_clusters(
 
     Args:
         session (Session): a cblaster session object
-        cluster_hierarchy (Set): a set of selected clusters
+        cluster_hierarchy (List): a sorted list of clusters with scaffold and organism
         output_dir (string): path to a directory for writing the output files
         prefix (string): string to start the file name of each cluster with
         format_ (str): the format that the extracted cluster should have
@@ -167,7 +167,8 @@ def create_genbanks_from_clusters(
         output_dir.mkdir()
 
     # Generate genbank files for all the required clusters
-    for cluster, scaffold_accession, organism_name in cluster_hierarchy:
+    for cluster, scaffold, organism_name in cluster_hierarchy:
+        scaffold_accession = scaffold.accession
         cluster_proteins = {
             getattr(subject, name_attr): proteins[getattr(subject, name_attr)]
             for subject in [*cluster.subjects, *cluster.intermediate_genes]
@@ -196,7 +197,7 @@ def local_fetch_nucleotide(sqlite_db, cluster_hierarchy):
 
     for cluster, scaffold, organism in cluster_hierarchy:
         sequence, *_ = query_nucleotides(
-            scaffold,
+            scaffold.accession,
             organism,
             cluster.intermediate_start,
             cluster.intermediate_end,
@@ -255,7 +256,8 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
     """
     sequences = dict()
     passed_time = 0
-    for cluster, scaffold_accession, org_name in cluster_hierarchy:
+    for cluster, scaffold, org_name in cluster_hierarchy:
+        scaffold_accession = scaffold.accession
         if passed_time < MIN_TIME_BETWEEN_REQUEST:
             time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
         start_time = time.time()
@@ -422,7 +424,7 @@ def extract_clusters(
         session = Session.from_json(fp)
 
     LOG.info("Extracting clusters that match the filters")
-    cluster_hierarchy = extract_cluster_hierarchies(
+    cluster_hierarchy = get_sorted_cluster_hierarchies(
         session,
         cluster_numbers,
         score_threshold,

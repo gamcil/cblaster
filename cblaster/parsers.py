@@ -248,6 +248,14 @@ def add_output_group(search):
              " path."
     )
     group.add_argument(
+        "-mpc",
+        "--max_plot_clusters",
+        default=50,
+        type=int,
+        help="The maximum amount of clusters included in the plot when sorting clusters on"
+             " score, meaning -osc has to be used for this argument to take effect. (def 50)"
+    )
+    group.add_argument(
         "--blast_file",
         type=lambda x: full_path(x, os.W_OK),
         help="Save BLAST/DIAMOND hit table to file"

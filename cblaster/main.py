@@ -105,6 +105,7 @@ def cblaster(
     session_file=None,
     indent=None,
     plot=False,
+    max_plot_clusters=50,
     recompute=False,
     blast_file=None,
     ipg_file=None,
@@ -148,6 +149,7 @@ def cblaster(
         session_file (str): Path to cblaster session JSON file
         indent (int): Total spaces to indent JSON files
         plot (str): Path to cblaster plot HTML file
+        max_plot_clusters (int): maximum clusters that are plotted when -osc (sort on score ) argument is used
         recompute (str): Path to recomputed session JSON file
         blast_file (str): path to file to save blast output
         ipg_file (str): path to file to save ipg output
@@ -294,6 +296,7 @@ def cblaster(
             key=binary_key,
             attr=binary_attr,
             decimals=binary_decimals,
+            sort_clusters=output_sort_clusters
         )
 
     LOG.info("Writing summary to %s", "stdout" if output is None else output)
@@ -308,7 +311,7 @@ def cblaster(
 
     if plot:
         plot = None if plot is True else plot
-        plot_session(session, output=plot)
+        plot_session(session, output=plot, sort_clusters=output_sort_clusters, max_clusters=max_plot_clusters)
 
     LOG.info("Done.")
     return session

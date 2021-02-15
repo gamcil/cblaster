@@ -13,6 +13,7 @@ from scipy.cluster.hierarchy import linkage
 
 from cblaster.classes import Session
 from cblaster.helpers import get_project_root
+from cblaster.extract_clusters import get_sorted_cluster_hierarchies
 
 
 LOG = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ def flag_duplicate_cells(cells):
             cells[index]["flag"] = number
 
 
-def get_data(session):
+def get_data(session, sort_clusters=False, max_clusters=None):
     matrix = []
     labels = {}
     counts = {
@@ -113,44 +114,52 @@ def get_data(session):
         "scaffolds": 0,
         "organisms": 0
     }
-
+    if sort_clusters:
+        cluster_hierarchy = get_sorted_cluster_hierarchies(session, max_clusters=max_clusters)
+    else:
+        cluster_hierarchy = [(cluster, scaffold, organism.name)for organism in session.organisms
+                             for accession, scaffold in organism.scaffolds.items()
+                             for cluster in scaffold.clusters]
     cluster_id = 0
+    organisms = set()
+    scaffolds = set()
+    for cluster, scaffold, organism_name in cluster_hierarchy:
+        organisms.add(organism_name)
+        scaffolds.add(scaffold.accession)
+        counts["subjects"] += len(scaffold.subjects)
+        counts["hits"] += sum(len(sub.hits) for sub in scaffold.subjects)
+        counts["clusters"] += 1
 
-    for organism in session.organisms:
-        counts["organisms"] += 1
+        # Save the cluster name and scaffold
+        labels[cluster_id] = {
+            "id": cluster_id,
+            "name": organism_name,
+            "scaffold": scaffold.accession,
+            "start": cluster.start,
+            "end": cluster.end,
+            "score": round(cluster.score, 3)
+        }
 
-        for accession, scaffold in organism.scaffolds.items():
-            counts["scaffolds"] += 1
-            counts["subjects"] += len(scaffold.subjects)
-            counts["hits"] += sum(len(sub.hits) for sub in scaffold.subjects)
+        # Generate all cells for the heatmap
+        cells = [
+            get_cell(query, cluster, cluster_id)
+            for query in session.queries
+        ]
 
-            for cluster in scaffold.clusters:
-                counts["clusters"] += 1
+        # Flag cells which contain hits present in other cells
+        flag_duplicate_cells(cells)
+        matrix.append(cells)
+        cluster_id += 1
 
-                # Save the cluster name and scaffold
-                labels[cluster_id] = {
-                    "id": cluster_id,
-                    "name": organism.full_name,
-                    "scaffold": accession,
-                    "start": cluster.start,
-                    "end": cluster.end,
-                }
-
-                # Generate all cells for the heatmap
-                cells = [
-                    get_cell(query, cluster, cluster_id)
-                    for query in session.queries
-                ]
-
-                # Flag cells which contain hits present in other cells
-                flag_duplicate_cells(cells)
-                matrix.append(cells)
-                cluster_id += 1
-
+    counts["organisms"] = len(organisms)
+    counts["scaffolds"] = len(scaffolds)
     # Only generate a linkage matrix if there is more than one result
-    if len(matrix) > 1:
+    if len(matrix) > 1 and not sort_clusters:
         linkage_matrix = generate_linkage_matrix(matrix)
         hierarchy = transform_linkage_matrix(linkage_matrix)
+    elif sort_clusters:
+        inner = [{"name": number, "children": []} for number in range(0, counts["clusters"])]
+        hierarchy = {"name": counts["clusters"], "children": inner}
     else:
         hierarchy = {
             "name": 0,
@@ -164,6 +173,7 @@ def get_data(session):
         "counts": counts,
         "matrix": matrix,
         "hierarchy": hierarchy,
+        "sort_clusters": sort_clusters
     }
 
 
@@ -269,8 +279,8 @@ def serve_html(data, chart="heatmap"):
             httpd.shutdown()
 
 
-def plot_session(session, output=None):
-    data = get_data(session)
+def plot_session(session, output=None, sort_clusters=False, max_clusters=None):
+    data = get_data(session, sort_clusters, max_clusters)
     if output:
         LOG.info(f"Saving cblaster plot HTML to: {output}")
         save_html(data, output)

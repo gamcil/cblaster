@@ -18,7 +18,7 @@ from clinker.align import (
 from clinker.plot import plot_clusters as clinker_plot_clusters
 
 
-from cblaster.extract_clusters import extract_cluster_hierarchies
+from cblaster.extract_clusters import get_sorted_cluster_hierarchies
 from cblaster.classes import Session
 
 
@@ -120,8 +120,8 @@ def clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies):
         a list of clinker.Alignment objects
     """
     allignments = []
-    for cblaster_cluster, scaffold_accession, organism_name in cluster_hierarchies:
-        clinker_cluster = cblaster_cluster.to_clinker_cluster(scaffold_accession)
+    for cblaster_cluster, scaffold, organism_name in cluster_hierarchies:
+        clinker_cluster = cblaster_cluster.to_clinker_cluster(scaffold.accession)
         allignment = ClinkerAlignment(query=clinker_query_cluster, target=clinker_cluster)
         for subject in cblaster_cluster.subjects:
             best_hit = max(subject.hits, key=lambda x: x.bitscore)
@@ -187,12 +187,8 @@ def plot_clusters(
         session = Session.from_json(f.read())
 
     # filter the cluster using the filter functions from extract_clusters modue
-    cluster_hierarchies = extract_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds,
-                                                      max_clusters)
-
-    cluster_hierarchies = list(cluster_hierarchies)
-    # sort the clusters based on score
-    cluster_hierarchies.sort(key=lambda x: x[0].score, reverse=True)
+    cluster_hierarchies = get_sorted_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds,
+                                                         max_clusters)
 
     clinker_query_cluster = query_to_clinker_cluster(session.params["query_file"])
 
