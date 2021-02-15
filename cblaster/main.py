@@ -280,7 +280,7 @@ def cblaster(
             rid, results = remote.search(
                 sequences=session.sequences,
                 rid=rid,
-                database=database,
+                database=databases[0],
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
