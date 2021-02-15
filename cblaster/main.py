@@ -17,7 +17,7 @@ from cblaster import (
     extract,
     extract_clusters,
     plot_clusters,
-    hmm_search
+    hmm_search,
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
@@ -28,7 +28,7 @@ from cblaster.intermediate_genes import find_intermediate_genes
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(levelname)s - %(message)s",
-    datefmt="%H:%M:%S"
+    datefmt="%H:%M:%S",
 )
 # make sure to not configure a name otherwise a different logger instance is returned where the debug level is set
 # resulting in no debug information being printed
@@ -54,18 +54,12 @@ def gne(
 
     LOG.info("Computing gene neighbourhood statistics")
     results = context.estimate_neighbourhood(
-        session,
-        max_gap=max_gap,
-        samples=samples,
-        scale=scale
+        session, max_gap=max_gap, samples=samples, scale=scale
     )
     if output:
         LOG.info("Writing GNE table to %s", output)
         summary = summarise_gne(
-            results,
-            hide_headers=hide_headers,
-            delimiter=delimiter,
-            decimals=decimals,
+            results, hide_headers=hide_headers, delimiter=delimiter, decimals=decimals,
         )
         with open(output, "w") as f:
             f.write(summary)
@@ -113,7 +107,7 @@ def cblaster(
     cpus=None,
     intermediate_genes=False,
     intermediate_gene_distance=5000,
-    intermediate_max_clusters=100
+    intermediate_max_clusters=100,
 ):
     """Run cblaster.
 
@@ -182,7 +176,9 @@ def cblaster(
             )
 
             if intermediate_genes:
-                find_intermediate_genes(session, intermediate_gene_distance, intermediate_max_clusters)
+                find_intermediate_genes(
+                    session, intermediate_gene_distance, intermediate_max_clusters
+                )
 
             if recompute is not True:
                 LOG.info("Writing recomputed session to %s", recompute)
@@ -194,7 +190,7 @@ def cblaster(
             sequences=helpers.get_sequences(
                 query_file=query_file,
                 query_ids=query_ids,
-                query_profiles=query_profiles
+                query_profiles=query_profiles,
             ),
             params={
                 "mode": mode,
@@ -222,14 +218,26 @@ def cblaster(
                 query_profiles=query_profiles,
                 database_pfam=database_pfam,
             )
-            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
+            LOG.info(
+                "Found %i hits meeting score thresholds for hmm search", len(results)
+            )
             LOG.info("Fetching genomic context of hits")
-            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
+            organisms.extend(
+                get_context(
+                    results,
+                    sqlite_db,
+                    unique,
+                    min_hits,
+                    gap,
+                    require,
+                    ipg_file,
+                    session,
+                )
+            )
 
         # when running combi modes run a local or remote search right after the hmm search
         if mode == "combi_local":
             mode = "local"
-
         elif mode == "combi_remote":
             mode = "remote"
 
@@ -248,9 +256,23 @@ def cblaster(
                 blast_file=blast_file,
                 cpus=cpus,
             )
-            LOG.info("Found %i hits meeting score thresholds for local search", len(results))
+            LOG.info(
+                "Found %i hits meeting score thresholds for local search", len(results)
+            )
             LOG.info("Fetching genomic context of hits")
-            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
+            organisms.extend(
+                get_context(
+                    results,
+                    sqlite_db,
+                    unique,
+                    min_hits,
+                    gap,
+                    require,
+                    ipg_file,
+                    session,
+                )
+            )
+
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
             if entrez_query:
@@ -267,9 +289,22 @@ def cblaster(
                 hitlist_size=hitlist_size,
             )
             session.params["rid"] = rid
-            LOG.info("Found %i hits meeting score thresholds for remote search", len(results))
+            LOG.info(
+                "Found %i hits meeting score thresholds for remote search", len(results)
+            )
             LOG.info("Fetching genomic context of hits")
-            organisms.extend(get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session))
+            organisms.extend(
+                get_context(
+                    results,
+                    sqlite_db,
+                    unique,
+                    min_hits,
+                    gap,
+                    require,
+                    ipg_file,
+                    session,
+                )
+            )
 
         session.organisms = organisms
 
@@ -277,7 +312,9 @@ def cblaster(
             session.params["sqlite_db"] = str(sqlite_db)
 
         if intermediate_genes:
-            find_intermediate_genes(session, intermediate_gene_distance, intermediate_max_clusters)
+            find_intermediate_genes(
+                session, intermediate_gene_distance, intermediate_max_clusters
+            )
 
         if session_file:
             LOG.info("Writing current search session to %s", session_file[0])
@@ -296,7 +333,7 @@ def cblaster(
             key=binary_key,
             attr=binary_attr,
             decimals=binary_decimals,
-            sort_clusters=output_sort_clusters
+            sort_clusters=output_sort_clusters,
         )
 
     LOG.info("Writing summary to %s", "stdout" if output is None else output)
@@ -311,7 +348,12 @@ def cblaster(
 
     if plot:
         plot = None if plot is True else plot
-        plot_session(session, output=plot, sort_clusters=output_sort_clusters, max_clusters=max_plot_clusters)
+        plot_session(
+            session,
+            output=plot,
+            sort_clusters=output_sort_clusters,
+            max_clusters=max_plot_clusters,
+        )
 
     LOG.info("Done.")
     return session
@@ -326,7 +368,7 @@ def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, se
         gap=gap,
         require=require,
         ipg_file=ipg_file,
-        query_sequence_order=list(session.sequences)
+        query_sequence_order=list(session.sequences),
     )
     return organisms
 
@@ -390,6 +432,7 @@ def main():
 
     elif args.subcommand == "gui":
         from cblaster.gui.main import cblaster_gui
+
         cblaster_gui()
 
     elif args.subcommand == "gne":
