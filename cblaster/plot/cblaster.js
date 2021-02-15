@@ -201,10 +201,10 @@ function scaleBranchLengths(node, width) {
 	const y = d3.scaleLinear()
 		.domain([1, 0])  // inversed, since thats how Scipy reports distances
 		.range([0, width]);
-	node.links().forEach(link => {
+  for (const link of node.links()) {
 		link.source.y = y(link.source.data.length)	
 		link.target.y = y(link.target.data.length || 0)	
-	})
+  }
 }
 
 function getScaledTree(hierarchy, width, height) {
@@ -217,18 +217,18 @@ function getScaledTree(hierarchy, width, height) {
 	return tree;
 }
 
-function pruneHierarchy(node, label) {
+function pruneHierarchy(node, labels) {
 	/* Prune any children of a nested object whose name is equal to label.
 	 * Additionally, if pruning results in an empty children list, remove the
 	 * parent.
 	*/
 	return node.filter(child => {
 		if (child.children) {
-			child.children = pruneHierarchy(child.children, label)	
+			child.children = pruneHierarchy(child.children, labels)	
 			if (child.children.length === 0 && constants.sorted !== true)
 				return false
 		}
-		return child.name !== label
+    return !labels.includes(child.name)
 	})
 }
 
@@ -473,12 +473,51 @@ function plot(data) {
 
 		// Rotate query sequence labels and attach click delete behaviour.
 		const clickRemoveX = query => {
-			let newData = {
+      // Escape if there would be no queries left after this action
+      let newQueries = data.queries.filter(q => q !== query)
+      if (newQueries.length === 0)
+        return
+
+      // Preliminary filter; remove any cells matching the deleted query label,
+      // also mark clusters which still have hits so we can delete empty ones
+      // after
+      let filteredCells = []
+      let filteredClusters = new Set()
+      for (const cell of data.matrix) {
+        if (cell.query === query) continue
+        if (cell.hits.length > 0)
+          filteredClusters.add(cell.cluster)
+        filteredCells.push(cell)
+      }
+
+      // Determine which clusters to keep/remove from the plot
+      let newClusters = {}
+      let removeClusters = []
+      for (let label of Object.keys(data.labels)) {
+        label = parseInt(label)
+        if (filteredClusters.has(label))
+          newClusters[label] = data.labels[label]
+        else
+          removeClusters.push(label)
+      }
+
+      // Escape if there would be no clusters left after this action
+      if (Object.keys(newClusters).length === 0)
+        return
+
+      // Prune the hierarchy if any labels are removed
+      let hierarchy = removeClusters.length > 0
+        ? { ...data.hierarchy, children: pruneHierarchy(data.hierarchy.children, removeClusters) }
+        : { ...data.hierarchy }
+
+      // Call plot update with the new data
+			update({
 				...data,
-				queries: data.queries.filter(q => q !== query),
-				matrix: data.matrix.filter(cell => cell.query !== query)
-			}
-			update(newData)
+				queries: newQueries,
+        matrix: filteredCells.filter(cell => filteredClusters.has(cell.cluster)),
+        labels: newClusters,
+				hierarchy: hierarchy
+      })
 		}
 		heatmapX.selectAll("text")
 			.style("font-size", `${Math.min(constants.cellWidth * 0.35, 14)}px`)
@@ -546,16 +585,25 @@ function plot(data) {
 		// multi-line labels and toggles with transitions and click to remove behaviour.
 		let yAxisTranslate = d => `translate(${heatWidth}, ${y(d) + y.bandwidth() / 2})`
 		let clickRemoveY = label => {
-			const newData = {
+      // Escape if there would be no clusters left after this action
+      let newLabels = {}
+      for (let lbl of Object.keys(data.labels)) {
+        lbl = parseInt(lbl)
+        if (lbl !== label) newLabels[lbl] = data.labels[lbl]
+      }
+      if (Object.keys(newLabels).length === 0)
+        return
+
+      // Update plot with new data
+			update({
 				...data,
-				"hierarchy": {
+				hierarchy: {
 					...data.hierarchy,
-					"children": pruneHierarchy(data.hierarchy.children, label)
+					"children": pruneHierarchy(data.hierarchy.children, [label])
 				},
-				"matrix": data.matrix.filter(cell => cell.cluster !== label)
-			}
-			delete newData.labels[label]
-			update(newData)
+				matrix: data.matrix.filter(cell => cell.cluster !== label),
+        labels: newLabels
+      })
 		}
 		heatmapY.selectAll(".tickGroup")
 			.data(y.domain(), d => d)
