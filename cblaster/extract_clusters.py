@@ -108,7 +108,7 @@ def get_sorted_cluster_hierarchies(
                     cluster,
                 ):
                     continue
-                selected_clusters.add((cluster, scaffold, organism.name))
+                selected_clusters.add((cluster, scaffold, organism.full_name))
 
     # Make sure the sort is consistent and that same, scores, locations
     # are always sorted in the same way.
