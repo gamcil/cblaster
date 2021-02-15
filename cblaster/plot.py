@@ -115,11 +115,17 @@ def get_data(session, sort_clusters=False, max_clusters=None):
         "organisms": 0
     }
     if sort_clusters:
-        cluster_hierarchy = get_sorted_cluster_hierarchies(session, max_clusters=max_clusters)
+        cluster_hierarchy = get_sorted_cluster_hierarchies(
+            session,
+            max_clusters=max_clusters
+        )
     else:
-        cluster_hierarchy = [(cluster, scaffold, organism.name)for organism in session.organisms
-                             for accession, scaffold in organism.scaffolds.items()
-                             for cluster in scaffold.clusters]
+        cluster_hierarchy = [
+            (cluster, scaffold, organism.full_name)
+            for organism in session.organisms
+            for accession, scaffold in organism.scaffolds.items()
+            for cluster in scaffold.clusters
+        ]
     cluster_id = 0
     organisms = set()
     scaffolds = set()
@@ -153,6 +159,7 @@ def get_data(session, sort_clusters=False, max_clusters=None):
 
     counts["organisms"] = len(organisms)
     counts["scaffolds"] = len(scaffolds)
+
     # Only generate a linkage matrix if there is more than one result
     if len(matrix) > 1 and not sort_clusters:
         linkage_matrix = generate_linkage_matrix(matrix)
