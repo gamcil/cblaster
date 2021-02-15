@@ -399,8 +399,8 @@ class Cluster(Serializer):
         for subject in self.subjects:
             best_hit = max(subject.hits, key=lambda x: x.bitscore)
             tooltip_dict = \
-                {"accession": subject.name, "identity": best_hit.identity, "bitscore": best_hit.bitscore,
-                 "coverage": best_hit.coverage, "e-value": best_hit.evalue if best_hit.evalue != 0 else "0.0"}
+                {"accession": subject.name, "identity": f"{best_hit.identity:.2f}", "bitscore": best_hit.bitscore,
+                 "coverage": f"{best_hit.coverage:.2f}", "e-value": best_hit.evalue if best_hit.evalue != 0 else "0.0"}
             clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
                                              end=subject.end, strand=1 if subject.strand == '+' else -1,
                                              names=tooltip_dict))

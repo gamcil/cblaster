@@ -287,7 +287,7 @@ def serve_html(data, chart="heatmap"):
 
 
 def plot_session(session, output=None, sort_clusters=False, max_clusters=None, testing=False):
-    data = get_data(session, sort_clusters)
+    data = get_data(session, sort_clusters, max_clusters=max_clusters)
     if output:
         LOG.info(f"Saving cblaster plot HTML to: {output}")
         save_html(data, output)
