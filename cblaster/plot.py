@@ -290,11 +290,12 @@ def plot_session(session, output=None, sort_clusters=False, max_clusters=None, t
         serve_html(data)
 
 
-def plot_gne(data, output=None):
+def plot_gne(data, output=None, testing=False):
     if output:
         LOG.info(f"Saving gne plot HTML to: {output}")
         save_html(data, chart="gne", output=output)
-        webbrowser.open(output)
+        if not testing:
+            webbrowser.open(output)
     else:
         serve_html(data, chart="gne")
 
