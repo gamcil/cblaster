@@ -23,7 +23,7 @@ copyright = "2019, Cameron Gilchrist"
 author = "Cameron Gilchrist"
 
 # The full version, including alpha/beta/rc tags
-release = "1.0.5"
+release = "1.2.5"
 
 
 # -- General configuration ---------------------------------------------------
