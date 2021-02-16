@@ -45,6 +45,7 @@ def gne(
     hide_headers=False,
     delimiter=",",
     decimals=4,
+    testing=False,
 ):
     """Estimate gene neighbourhood."""
     LOG.info("Starting cblaster gene neighbourhood estimation")
@@ -69,9 +70,8 @@ def gne(
         )
         with open(output, "w") as f:
             f.write(summary)
-    # make sure to not always serve the plot.
-    if plot:
-        plot_gne(results, output=plot if plot is not True else None)
+
+    plot_gne(results, output=plot, testing=testing)
     LOG.info("Done.")
 
 
@@ -456,6 +456,7 @@ def main():
             hide_headers=args.hide_headers,
             decimals=args.decimals,
             plot=args.plot,
+            testing=args.testing,
         )
 
     elif args.subcommand == "extract":
@@ -492,6 +493,7 @@ def main():
             scaffolds=args.scaffolds,
             plot_outfile=args.output,
             max_clusters=args.maximum_clusters,
+            testing=args.testing,
         )
 
 

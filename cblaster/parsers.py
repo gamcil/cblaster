@@ -499,7 +499,7 @@ def add_gne_output_group(parser):
         "--plot",
         nargs='?',
         const=True,
-        default=False,
+        default=None,
         type=lambda x: full_path(x, os.W_OK),
         help="Specify this argument without value to dynamically serve te plot. If a file location is provided"
              " the plot will be saved there."

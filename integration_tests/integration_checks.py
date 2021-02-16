@@ -58,6 +58,7 @@ def compare_files(actual_file_path, expected_file_path, out_dir):
             open(COMPARISSON_FILE_DIR + os.sep + expected_file_path, "r") as expected_file:
         try:
             assert actual_file.read() == expected_file.read()
+        # make the error a bit more readable by telling what files are not matching.
         except AssertionError as e:
             raise type(e)(str(e) + f" {actual_file.name} and {expected_file.name} dont match.")
 
@@ -147,179 +148,145 @@ def test_recompute_session_local_search(tmpdir):
     compare_file_pairs([["summary.txt", "summary_local_gbk_recompute.txt"],
                         ["binary.txt", "binary_local_gbk_recompute.txt"]], tmpdir)
 
-# def search_remote_commands():
-#     global OUT_DIR, TEST_FILE_DIR
-#
-#     # load a remote session and make summary and binary files
-#     commands = [
-#         CommandTest(
-#             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
-#             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
-#             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt -ig",
-#             "load remote session",
-#             [["summary.txt", "summary_remote_fa.txt"], ["binary.txt", "binary_remote_fa.txt"]]
-#         ),
-#         # recompute a remote session
-#         CommandTest(
-#             f"cblaster -d search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s "
-#             f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json"
-#             f" -o {OUT_DIR}{os.sep}summary.txt -b {OUT_DIR}{os.sep}binary.txt --recompute -g 50000 -u 7"
-#             f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters -ig -md 6000 -mic 3 -osc",
-#             "recompute remote session",
-#             [["summary.txt", "summary_remote_fa_recompute.txt"], ["binary.txt", "binary_remote_fa_recompute.txt"]]
-#         )
-#     ]
-#     return commands
-#
-#
-# def search_hmm_commands():
-#     global OUT_DIR, TEST_FILE_DIR, CURRENT_DIR
-#     if OS_NAME == "windows":
-#         print("Skipping hmm tests because the hmmer program is not supported on windows systems.")
-#         return []
-#     commands = [
-#         CommandTest(
-#             f"cblaster search -m hmm -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
-#             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -ohh -o {OUT_DIR}{os.sep}summary.txt"
-#             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
-#             f"-g 25000 -u 2 -mh 3 -me 0.01 -s {OUT_DIR}{os.sep}session.json",
-#             "hmm search"
-#         ),
-#         CommandTest(
-#             f"cblaster search -m hmm -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
-#             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -o {OUT_DIR}{os.sep}summary.txt"
-#             f" -b {OUT_DIR}{os.sep}binary.txt -s {TEST_FILE_DIR}{os.sep}test_session_hmm_fa.json",
-#             "load hmm session"
-#         )
-#     ]
-#     return commands
-#
-#
-# def search_combi_local_command():
-#     global OUT_DIR, TEST_FILE_DIR, CURRENT_DIR
-#     if OS_NAME == "windows":
-#         print("Skipping hmm tests because the hmmer program is not supported on windows systems.")
-#         return []
-#     commands = [
-#         CommandTest(
-#             f"cblaster search -m combi_local -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -qf"
-#             f" {TEST_FILE_DIR}{os.sep}test_query.gb -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta "
-#             f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh -o {OUT_DIR}{os.sep}summary.txt"
-#             f" -ode , -odc 2 -osc -b {OUT_DIR}{os.sep}binary.txt -bhh -bde _ -bdc 2 -bkey sum -bat coverage "
-#             f"-g 25000 -u 2 -mh 3 -me 0.01 -s {OUT_DIR}{os.sep}session.json",
-#             "combi_local search"
-#         ),
-#         CommandTest(
-#             f"cblaster search -m combi_local -qp PF00698 -pfam {CURRENT_DIR}{os.sep} -db "
-#             f"{TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -o {OUT_DIR}{os.sep}summary.txt"
-#             f" -b {OUT_DIR}{os.sep}binary.txt -s {TEST_FILE_DIR}{os.sep}test_session_combi_local_fa.json",
-#             "load combi local hmm session"
-#         )
-#     ]
-#     return commands
-#
-#
-# def makedb_commands():
-#     global OUT_DIR, TEST_FILE_DIR
-#     commands = [
-#         # using embl and gbk files
-#         CommandTest(
-#             f"cblaster -d makedb {TEST_FILE_DIR}{os.sep}test_query.gb"
-#             f" {TEST_FILE_DIR}{os.sep}test_query.embl -n {OUT_DIR}{os.sep}database -b 3 -c 100",
-#             "makedb gbk, embl files",
-#             [["database.fasta", "makedb_database_gbk_embl.fasta"]]
-#         ),
-#         # using gff files
-#         CommandTest(
-#             f"cblaster -d makedb {TEST_FILE_DIR}{os.sep}test_gff_v_maris.fna"
-#             f" {TEST_FILE_DIR}{os.sep}test_gff_v_maris.gff -n {OUT_DIR}{os.sep}database -b 3 -c 100",
-#             "makedb gff files"
-#         )
-#     ]
-#     return commands
-#
-#
-# def gne_commands():
-#     global OUT_DIR, TEST_FILE_DIR
-#     commands = [
-#         CommandTest(
-#             f"cblaster -d gne {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json --max_gap 200000 --samples 25"
-#             f' --scale log -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 2',
-#             "gne with local gbk session",
-#             [["summary.txt", "gne_local_summary.txt"]]
-#         ),
-#         CommandTest(
-#             f"cblaster -d gne {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json --max_gap 250000 --samples 10"
-#             f' --scale linear -o {OUT_DIR}{os.sep}summary.txt -hh -d "\t" -e 3',
-#             "gne with remote fa session",
-#             [["summary.txt", "gne_remote_summary.txt"]]
-#         )
-#     ]
-#     return commands
-#
-#
-# def extract_commands():
-#     global OUT_DIR, TEST_FILE_DIR
-#     commands = [
-#         CommandTest(
-#             f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json "
-#             f"-or GCA_0002041.* -q AEK75517.1 AEK75496.1 AEK75490.1 -o"
-#             f" {OUT_DIR}{os.sep}summary.txt -sc CP002638.1:2562030-2619476 -de _ -es -no",
-#             "local session extraction",
-#             [["summary.txt", "extract_local_summary.txt"]]
-#         ),
-#         CommandTest(
-#             f"cblaster -d extract {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json -o "
-#             f"{OUT_DIR}{os.sep}summary.txt -de : -es -or Verrucosispora.*",
-#             "remote session extraction",
-#             [["summary.txt", "extract_remote_summary.txt"]]
-#         )
-#     ]
-#     return commands
-#
-#
-# def extract_clusters_commands():
-#     global OUT_DIR, TEST_FILE_DIR
-#     commands = [
-#         CommandTest(
-#             f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 1-2 4 -o"
-#             f" {OUT_DIR} -pf test_ -f genbank -mc 5",
-#             "local session cluster extraction",
-#             [["test_cluster1.gbk", "extract_clusters_cluster1_local_genbank.gbk"]]
-#         ),
-#         CommandTest(
-#             f"cblaster -d extract_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json -o {OUT_DIR} -or"
-#             f" Verrucosispora.* -sc KF826676.1:5000-30000 -st 20 -f bigscape",
-#             "remote session cluster extraction",
-#             [["cluster11.gbk", "extract_clusters_cluster11_remote_bigscape.gbk"]]
-#         )
-#     ]
-#     return commands
-#
-#
-# def plot_clusters_commands():
-#     # this check will open 2 plots that are deleter right after. There is unfortunately no way to stop this.
-#     global OUT_DIR, TEST_FILE_DIR
-#     commands = [
-#         CommandTest(
-#             f"cblaster -d plot_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 1-2 4 -o"
-#             f" {OUT_DIR}{os.sep}plot.html -mc 5",
-#             "local session cluster plot"
-#         ),
-#         CommandTest(
-#             f"cblaster -d plot_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json -o"
-#             f" {OUT_DIR}{os.sep}plot.html -mc 5 -or Verrucosispora.* -sc KF826676.1:5000-30000 -st 20",
-#             "remote session cluster plot"
-#         )
-#     ]
-#     return commands
+
+def test_load_remote_session(tmpdir):
+    command = \
+        f"cblaster -d --testing search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s " \
+        f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json" \
+        f" -o {str(tmpdir.join('summary.txt'))} -b {str(tmpdir.join('binary.txt'))} -ig" \
+        f" -p {str(tmpdir.join('plot.html'))}"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"binary.txt", "plot.html", "summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt", "summary_remote_fa.txt"],
+                        ["binary.txt", "binary_remote_fa.txt"]], tmpdir)
+
+
+def test_recompute_remote_session(tmpdir):
+    command = \
+        f"cblaster -d --testing search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s " \
+        f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json" \
+        f" -o {str(tmpdir.join('summary.txt'))} -b {str(tmpdir.join('binary.txt'))} --recompute -g 50000 -u 7" \
+        f" -mh 3 -me 0.01 -mi 20 -mc 60 --sort_clusters -ig -md 6000 -mic 3 -osc  -p {str(tmpdir.join('plot.html'))}"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"binary.txt", "plot.html", "summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt", "summary_remote_fa_recompute.txt"],
+                        ["binary.txt", "binary_remote_fa_recompute.txt"]], tmpdir)
+
+
+def test_search_hmm_commands(tmpdir):
+    pass
+
+
+def test_embl_gbk_makedb(tmpdir):
+    command = \
+        f"cblaster -d --testing makedb {TEST_FILE_DIR}{os.sep}test_query.gb" \
+        f" {TEST_FILE_DIR}{os.sep}test_query.embl -n {str(tmpdir.join('database'))} -b 3 -c 100"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"database.dmnd", "database.fasta", "database.sqlite3"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["database.fasta",  "makedb_database_gbk_embl.fasta"]], tmpdir)
+
+
+def test_gff_fasta_makedb(tmpdir):
+    command = \
+        f"cblaster -d --testing makedb {TEST_FILE_DIR}{os.sep}test_gff_v_maris.fna" \
+        f" {TEST_FILE_DIR}{os.sep}test_gff_v_maris.gff -n {str(tmpdir.join('database'))} -b 3 -c 100"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"database.dmnd", "database.fasta", "database.sqlite3"}
+    confirm_files_present(expected_files, tmpdir)
+
+
+def test_local_gne(tmpdir):
+    command = \
+        f"cblaster -d  --testing gne {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json --max_gap 200000" \
+        f' --samples 25 --scale log -o {str(tmpdir.join("summary.txt"))} -hh -d "\t" -e 2 ' \
+        f'-p {str(tmpdir.join("plot.html"))}'
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"summary.txt", "plot.html"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt",  "gne_local_summary.txt"]], tmpdir)
+
+
+def test_remote_gne(tmpdir):
+    command = \
+        f"cblaster -d  --testing gne {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json --max_gap 250000" \
+        f' --samples 25 --scale linear -o {str(tmpdir.join("summary.txt"))} -hh -d "\t" -e 2 ' \
+        f'-p {str(tmpdir.join("plot.html"))}'
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"summary.txt", "plot.html"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt",  "gne_remote_summary.txt"]], tmpdir)
+
+
+def test_local_extract(tmpdir):
+    command = \
+        f"cblaster -d --testing extract {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json "\
+        f" -q AEK75493.1 AEK75491.1 AEK75490.1 -o {str(tmpdir.join('summary.txt'))} -sc JF752342.1:1-70000 -de _ -es" \
+        f" -no"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt",  "extract_local_summary.txt"]], tmpdir)
+
+
+def test_remote_extract(tmpdir):
+    command = \
+        f"cblaster -d --testing extract {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json " \
+        f" -o {str(tmpdir.join('summary.txt'))} -de _ -es -no -or Verrucosispora.*"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["summary.txt",  "extract_remote_summary.txt"]], tmpdir)
+
+
+def test_local_extract_clusters(tmpdir):
+    command = \
+        f"cblaster -d --testing extract_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 2 -o" \
+        f" {tmpdir} -pf test_ -f genbank -mc 5"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"test_cluster2.gbk"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["test_cluster2.gbk",  "extract_clusters_cluster2_local_genbank.gbk"]], tmpdir)
+
+
+def test_remote_extract_clusters(tmpdir):
+    command = \
+        f"cblaster -d --testing extract_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json " \
+        f"-o {tmpdir} -or Verrucosispora.* -sc KF826676.1:5000-30000 -pf test_ -f genbank -st 20 -f bigscape"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"test_cluster11.gbk"}
+    confirm_files_present(expected_files, tmpdir)
+    compare_file_pairs([["test_cluster11.gbk",  "extract_clusters_cluster11_remote_bigscape.gbk"]], tmpdir)
+
+
+def test_local_plot_clusters(tmpdir):
+    command = \
+        f"cblaster -d --testing plot_clusters {TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -c 2 -o" \
+        f" {str(tmpdir.join('plot.html'))} -mc 5"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+
+
+def test_remote_plot_clusters(tmpdir):
+    command = \
+        f"cblaster -d --testing plot_clusters {TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json -o" \
+        f" {str(tmpdir.join('plot.html'))} -mc 5 -or Verrucosispora.* -sc KF826676.1:5000-30000 -st 20"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
 
 
 if __name__ == '__main__':
-    pytest.main(args=['-s', os.path.abspath(__file__), "--log-cli-level", "DEBUG"])
-#     # run tests of all the requested commands by specifying the command name separated by spaces
-#     cmd_arguments = sys.argv[1:]
-#     print("Running setup")
-#     setup()
-#     print("\nRunning tests:\n")
-#     test_commands(cmd_arguments)
+    pytest.main(args=['-s', os.path.abspath(__file__)])
+
