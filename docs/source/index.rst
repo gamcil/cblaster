@@ -46,8 +46,9 @@ API Documentation
 Comprehensive documentation for all public API exposed by `cblaster`:
 
 .. toctree::
+        :maxdepth: 2
 
-        api/index
+        api/modules
 
 
 Indices and tables
