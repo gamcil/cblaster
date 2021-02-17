@@ -7,6 +7,10 @@ SOURCE      .
   ORGANISM  .
             .
 FEATURES             Location/Qualifiers
+     SOURCE          1..12860
+                     /organism="Verrucosispora sp. MS100047"
+     region          1..12860
+                     /product="other"
      CDS             1..1289
                      /protein_id="AIS85730.1"
                      /translation="MVTTDCLHHHVDRLVDVVQPDHHLGCAQVAQPLPPRRRADRRHHR
@@ -88,10 +92,6 @@ FEATURES             Location/Qualifiers
                      VVAAALFTVINLVVDLLYRVVDPRLREWAA"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     SOURCE          7869..20728
-                     /organism="Verrucosispora sp."
-     region          7869..20728
-                     /product="other"
      CDS             7879..9494
                      /protein_id="AIS85738.1"
                      /translation="MRTTTRSTAILLLLVAATAACGTSAAQTGDAQPTTGGALTFATAV

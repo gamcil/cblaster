@@ -499,7 +499,7 @@ def add_gne_output_group(parser):
         "--plot",
         nargs='?',
         const=True,
-        default=False,
+        default=None,
         type=lambda x: full_path(x, os.W_OK),
         help="Specify this argument without value to dynamically serve te plot. If a file location is provided"
              " the plot will be saved there."
@@ -781,6 +781,10 @@ def get_parser():
     )
     parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     parser.add_argument("-d", "--debug", help="Print debugging information", action="store_true")
+    parser.add_argument(
+        "--testing",
+        action="store_true",
+        help="Turn this argument on when running tests to suppress certain actions like opening plots")
     parser.add_argument(
         "-i",
         "--indent",

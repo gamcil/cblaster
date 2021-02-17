@@ -45,6 +45,7 @@ def gne(
     hide_headers=False,
     delimiter=",",
     decimals=4,
+    testing=False,
 ):
     """Estimate gene neighbourhood."""
     LOG.info("Starting cblaster gene neighbourhood estimation")
@@ -54,18 +55,23 @@ def gne(
 
     LOG.info("Computing gene neighbourhood statistics")
     results = context.estimate_neighbourhood(
-        session, max_gap=max_gap, samples=samples, scale=scale
+        session,
+        max_gap=max_gap,
+        samples=samples,
+        scale=scale
     )
     if output:
         LOG.info("Writing GNE table to %s", output)
         summary = summarise_gne(
-            results, hide_headers=hide_headers, delimiter=delimiter, decimals=decimals,
+            results,
+            hide_headers=hide_headers,
+            delimiter=delimiter,
+            decimals=decimals,
         )
         with open(output, "w") as f:
             f.write(summary)
-    # make sure to not always serve the plot.
-    if plot:
-        plot_gne(results, output=plot if plot is not True else None)
+
+    plot_gne(results, output=plot, testing=testing)
     LOG.info("Done.")
 
 
@@ -108,6 +114,7 @@ def cblaster(
     intermediate_genes=False,
     intermediate_gene_distance=5000,
     intermediate_max_clusters=100,
+    testing=False,
 ):
     """Run cblaster.
 
@@ -154,6 +161,7 @@ def cblaster(
          edge of a cluster and an intermediate gene.
         intermediate_max_clusters (int): the maximum amount of clusters for which intermediate
          genes will be fetched, since this can become expensive for remote searches
+        testing (bool): flag to make sure certain code does not run when testing
 
     Returns:
         Session: cblaster search Session object
@@ -353,6 +361,7 @@ def cblaster(
             output=plot,
             sort_clusters=output_sort_clusters,
             max_clusters=max_plot_clusters,
+            testing=testing,
         )
 
     LOG.info("Done.")
@@ -428,6 +437,7 @@ def main():
             intermediate_genes=args.intermediate_genes,
             intermediate_gene_distance=args.max_distance,
             intermediate_max_clusters=args.maximum_clusters,
+            testing=args.testing,
         )
 
     elif args.subcommand == "gui":
@@ -446,6 +456,7 @@ def main():
             hide_headers=args.hide_headers,
             decimals=args.decimals,
             plot=args.plot,
+            testing=args.testing,
         )
 
     elif args.subcommand == "extract":
@@ -482,6 +493,7 @@ def main():
             scaffolds=args.scaffolds,
             plot_outfile=args.output,
             max_clusters=args.maximum_clusters,
+            testing=args.testing,
         )
 
 

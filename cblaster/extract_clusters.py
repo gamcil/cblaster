@@ -188,7 +188,7 @@ def create_genbanks_from_clusters(
             )
             SeqIO.write(record, fp, "genbank")
 
-        LOG.debug(f"Created {output_file.name}.gb file for cluster {cluster.number}")
+        LOG.debug(f"Created {output_file.name} file for cluster {cluster.number}")
 
 
 def local_fetch_nucleotide(sqlite_db, cluster_hierarchy):
@@ -328,7 +328,7 @@ def cluster_to_record(
         description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}",
     )
     source_feature = SeqFeature(
-        FeatureLocation(start=cluster.start, end=cluster.end),
+        FeatureLocation(start=cluster.start - cluster.intermediate_start, end=cluster.end - cluster.intermediate_start),
         type="SOURCE",
         qualifiers={"organism": organism_name},
     )
@@ -336,7 +336,8 @@ def cluster_to_record(
 
     if format_ == "bigscape":
         region_feature = SeqFeature(
-            FeatureLocation(start=cluster.start, end=cluster.end),
+            FeatureLocation(start=cluster.start - cluster.intermediate_start,
+                            end=cluster.end - cluster.intermediate_start),
             type="region",
             qualifiers={"product": "other"},
         )

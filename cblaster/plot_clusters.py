@@ -169,7 +169,8 @@ def plot_clusters(
         organisms=None,
         scaffolds=None,
         plot_outfile=None,
-        max_clusters=50
+        max_clusters=50,
+        testing=False,
 ):
     """Plot Cluster objects from a Session file
     Args:
@@ -181,6 +182,8 @@ def plot_clusters(
         scaffolds(list): clusters on these scaffolds are included
         plot_outfile (str): path to a file for the final plot
         max_clusters (int): the maximum amount of clusters plotted regardless of filters
+        testing (bool): argument to switch of plotting when testing making sure that no dynamioc plot
+         is served since this will crash the testing.
     """
     LOG.info("Starting generation of cluster plot with clinker.")
     with open(session, "r") as f:
@@ -194,7 +197,8 @@ def plot_clusters(
 
     allignments = clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies)
     global_aligner = allignments_to_clinker_global_alligner(allignments)
-    clinker_plot_clusters(global_aligner, plot_outfile, use_file_order=True)
+    if not testing:
+        clinker_plot_clusters(global_aligner, plot_outfile, use_file_order=True)
     if plot_outfile:
         LOG.info(f"Plot file can be found at {plot_outfile}")
     LOG.info("Done!")
