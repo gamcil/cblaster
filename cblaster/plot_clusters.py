@@ -13,17 +13,69 @@ from clinker.classes import (
 )
 from clinker.align import (
     Alignment as ClinkerAlignment,
-    Globaligner as ClinkerGlobalaligner
+    Globaligner as ClinkerGlobalaligner,
+    Group as ClinkerGroup,
 )
 from clinker.plot import plot_clusters as clinker_plot_clusters
-
-
 from cblaster.extract_clusters import get_sorted_cluster_hierarchies
 from cblaster.classes import Session
+from cblaster.genome_parsers import GBK_SUFFIXES, EMBL_SUFFIXES
 
 
 LOG = logging.getLogger(__name__)
+
 FASTA_SPACE = 500
+
+
+def cblaster_to_clinker_cluster(cluster, scaffold_accession="", organism_name=""):
+    """Convert this cluster to a clinker format cluster
+
+    Args:
+        scaffold_accession (str): accession of the scaffold this cluster is located on
+    Returns:
+        A clinker.Cluster object
+    """
+    clinker_genes = []
+    for subject in cluster.subjects:
+        best_hit = max(subject.hits, key=lambda x: x.bitscore)
+        tooltip_dict = {
+            "accession": subject.name,
+            "identity": f"{best_hit.identity:.2f}",
+            "bitscore": best_hit.bitscore,
+            "coverage": f"{best_hit.coverage:.2f}",
+            "e-value": best_hit.evalue if best_hit.evalue != 0 else "0.0"
+        }
+        clinker_gene = ClinkerGene(
+            label=subject.name,
+            start=subject.start,
+            end=subject.end,
+            strand=1 if subject.strand == '+' else -1,
+            names=tooltip_dict
+        )
+        clinker_genes.append(clinker_gene)
+
+    for gene in cluster.intermediate_genes:
+        tooltip_dict = {"accession": gene.name}
+        clinker_gene = ClinkerGene(
+            label=gene.name,
+            start=gene.start,
+            end=gene.end,
+            strand=1 if gene.strand == '+' else -1,
+            names=tooltip_dict
+        )
+        clinker_genes.append(clinker_gene)
+
+    clinker_locus = ClinkerLocus(
+        scaffold_accession,
+        clinker_genes,
+        start=cluster.intermediate_start,
+        end=cluster.intermediate_end
+    )
+
+    return ClinkerCluster(
+        f"{organism_name} Cluster {cluster.number} ({cluster.score:.2f} score)",
+        [clinker_locus],
+    )
 
 
 def query_to_clinker_cluster(query_file):
@@ -34,14 +86,13 @@ def query_to_clinker_cluster(query_file):
         a clinker.Cluster object
     """
     with open(query_file) as query:
-        if any(query_file.endswith(ext) for ext in (".gbk", ".gb", ".genbank", ".gbff")):
+        if any(query_file.endswith(ext) for ext in GBK_SUFFIXES):
             seqrecord = SeqIO.parse(query, "genbank")
-            return _seqrecord_to_clinker_cluster(seqrecord)
-        elif any(query_file.endswith(ext) for ext in (".embl", ".emb")):
+        elif any(query_file.endswith(ext) for ext in EMBL_SUFFIXES):
             seqrecord = SeqIO.parse(query, "embl")
-            return _seqrecord_to_clinker_cluster(seqrecord)
         else:
             return fasta_to_cluster(query)
+        return _seqrecord_to_clinker_cluster(seqrecord)
 
 
 def _seqrecord_to_clinker_cluster(seqrecord):
@@ -58,23 +109,31 @@ def _seqrecord_to_clinker_cluster(seqrecord):
         locus_genes = []
         locus_start = locus_end = None
         for feature in record.features:
-            if feature.type == "CDS":
-                name = None
-                for identifier in identifiers:
-                    if identifier not in feature.qualifiers:
-                        continue
-                    name = feature.qualifiers[identifier][0]
-                    break
-                if name is None:
-                    name = f"protein_{count}"
-                    count += 1
-                if locus_start is None or feature.location.start < locus_start:
-                    locus_start = feature.location.start
-                if locus_end is None or feature.location.end > locus_end:
-                    locus_end = feature.location.end
-                locus_genes.append(ClinkerGene(label=name, start=feature.location.start, end=feature.location.end,
-                                               strand=feature.location.strand, names={"accession": name}))
-        loci.append(ClinkerLocus(f"Locus{locus_nr + 1}", locus_genes, start=locus_start, end=locus_end))
+            if feature.type != "CDS":
+                continue
+            name = None
+            for identifier in identifiers:
+                if identifier not in feature.qualifiers:
+                    continue
+                name = feature.qualifiers[identifier][0]
+                break
+            if name is None:
+                name = f"protein_{count}"
+                count += 1
+            if locus_start is None or feature.location.start < locus_start:
+                locus_start = feature.location.start
+            if locus_end is None or feature.location.end > locus_end:
+                locus_end = feature.location.end
+            gene = ClinkerGene(
+                label=name,
+                start=feature.location.start,
+                end=feature.location.end,
+                strand=feature.location.strand,
+                names={"accession": name}
+            )
+            locus_genes.append(gene)
+        locus = ClinkerLocus(f"Locus{locus_nr + 1}", locus_genes, start=locus_start, end=locus_end)
+        loci.append(locus)
     return ClinkerCluster("Query_cluster", loci)
 
 
@@ -93,7 +152,8 @@ def fasta_to_cluster(fasta_handle):
         if line.startswith(">"):
             # if a sequence was found
             if sequence_length != 0:
-                locus_genes.append(ClinkerGene(label=name, start=start, end=end, strand=0))
+                gene = ClinkerGene(label=name, start=start, end=end, strand=1)
+                locus_genes.append(gene)
                 # space the genes a bit
                 end += FASTA_SPACE
                 start = end
@@ -103,80 +163,82 @@ def fasta_to_cluster(fasta_handle):
             # do not count the newline character and get in nucleotide numbers
             sequence_length += (len(line) - 1) * 3
             end += (len(line) - 1) * 3
-    locus_genes.append(ClinkerGene(label=name, start=start, end=end, strand=0, names={"accession": name}))
+
+    clinker_gene = ClinkerGene(
+        label=name,
+        start=start,
+        end=end,
+        strand=1,
+        names={"accession": name}
+    )
+    locus_genes.append(clinker_gene)
     locus = ClinkerLocus("Locus1", locus_genes, start=0, end=end)
     return ClinkerCluster("Query_cluster", [locus])
 
 
-def clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies):
+def clusters_to_clinker_globaligner(clinker_query_cluster, cluster_hierarchies):
     """Create clinker.Alignments classes between the query cluster and all other clusters
+
     Make clinker.Link objects between all genes of the query and the genes in the clusters that
     where matched during blasting.
+
     Args:
-        clinker_query_cluster(clinker.Cluster): clinker.Cluster object of the query used for the session
-        cluster_hierarchies(List): a list of tuples in the form (cblaster.Cluster object, scaffold_accession
-         of cluster, organism_name of cluster)
+        clinker_query_cluster (clinker.Cluster):
+            clinker.Cluster object of the query used for the session
+        cluster_hierarchies (List):
+            a list of tuples in the form (cblaster.Cluster object, scaffold_accession
+            of cluster, organism_name of cluster)
     Returns:
         a list of clinker.Alignment objects
     """
-    allignments = []
+    globaligner = ClinkerGlobalaligner()
+
+    groups = {
+        gene.label: ClinkerGroup(label=gene.label, genes=[gene.uid])
+        for locus in clinker_query_cluster.loci
+        for gene in locus.genes
+    }
+
     for cblaster_cluster, scaffold, organism_name in cluster_hierarchies:
-        clinker_cluster = cblaster_cluster.to_clinker_cluster(scaffold.accession)
-        allignment = ClinkerAlignment(query=clinker_query_cluster, target=clinker_cluster)
+        clinker_cluster = cblaster_to_clinker_cluster(
+            cblaster_cluster,
+            scaffold.accession,
+            organism_name,
+        )
+        alignment = ClinkerAlignment(query=clinker_query_cluster, target=clinker_cluster)
+
         for subject in cblaster_cluster.subjects:
+            # Find the best query hit
             best_hit = max(subject.hits, key=lambda x: x.bitscore)
-            query_gene = _gene_from_clinker_cluster(clinker_query_cluster, best_hit.query)
-            subject_gene = _gene_from_clinker_cluster(clinker_cluster, best_hit.subject)
-            allignment.add_link(query_gene, subject_gene, best_hit.identity / 100, 0)
-        allignments.append(allignment)
-    return allignments
 
+            # Pull out the corresponding query/subject genes and create alignment
+            query_gene = clinker_query_cluster.get_gene(best_hit.query)
+            subject_gene = clinker_cluster.get_gene(best_hit.subject)
+            alignment.add_link(query_gene, subject_gene, best_hit.identity / 100, 0)
 
-def _gene_from_clinker_cluster(cluster, gene_label):
-    """Get a gene from a clinker.Cluster object
-    works the same as clinker.Cluster.get_gene, except that this function is
-    broken at the moment since clinker.Gene objects have no name attribute
-    anymore but label objects instead.
-    Args:
-        cluster(clinker.Cluster): a clinker.Cluster object
-        gene_label(str): the label of the clinker.Gene object that is requested
-    Returns:
-        a clinker.Gene object or None of no sutch gene exists in the cluster.
-    """
-    for locus in cluster.loci:
-        for gene in locus.genes:
-            if gene.label == gene_label:
-                return gene
+            # Save the UID of the subject to the corresponding query group
+            groups[query_gene.label].genes.append(subject_gene.uid)
 
-
-def allignments_to_clinker_global_alligner(allignments):
-    """Create a clinker.Globalaligner object from alignments
-    Args:
-        allignments (List): a list of clinker.Aligner objects
-    Returns:
-        a clinker.Globalaligner object
-    """
-    global_aligner = ClinkerGlobalaligner()
-    for allignment in allignments:
-        global_aligner.add_alignment(allignment)
-    return global_aligner
+        globaligner.add_alignment(alignment)
+    globaligner.groups = [group for group in groups.values()]
+    return globaligner
 
 
 def plot_clusters(
-        session,
-        cluster_numbers=None,
-        score_threshold=None,
-        organisms=None,
-        scaffolds=None,
-        plot_outfile=None,
-        max_clusters=50,
-        testing=False,
+    session,
+    cluster_numbers=None,
+    score_threshold=None,
+    organisms=None,
+    scaffolds=None,
+    plot_outfile=None,
+    max_clusters=50,
+    testing=False,
 ):
     """Plot Cluster objects from a Session file
     Args:
         session (string): path to a session.json file
         cluster_numbers (list): cluster numbers to include
-        score_threshold (float): minum score in order for a cluster to be included
+        score_threshold (float): minumum score in order for a cluster to be included
         organisms (list): Organism filtering regular expressions, clusters for
          these organisms are included
         scaffolds(list): clusters on these scaffolds are included
@@ -186,19 +248,26 @@ def plot_clusters(
          is served since this will crash the testing.
     """
     LOG.info("Starting generation of cluster plot with clinker.")
-    with open(session, "r") as f:
-        session = Session.from_json(f.read())
+    session = Session.from_file(session)
 
-    # filter the cluster using the filter functions from extract_clusters modue
-    cluster_hierarchies = get_sorted_cluster_hierarchies(session, cluster_numbers, score_threshold, organisms, scaffolds,
-                                                         max_clusters)
+    # Filter the cluster using filter functions from the extract_clusters module
+    cluster_hierarchies = get_sorted_cluster_hierarchies(
+        session,
+        cluster_numbers,
+        score_threshold,
+        organisms,
+        scaffolds,
+        max_clusters,
+    )
 
+    # Form the query cluster from the session query file
     clinker_query_cluster = query_to_clinker_cluster(session.params["query_file"])
 
-    allignments = clusters_to_clinker_alignments(clinker_query_cluster, cluster_hierarchies)
-    global_aligner = allignments_to_clinker_global_alligner(allignments)
+    # Create a Globaligner object containing mocked clusters/alignments/links
+    globaligner = clusters_to_clinker_globaligner(clinker_query_cluster, cluster_hierarchies)
+
     if not testing:
-        clinker_plot_clusters(global_aligner, plot_outfile, use_file_order=True)
+        clinker_plot_clusters(globaligner, plot_outfile, use_file_order=True)
     if plot_outfile:
         LOG.info(f"Plot file can be found at {plot_outfile}")
     LOG.info("Done!")
