@@ -19,7 +19,7 @@ LOG = logging.getLogger("cblaster")
 FASTA_SUFFIXES = (".fa", ".fsa", ".fna", ".fasta", ".faa")
 GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff")
 GFF_SUFFIXES = (".gtf", ".gff", ".gff3")
-EMBL_SUFFIXES = (".embl",)
+EMBL_SUFFIXES = (".embl", ".emb")
 
 
 def find_overlapping_location(feature, locations):
