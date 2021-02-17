@@ -51,9 +51,7 @@ def parse_numbers(cluster_numbers):
             else:
                 chosen_cluster_numbers.add(int(number))
         except ValueError:
-            LOG.warning(
-                f"Cannot extract cluster '{number}': number is not a valid integer"
-            )
+            LOG.warning(f"Cannot extract cluster '{number}': number is not a valid integer")
     return chosen_cluster_numbers
 
 
@@ -150,13 +148,11 @@ def create_genbanks_from_clusters(
         proteins = efetch_protein_sequences(cluster_hierarchy)
         nucleotides = efetch_nucleotide_sequence(cluster_hierarchy)
         name_attr = "name"
-
     elif session.params["mode"] == "local":
         sqlite_db = session.params["sqlite_db"]
         proteins = local_fetch_sequences(sqlite_db, cluster_hierarchy)
         nucleotides = local_fetch_nucleotide(sqlite_db, cluster_hierarchy)
         name_attr = "id"
-
     else:
         raise NotImplementedError(f"No protocol for mode {session.params['mode']}")
 
@@ -167,22 +163,19 @@ def create_genbanks_from_clusters(
         output_dir.mkdir()
 
     # Generate genbank files for all the required clusters
-    for cluster, scaffold, organism_name in cluster_hierarchy:
-        scaffold_accession = scaffold.accession
+    for cluster, scaffold, organism in cluster_hierarchy:
         cluster_proteins = {
             getattr(subject, name_attr): proteins[getattr(subject, name_attr)]
             for subject in [*cluster.subjects, *cluster.intermediate_genes]
         }
-        cluster_nucleotides = nucleotides[cluster.number]
-
         output_file = output_dir / f"{prefix}cluster{cluster.number}.gbk"
         with output_file.open("w") as fp:
             record = cluster_to_record(
                 cluster,
                 cluster_proteins,
-                cluster_nucleotides,
-                organism_name,
-                scaffold_accession,
+                nucleotides.get(cluster.number),
+                organism,
+                scaffold.accession,
                 format_,
                 session.params["require"],
             )
@@ -256,11 +249,17 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
     """
     sequences = dict()
     passed_time = 0
+
     for cluster, scaffold, org_name in cluster_hierarchy:
-        scaffold_accession = scaffold.accession
         if passed_time < MIN_TIME_BETWEEN_REQUEST:
             time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
         start_time = time.time()
+
+        LOG.info(
+            f"Querying NCBI for sequence of {scaffold.accession}"
+            f" from {cluster.intermediate_start}"
+            f" to {cluster.intermediate_end}"
+        )
         response = requests.post(
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
             params={
@@ -270,24 +269,25 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
                 "seq_stop": str(cluster.intermediate_end),
                 "strand": "1",
             },
-            files={"id": scaffold_accession},
-        )
-        LOG.info(
-            f"Querying NCBI for sequence of {scaffold_accession}"
-            f" from {cluster.intermediate_start}"
-            f" to {cluster.intermediate_end}"
+            files={"id": scaffold.accession},
         )
         LOG.debug(f"Efetch URL: {response.url}")
 
         if response.status_code != 200:
             raise requests.HTTPError(
                 f"Error fetching sequences from NCBI [code {response.status_code}]."
-                " Incorect scaffold accession?"
+                " Incorrect scaffold accession?"
             )
 
-        # only save the sequence not the fasta header
-        sequences[cluster.number] = response.text.split("\n", 1)[1].replace("\n", "")
+        # Only save the sequence not the fasta header
+        sequences[cluster.number] = (
+            response.text
+            .strip()
+            .split("\n", 1)[1]
+            .replace("\n", "")
+        )
         passed_time = time.time() - start_time
+
     return sequences
 
 
