@@ -8,11 +8,6 @@ import re
 import json
 import itertools
 from abc import ABC, abstractmethod
-from clinker.classes import (
-    Cluster as ClinkerCluster,
-    Locus as ClinkerLocus,
-    Gene as ClinkerGene
-)
 
 from cblaster.formatters import (
     binary,
@@ -386,34 +381,6 @@ class Cluster(Serializer):
         synteny_score = self.__calculate_synteny_score(query_sequence_order)
         bitscore = self.__calculate_bitscore()
         return bitscore / 10000 + len(self.subjects) + synteny_score
-
-    def to_clinker_cluster(self, scaffold_accession=""):
-        """Convert this cluster to a clinker format cluster
-
-        Args:
-            scaffold_accession (str): accession of the scaffold this cluster is located on
-        Returns:
-            A clinker.Cluster object
-        """
-        clinker_genes = []
-        for subject in self.subjects:
-            best_hit = max(subject.hits, key=lambda x: x.bitscore)
-            tooltip_dict = \
-                {"accession": subject.name, "identity": f"{best_hit.identity:.2f}", "bitscore": best_hit.bitscore,
-                 "coverage": f"{best_hit.coverage:.2f}", "e-value": best_hit.evalue if best_hit.evalue != 0 else "0.0"}
-            clinker_genes.append(ClinkerGene(label=subject.name, start=subject.start,
-                                             end=subject.end, strand=1 if subject.strand == '+' else -1,
-                                             names=tooltip_dict))
-        for gene in self.intermediate_genes:
-            tooltip_dict = {"accession": gene.name}
-            clinker_genes.append(ClinkerGene(label=gene.name, start=gene.start, end=gene.end,
-                                             strand=1 if gene.strand == '+' else -1, names=tooltip_dict))
-
-        clinker_locus = ClinkerLocus(scaffold_accession, clinker_genes, start=self.intermediate_start,
-                                     end=self.intermediate_end)
-        clinker_cluster = ClinkerCluster("Cluster {} ({:.2f} score)".format(self.number, self.score),
-                                         [clinker_locus])
-        return clinker_cluster
 
     def to_dict(self):
         return {
