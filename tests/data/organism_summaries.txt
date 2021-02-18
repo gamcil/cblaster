@@ -1,0 +1,75 @@
+
+>>
+organism1 strain_organism1
+==========================
+scaffold1
+---------
+Cluster 3 with score 4.1701:
+Query  Subject  Identity  Coverage  E-value   Bitscore  Start  End   Strand
+q1     s1       70.9      54.6      0         500.3     0      100   -     
+q1     s2       5.9       21.6      1.06e-29  100.3     0      100   -     
+q3     s5       1123.9    12.6      0.01      500.3     500    1000  +     
+q2     s3       2.9       34.6      1.02e-30  200.3     1200   6000  +     
+q4     s1       0.9       1.6       0.005     500.3     6453   8000  +     
+
+Cluster 1 with score 2.1001:
+Query  Subject  Identity  Coverage  E-value   Bitscore  Start  End  Strand
+q1     s1       70.9      54.6      0         500.3     0      100  -     
+q1     s2       5.9       21.6      1.06e-29  100.3     0      100  -     
+q1     s2       5.9       21.6      1.06e-29  100.3     0      100  -     
+q1     s1       70.9      54.6      0         500.3     0      100  -     
+>>
+organism1 strain_organism1
+==========================
+scaffold1
+---------
+Cluster 3 with score 4.1701:
+q1  s1  70.9    54.6  0         500.3  0     100   -
+q1  s2  5.9     21.6  1.06e-29  100.3  0     100   -
+q3  s5  1123.9  12.6  0.01      500.3  500   1000  +
+q2  s3  2.9     34.6  1.02e-30  200.3  1200  6000  +
+q4  s1  0.9     1.6   0.005     500.3  6453  8000  +
+
+Cluster 1 with score 2.1001:
+q1  s1  70.9  54.6  0         500.3  0  100  -
+q1  s2  5.9   21.6  1.06e-29  100.3  0  100  -
+q1  s2  5.9   21.6  1.06e-29  100.3  0  100  -
+q1  s1  70.9  54.6  0         500.3  0  100  -
+>>
+organism1 strain_organism1
+==========================
+scaffold1
+---------
+Cluster 3 with score 4.1701:
+Query____Subject____Identity____Coverage____E-value____Bitscore____Start____End____Strand
+q1____s1____70.9____54.6____0____500.3____0____100____-
+q1____s2____5.9____21.6____1.06e-29____100.3____0____100____-
+q3____s5____1123.9____12.6____0.01____500.3____500____1000____+
+q2____s3____2.9____34.6____1.02e-30____200.3____1200____6000____+
+q4____s1____0.9____1.6____0.005____500.3____6453____8000____+
+
+Cluster 1 with score 2.1001:
+Query____Subject____Identity____Coverage____E-value____Bitscore____Start____End____Strand
+q1____s1____70.9____54.6____0____500.3____0____100____-
+q1____s2____5.9____21.6____1.06e-29____100.3____0____100____-
+q1____s2____5.9____21.6____1.06e-29____100.3____0____100____-
+q1____s1____70.9____54.6____0____500.3____0____100____-
+>>
+organism1 strain_organism1
+==========================
+scaffold1
+---------
+Cluster 3 with score 4:
+Query  Subject  Identity  Coverage  E-value  Bitscore  Start  End   Strand
+q1     s1       71        55        0        500       0      100   -     
+q1     s2       6         22        1e-29    100       0      100   -     
+q3     s5       1124      13        0.01     500       500    1000  +     
+q2     s3       3         35        1e-30    200       1200   6000  +     
+q4     s1       1         2         0.005    500       6453   8000  +     
+
+Cluster 1 with score 2:
+Query  Subject  Identity  Coverage  E-value  Bitscore  Start  End  Strand
+q1     s1       71        55        0        500       0      100  -     
+q1     s2       6         22        1e-29    100       0      100  -     
+q1     s2       6         22        1e-29    100       0      100  -     
+q1     s1       71        55        0        500       0      100  -     

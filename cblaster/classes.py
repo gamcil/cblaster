@@ -397,7 +397,7 @@ class Cluster(Serializer):
         return cls(
             indices=d["indices"],
             intermediate_genes=[Subject.from_dict(d) for d in d["intermediate_genes"]],
-            subjects=subjects,
+            subjects=list(subjects),
             score=d["score"],
             start=d["start"],
             end=d["end"],
