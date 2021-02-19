@@ -255,6 +255,19 @@ class Scaffold(Serializer):
             self.clusters.append(cluster)
         self.clusters.sort(key=lambda x: x.score, reverse=True)
 
+    def remove_subject(self, subject):
+        """Safely remove a subject from a cluster by removing it from the cluster as well.
+
+        Args:
+            subject (Subject): cblaster Subject object
+        """
+        remove_index = self.subjects.index(subject)
+        for cluster in self.clusters:
+            cluster.remove_subject(subject, remove_index)
+            if len(cluster.subjects) == 0:
+                self.clusters.remove(cluster)
+        del self.subjects[remove_index]
+
     def summary(self, hide_headers=False, delimiter=None, decimals=4):
         return summarise_scaffold(
             self, decimals=decimals, hide_headers=hide_headers, delimiter=delimiter,
@@ -326,6 +339,22 @@ class Cluster(Serializer):
 
     def __hash__(self):
         return hash(id(self))
+
+    def remove_subject(self, subject, scaffold_index):
+        """Safely remove a subject from a cluster.
+
+        This is important when subjects become empty when recomputing a session with different treshholds
+
+        Args:
+            subject (Subject): cblaster Subject object
+            scaffold_index (int): the index of the subject in the scaffold it is saved in
+        """
+        remove_index = self.subjects.index(subject)
+        for index, index_value in enumerate(self.indices):
+            if index_value > scaffold_index:
+                self.indices[index] -= 1
+        del self.indices[remove_index]
+        del self.subjects[remove_index]
 
     def __calculate_synteny_score(self, query_sequence_order):
         if not query_sequence_order:
