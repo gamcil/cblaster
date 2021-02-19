@@ -11,7 +11,7 @@ FEATURES             Location/Qualifiers
                      /organism="Verrucosispora sp. MS100047"
      region          1..12860
                      /product="other"
-     CDS             1..1289
+     CDS             complement(1..1289)
                      /protein_id="AIS85730.1"
                      /translation="MVTTDCLHHHVDRLVDVVQPDHHLGCAQVAQPLPPRRRADRRHHR
                      GSAEAGELDRQPSDASGRAGDQHPTAQQWAGASQGPQGGEAHHRQGRRGGEIEPVGDPR
@@ -23,7 +23,7 @@ FEATURES             Location/Qualifiers
                      GGVDRLRAAVRALARCLLPPGPERSCRPGP"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             1492..2387
+     CDS             complement(1492..2387)
                      /protein_id="AIS85731.1"
                      /translation="MGRTARAGTQRSTGYLDRTPDPADRVRLFCFHHAGAAASTFAGWA
                      EALQPRVAVYPVQLPGRENRVREAPITDFGRLLDAVVDAVEPSLERPYALYGHSMGAAL
@@ -41,13 +41,13 @@ FEATURES             Location/Qualifiers
                      CEVVDRFAAALHRAVTSAPPDGTGRPGMR"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             3092..3252
+     CDS             complement(3092..3252)
                      /protein_id="AIS85733.1"
                      /translation="MRTDPTVFGQSDEGTVRLLRGSLPGSLRSVVTEAAALCPAQAITV
                      TGTADPPH"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             3306..4390
+     CDS             complement(3306..4390)
                      /protein_id="AIS85734.1"
                      /translation="MRLYDGRPAWLVTGHETARQVLLDAATFSSDRQHPAFPALAARFE
                      AARAVRNFIGMDPPEHTAQRRMLISGFTAKRVATLRPAITEIVDSLLDEVVRRGPGVDL
@@ -58,7 +58,7 @@ FEATURES             Location/Qualifiers
                      EELGGKEAGGVQGVQRLPVTW"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             4490..6093
+     CDS             complement(4490..6093)
                      /protein_id="AIS85735.1"
                      /translation="MSVAGLHVTYRVGRAEVFAVRGVDFHLRAGECLAIVGESGSGKST
                      VARALVGLAGPGARLRSDRLVVSGQELSRLGDREWRRIRGAQVGLVLQDALTALDPLRT
@@ -72,7 +72,7 @@ FEATURES             Location/Qualifiers
                      ALPRPGDAYAAHPEGVA"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             6099..6958
+     CDS             complement(6099..6958)
                      /protein_id="AIS85736.1"
                      /translation="MGGMTTVLTPVTAPVARARPALVLAWVGLGLLALAAAWPALLATA
                      APDTVDPASALAPISPHHPFGTDQLGRDVYSRVVYGTRMSLLIGLGATTLAVTVGALLG
@@ -82,7 +82,7 @@ FEATURES             Location/Qualifiers
                      GTGGR"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             6947..7881
+     CDS             complement(6947..7881)
                      /protein_id="AIS85737.1"
                      /translation="MSPALRWLARKLALAVLVVLGAATVAFAALHLAPGDPVRAVIGTL
                      APSDDLVAQVRADLDLDKPLATQYAHMLGGLARGDLGESYQLRRPVVEVIVADLGWTVQ
@@ -92,7 +92,7 @@ FEATURES             Location/Qualifiers
                      VVAAALFTVINLVVDLLYRVVDPRLREWAA"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             7879..9494
+     CDS             complement(7879..9494)
                      /protein_id="AIS85738.1"
                      /translation="MRTTTRSTAILLLLVAATAACGTSAAQTGDAQPTTGGALTFATAV
                      EPDCLDPAVSARDVTGVINRNIFDSLVRQAPDGSFHPWLAERWETAPDGRAYTFHLRSG
@@ -106,7 +106,7 @@ FEATURES             Location/Qualifiers
                      VHGVEFGANATPLFAGAWIAG"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             9583..10589
+     CDS             complement(9583..10589)
                      /protein_id="AIS85739.1"
                      /translation="MTDTPPVSVLDVVPVWSGSTATRALRDSVQLAVEVERLGYTRYWV
                      AEHHNTPCLATATPPVLVGALLAATSTLRVGSGGVLLPNHPPLVVAEQFGTLAALYPGR
@@ -116,7 +116,7 @@ FEATURES             Location/Qualifiers
                      QIVGGPETVRERVQRLHAETGANELMALTILPELEDRVRSYALLADAVRASIAV"
                      /cluster_role="hit_required"
                      /gene_kind="biosynthetic"
-     CDS             10658..12084
+     CDS             complement(10658..12084)
                      /protein_id="AIS85740.1"
                      /translation="MTQSPSDRIDGPLLRLLGVMVLGGVMSYFDATIINVSVETLTAHF
                      DATLGTISWVATGYLLAVAVAIPLAGWAVARFGARRVWLAALTLFLVASALCALAWDVG

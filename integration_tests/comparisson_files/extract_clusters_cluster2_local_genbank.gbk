@@ -34,7 +34,7 @@ FEATURES             Location/Qualifiers
                      ALATNRHRELIGELVQWVEEHPLHEPLREVLMVALTRAGRRAEALAAYQSTRRVLHEEL
                      GLEPGEAMRRLQLAILSADVGLVPAA"
                      /cluster_role="intermediate"
-     CDS             2621..3836
+     CDS             complement(2621..3836)
                      /protein_id="AEK75493.1"
                      /translation="MTDVQLPAFPMTRTCPHQPPEGYAALRENGPLAQVRLVGDRTAWV
                      VTDHDVARTLLVDPRLSSDRLRPDFPVLVPRMSAAKLVPLVGMDPPVHTQRRRMLIAAF
@@ -44,7 +44,7 @@ FEATURES             Location/Qualifiers
                      ADEIQRVVAEPIEVAGHVLRVGDAVYLPAAASNRDPAAFPDPDALDVSRRARHHLAFGY
                      GIHQCLGQNLARAELEVTLRALFERLPTLALAEPLSSLPVKPGGSVQGVYRLPVTW"
                      /cluster_role="hit_required"
-     CDS             2621..3836
+     CDS             complement(2621..3836)
                      /protein_id="AEK75493.1"
                      /translation="MTDVQLPAFPMTRTCPHQPPEGYAALRENGPLAQVRLVGDRTAWV
                      VTDHDVARTLLVDPRLSSDRLRPDFPVLVPRMSAAKLVPLVGMDPPVHTQRRRMLIAAF
@@ -55,7 +55,7 @@ FEATURES             Location/Qualifiers
                      GIHQCLGQNLARAELEVTLRALFERLPTLALAEPLSSLPVKPGGSVQGVYRLPVTW*A*
                      GPSGSR"
                      /cluster_role="hit_required"
-     CDS             2646..3836
+     CDS             complement(2646..3836)
                      /protein_id="AEK75493.1"
                      /translation="MTDVQLPAFPMTRTCPHQPPEGYAALRENGPLAQVRLVGDRTAWV
                      VTDHDVARTLLVDPRLSSDRLRPDFPVLVPRMSAAKLVPLVGMDPPVHTQRRRMLIAAF
@@ -65,7 +65,7 @@ FEATURES             Location/Qualifiers
                      ADEIQRVVAEPIEVAGHVLRVGDAVYLPAAASNRDPAAFPDPDALDVSRRARHHLAFGY
                      GIHQCLGQNLARAELEVTLRALFERLPTLALAEPLSSLPVKPGGSVQGVYRLPVTW"
                      /cluster_role="hit_required"
-     CDS             3927..6596
+     CDS             complement(3927..6596)
                      /protein_id="AEK75494.1"
                      /translation="MRDTAEHRIGTSGRHTPQAQATPADRLSQALARARSGRGGVVELV
                      GEPGIGKTQALTELTRLARVAGIPIAAGRCTEVTPDSPLTLAAAVTGATGSPGELADAL
@@ -92,7 +92,7 @@ FEATURES             Location/Qualifiers
                      EARLALGGHQEVVDLLTAVLADHPLHENFHRQLMVALVRAGRWTDALRAYQHTHRLLRE
                      ELGLEPDRSLRELHHWILRAYRRREVAQAC"
                      /cluster_role="hit"
-     CDS             8175..10034
+     CDS             complement(8175..10034)
                      /protein_id="AEK75496.1"
                      /translation="MALRRRHAFCCPRRGELPETTRPRGPRMTLAHERADGRSLVSRHP
                      DRPDLPLSLADAAGNRVDYSYDDGGRLLRAYSRAFDRDIETRTYHPDGSLASATDGRGA
@@ -342,7 +342,7 @@ FEATURES             Location/Qualifiers
                      TPESVGPDDNFVEIGLSSFTALEVRNRLCEGTGLELSPLALFEHPTPAALAEHLRAVRA
                      ART"
                      /cluster_role="hit"
-     CDS             46457..47149
+     CDS             complement(46457..47149)
                      /protein_id="AEK75505.1"
                      /translation="MTERDTRNAPRGRLDKRQAIIAAALRVFAREGYGQASLDTIAAEA
                      GVAKPTIYNHLGGKENLFRHVLAEIAARSNAKTLAALQTFPTDPQELRDHLNTVGLRLA
@@ -430,7 +430,7 @@ FEATURES             Location/Qualifiers
                      /translation="MCRVSNAFRSPGDPVHVNIDAARCVGAGQCVRTDPTVFGQSDEGT
                      VRLLRGSLPGSLRSVVTEAAALCPAQAITVTGTADPPH"
                      /cluster_role="hit"
-     CDS             56230..56808
+     CDS             complement(56230..56808)
                      /protein_id="AEK75514.1"
                      /translation="MPTVLSVSGSPSATSRTAGLLRHLDRQLVADGHEVIPLDVRTLPA
                      HVLVGADPRHPAITGVAALVAEADGLVIGTPIYKAAYSGLLKCLFDLLPQYALAGKTVL
@@ -446,7 +446,7 @@ FEATURES             Location/Qualifiers
                      FRLRVLPGGHLFHLRSGDRLRADIAACLGELTSLPGGRPDGGASVDVEDRLAGHAAAEQ
                      RLDRVVDALPGVPPADR"
                      /cluster_role="hit"
-     CDS             57728..58636
+     CDS             complement(57728..58636)
                      /protein_id="AEK75516.1"
                      /translation="MQALIAAPDTAEGHRLAEVPEPVPTPGQLLVEVRQSSVNFGEARF
                      RAGMPAGTVLGYDAAGYVVRAAEDGSGPAVGDRVVAFGPGTWAERAVFDVDSVARIPDG

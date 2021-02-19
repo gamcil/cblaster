@@ -328,7 +328,9 @@ def cluster_to_record(
         description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}",
     )
     source_feature = SeqFeature(
-        FeatureLocation(start=cluster.start - cluster.intermediate_start, end=cluster.end - cluster.intermediate_start),
+        FeatureLocation(
+            start=cluster.start - cluster.intermediate_start,
+            end=cluster.end - cluster.intermediate_start),
         type="SOURCE",
         qualifiers={"organism": organism_name},
     )
@@ -375,6 +377,7 @@ def cluster_to_record(
         location = FeatureLocation(
             start=subject.start - cluster.intermediate_start,
             end=subject.end - cluster.intermediate_start,
+            strand=1 if subject.strand == "+" else -1,
         )
         cds_feature = SeqFeature(location, type="CDS", qualifiers=qualifiers)
         record.features.append(cds_feature)
