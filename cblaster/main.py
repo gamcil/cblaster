@@ -430,6 +430,7 @@ def main():
             indent=args.indent,
             recompute=args.recompute,
             plot=args.plot,
+            max_plot_clusters=args.max_plot_clusters,
             blast_file=args.blast_file,
             ipg_file=args.ipg_file,
             hitlist_size=args.hitlist_size,
