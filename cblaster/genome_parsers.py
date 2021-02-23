@@ -39,6 +39,8 @@ def find_overlapping_location(feature, locations):
 
 def find_gene_name(qualifiers):
     """Finds a gene name in a dictionary of feature qualifiers."""
+    if not isinstance(qualifiers, dict):
+        raise TypeError("Expected qualifier dictionary")
     for tag in ["locus_tag", "protein_id", "id", "gene", "name", "label"]:
         if tag in qualifiers:
             return qualifiers[tag]
@@ -73,6 +75,40 @@ def find_regions(directives):
     return regions
 
 
+def parse_cds_features(features, record_start):
+    cds = []
+    gene = []
+    for feature in features:
+        feature = biopython_integration.to_seqfeature(feature)
+        feature.location = FeatureLocation(
+            feature.location.start - record_start,
+            feature.location.end - record_start,
+            strand=feature.location.strand
+        )
+        if feature.type == "CDS":
+            cds.append(feature)
+        else:
+            gene.append(feature)
+    return cds, gene
+
+
+def merge_cds_features(features):
+    # Merge CDS features into singular SeqFeature objects, add them to record
+    features.sort(key=lambda f: f.location.start)
+    merged, features = features[:1], features[1:]
+    for feature in features:
+        if merged[-1].qualifiers["ID"][0] == feature.qualifiers["ID"][0]:
+            if feature.location.strand == 1:
+                merged[-1].location += feature.location
+            else:
+                # Reverse strand locations must be in biological order
+                old, new = merged[-1].location, feature.location
+                merged[-1].location = new + old
+        else:
+            merged.append(feature)
+    return merged
+
+
 def parse_gff(path):
     """Parses GFF and corresponding FASTA using GFFutils.
 
@@ -98,54 +134,21 @@ def parse_gff(path):
     )
     regions = find_regions(gff.directives)
 
-    # Find features for each record in the FASTA file
     for record in fasta:
-        try:
-            record_start, _ = regions[record.id]
-            record_start -= 1
-        except KeyError:
-            record_start = 0
-
         # Normalise Feature location based on ##sequence-region directive.
         # Necessary for extracted GFF3 files that still store coordinates
         # relative to the entire region, not to the extracted FASTA.
         # If no sequence-region directive is found, assumes 1 (i.e. sequence start).
-        cds_features = []
-        for feature in gff.region(seqid=record.id, featuretype=["gene", "CDS"]):
-            feature = biopython_integration.to_seqfeature(feature)
-            feature.location = FeatureLocation(
-                feature.location.start - record_start,
-                feature.location.end - record_start,
-                strand=feature.location.strand
-            )
-            if feature.type == "CDS":
-                cds_features.append(feature)
-            else:
-                record.features.append(feature)
-
-        if not cds_features:
+        cds, gene = parse_cds_features(
+            gff.region(seqid=record.id, featuretype=["gene", "CDS"]),
+            regions[record.id][0] - 1 if record.id in regions else 0
+        )
+        if not cds:
             raise ValueError(f"Found no CDS features in {record.id} [{path}]")
-
-        # Merge CDS features into singular SeqFeature objects, add them to record
-        previous = None
-        for feature in sorted(cds_features, key=lambda f: f.location.start):
-            seqid = feature.qualifiers["ID"][0]
-            same_feature = previous == seqid
-            if not previous:
-                previous = seqid
-            if same_feature:
-                if feature.location.strand == 1:
-                    record.features[-1].location += feature.location
-                else:
-                    # Reverse strand locations must be in biological order
-                    old, new = record.features[-1].location, feature.location
-                    record.features[-1].location = new + old
-            else:
-                record.features.append(feature)
-                previous = seqid
-
-        # Sort, then generate insertion tuples like with other formats
-        record.features.sort(key=lambda f: f.location.start)
+        record.features = sorted(
+            [*gene, *merge_cds_features(cds)],
+            key=lambda f: f.location.start
+        )
 
     return fasta
 
