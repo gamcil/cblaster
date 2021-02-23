@@ -88,7 +88,7 @@ def efetch_sequences(headers):
     Returns:
         a dictionary of sequences keyed on header id
     """
-    LOG.info("Querying NCBI for sequences of: %s", headers)
+    LOG.info("Querying NCBI for %d sequences.", len(headers))
     sequence_records = {}
     passed_time = 0
 
