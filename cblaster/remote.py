@@ -306,6 +306,7 @@ def search(
     min_coverage=0.5,
     max_evalue=0.01,
     blast_file=None,
+    hitlist_size=500,
     **kwargs,
 ):
     """Perform a remote BLAST search via the NCBI's BLAST API.
@@ -325,6 +326,7 @@ def search(
         min_coverage (float): Minimum percent query coverage
         max_evalue (float): Maximum e-value
         blast_file (str): Path to file blast results are written to
+        hitlist_size (int): Number of database sequences to keep
     Returns:
         list: Hit objects corresponding to criteria passing BLAST hits
     """
@@ -336,6 +338,7 @@ def search(
             sequences=sequences,
             query_file=query_file,
             query_ids=query_ids,
+            hitlist_size=hitlist_size,
             **kwargs
         )
 
@@ -349,7 +352,7 @@ def search(
     poll(rid)
 
     LOG.info("Retrieving results for search %s", rid)
-    results = retrieve(rid)
+    results = retrieve(rid, hitlist_size=hitlist_size)
 
     if blast_file:
         LOG.info("Writing BLAST hit table to %s", blast_file)
