@@ -149,7 +149,7 @@ def test_recompute_session_local_search(tmpdir):
                         ["binary.txt", "binary_local_gbk_recompute.txt"]], tmpdir)
 
 
-def test_load_remote_session(tmpdir):
+def test_load_remote_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s " \
         f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json" \
@@ -163,7 +163,7 @@ def test_load_remote_session(tmpdir):
                         ["binary.txt", "binary_remote_fa.txt"]], tmpdir)
 
 
-def test_recompute_remote_session(tmpdir):
+def test_recompute_remote_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s " \
         f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json" \
