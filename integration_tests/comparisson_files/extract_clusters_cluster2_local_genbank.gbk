@@ -1,5 +1,6 @@
 LOCUS       JF752342.1             59319 bp    DNA              UNK 01-JAN-1980
-DEFINITION  Genes for cluster 2 on scaffold JF752342.1.
+DEFINITION  Genes for cluster 2 on scaffold JF752342.1 of species
+            database_creation_file.
 ACCESSION   JF752342
 VERSION     JF752342.1
 KEYWORDS    .
