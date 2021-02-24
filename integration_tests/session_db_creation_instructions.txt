@@ -5,7 +5,9 @@ Best way is to use the command line with 'pytest -s integration_tests.py' you ca
 Integration tests file preparation:
 - database creation: cblaster makedb database_creation_file.embl database_creation_file.gb -n test_database_windows -->
   based on the operating system the db is made for add windows, linux or darwin respectively. The files for creation of
-  the database can be found in the folder integration_tests/database_creation_files
+  the database can be found in the folder integration_tests/database_creation_files. Make sure to use diamond provided
+  in the diamond_files folder. An easy way to do this is by returning the path to the diamond program in the
+  diamond_files folder in the helpers.py get_program_path function at the start of the function.
 - local session creation: the embl and genbank session files are the session files resulting from running the first and
   second local_search tests
 - remote session is created by taking the test_query.fa and submitting that to NCBI webserver to get an RID. Then the
