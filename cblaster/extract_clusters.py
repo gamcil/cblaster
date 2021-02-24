@@ -325,7 +325,7 @@ def cluster_to_record(
         id=scaffold_accession,
         name=scaffold_accession,
         annotations={"molecule_type": "DNA"},
-        description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession}",
+        description=f"Genes for cluster {cluster.number} on scaffold {scaffold_accession} of species {organism_name}",
     )
     source_feature = SeqFeature(
         FeatureLocation(
