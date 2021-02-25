@@ -70,7 +70,7 @@ def get_cell(query, cluster, cluster_id):
         for hit in subject.hits
         if hit.query == query
     ]
-    value = max(hit["identity"] for hit in hits) if hits else 0
+    value = max(hit["identity"] or hit["bitscore"] for hit in hits) if hits else 0
     cell = {
         "query": query,
         "cluster": cluster_id,
