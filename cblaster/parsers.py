@@ -282,12 +282,10 @@ def add_searching_group(search):
         default=["nr"],
         nargs="+",
         type=lambda x: full_database_path(x, os.R_OK),
-        help="Database to be searched. This should be either a path to a local"
-        " DIAMOND database (if 'local' is passed to --mode) or a valid NCBI"
-        " database name (def. nr)"
-        " For the hmm search mode a path to a local Fasta or genbanck database"
-        " is required",
-
+        help="Database to be searched. Remote search mode: NCBI database name (def."
+        " 'nr'); local search mode: path to DIAMOND database; HMM search mode:"
+        " path to FASTA file. In local/hmm/combined modes, must have cblaster"
+        " database in same location with same name and .sqlite3 extension."
     )
     group.add_argument(
         "-cp",
@@ -299,22 +297,23 @@ def add_searching_group(search):
     group.add_argument(
         "-pfam",
         "--database_pfam",
-        help="Path to Pfam database, if not present it will save db there"
-        " This option is required when running hmm or combi search mode",
+        help="Path to Pfam database. If not present, the latest version of the"
+        " Pfam database will be downloaded. This option is required when running"
+        " HMM or combi search modes.",
     )
     group.add_argument(
         "-eq",
         "--entrez_query",
         help="An NCBI Entrez search term for pre-search filtering of an NCBI database"
-             " when using command line BLASTp (i.e. only used if 'remote' is passed to"
-             ' --mode); e.g. "Aspergillus"[organism]',
+        " when using command line BLASTp (i.e. only used if 'remote' is passed to"
+        ' --mode); e.g. "Aspergillus"[organism]',
     )
     group.add_argument(
         "--rid",
         help="Request Identifier (RID) for a web BLAST search. This is only used"
-             " if 'remote' is passed to --mode. Useful if you have previously run a web BLAST"
-             " search and want to directly retrieve those results instead of running a new"
-             " search.",
+        " if 'remote' is passed to --mode. Useful if you have previously run a web BLAST"
+        " search and want to directly retrieve those results instead of running a new"
+        " search.",
     )
     group.add_argument(
         "-s",
