@@ -222,9 +222,10 @@ def cblaster(
 
         if mode in ("hmm", "combi_local", "combi_remote"):
             results = hmm_search.perform_hmmer(
-                database=databases[0],
+                fasta=databases[0],
                 query_profiles=query_profiles,
-                database_pfam=database_pfam,
+                pfam=database_pfam,
+                session=session
             )
             LOG.info(
                 "Found %i hits meeting score thresholds for hmm search", len(results)
