@@ -4,15 +4,9 @@
 Hmmfetch and hmmsearch implementation
 """
 
-import io
-import os
 import gzip
 import subprocess
-import urllib.request
-import urllib.error
 import logging
-
-import requests
 
 from datetime import datetime
 from ftplib import FTP
