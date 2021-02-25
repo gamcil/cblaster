@@ -568,8 +568,8 @@ class Hit(Serializer):
         return [
             self.query,
             self.subject,
-            f"{round(self.identity, decimals):g}",
-            f"{round(self.coverage, decimals):g}",
+            f"{round(self.identity, decimals):g}" if self.identity else "-",
+            f"{round(self.coverage, decimals):g}" if self.coverage else "-",
             f"{self.evalue:.{decimals}g}",
             f"{round(self.bitscore, decimals):g}",
         ]
