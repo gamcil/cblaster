@@ -17,6 +17,14 @@ MAX_REQUEST_SIZE = 500
 MIN_TIME_BETWEEN_REQUEST = 0.34  # seconds
 
 
+def find_sqlite_db(path):
+    sqlite_db = Path(path).with_suffix(".sqlite3")
+    if not sqlite_db.exists():
+        LOG.error("Could not find matching SQlite3 database, exiting")
+        raise SystemExit
+    return sqlite_db
+
+
 def get_program_path(aliases):
     """Get programs path given a list of program names.
 

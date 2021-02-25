@@ -238,6 +238,7 @@ def cblaster(
                 "Found %i hits meeting score thresholds for hmm search", len(results)
             )
             LOG.info("Fetching genomic context of hits")
+            sqlite_db = helpers.find_sqlite_db(databases[0])
             organisms.extend(
                 get_context(
                     results,
@@ -260,10 +261,7 @@ def cblaster(
 
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
-            sqlite_db = Path(databases[0]).with_suffix(".sqlite3")
-            if not sqlite_db.exists():
-                LOG.error("Could not find matching SQlite3 database, exiting")
-                raise SystemExit
+            sqlite_db = helpers.find_sqlite_db(databases[0])
             results = local.search(
                 databases[0],
                 sequences=session.sequences,
