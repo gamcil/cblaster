@@ -444,6 +444,8 @@ def filter_session(
                         and hit.evalue < max_evalue
                     )
                 ]
+                if len(subject.hits) == 0:
+                    scaffold.remove_subject(subject)
             clusters = find_clusters(
                 scaffold.subjects,
                 gap=gap,
@@ -452,6 +454,7 @@ def filter_session(
                 unique=unique,
             )
             scaffold.clusters = []
+
             scaffold.add_clusters(clusters, query_sequence_order=session.queries)
         deduplicate(organism)
 

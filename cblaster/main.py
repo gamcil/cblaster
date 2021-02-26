@@ -190,6 +190,10 @@ def cblaster(
 
             if recompute is not True:
                 LOG.info("Writing recomputed session to %s", recompute)
+                session.params["min_identity"] = min_identity
+                session.params["min_coverage"] = min_coverage
+                session.params["max_evalue"] = max_evalue
+                session.params["require"] = require
                 with open(recompute, "w") as fp:
                     session.to_json(fp, indent=indent)
     else:
