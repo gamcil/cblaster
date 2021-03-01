@@ -225,6 +225,7 @@ def cblaster(
         organisms = []
 
         if mode in ("hmm", "combi_local", "combi_remote"):
+            sqlite_db = Path(databases[0]).with_suffix(".sqlite3")
             results = hmm_search.perform_hmmer(
                 database=databases[0],
                 query_profiles=query_profiles,
