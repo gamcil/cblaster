@@ -150,7 +150,6 @@ def add_input_group(search):
         "--query_profiles",
         nargs="+",
         help="A collection of valid Pfam profile identifiers to be searched "
-             "Or .hmm profile files",
     )
 
 
