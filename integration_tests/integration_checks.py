@@ -177,8 +177,15 @@ def test_recompute_remote_session(tmpdir):
                         ["binary.txt", "binary_remote_fa_recompute.txt"]], tmpdir)
 
 
-def test_search_hmm_commands(tmpdir):
-    pass
+def test_search_hmm(tmpdir):
+    command = \
+        f"cblaster search -m hmm -qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta " \
+        f"- pfam {TEST_FILE_DIR} -o {str(tmpdir.join('summary.txt'))} -s {str(tmpdir.join('session.json'))} " \
+        f"-b {str(tmpdir.join('binary.txt'))} -p {str(tmpdir.join('plot.html'))}"
+    return_code, sdterr, stdout = run_command(command)
+    assert return_code == 0
+    expected_files = {"binary.txt", "session.json", "plot.html", "summary.txt"}
+    confirm_files_present(expected_files, tmpdir)
 
 
 def test_embl_gbk_makedb(tmpdir):
