@@ -49,7 +49,7 @@ def test_diamond(monkeypatch):
         return "diamond"
 
     def mock_run(command, **kwargs):
-        assert command == [
+        correct = [
             "diamond",
             "blastp",
             "--query",
@@ -75,43 +75,35 @@ def test_diamond(monkeypatch):
             "--max-hsps",
             "1",
         ]
+        assert correct == command
         return subprocess.CompletedProcess(
-            args=command, stdout=b"line1\nline2\nline3", returncode=1
+            args=command, stdout=b"line1\nline2\nline3", returncode=0
         )
 
     monkeypatch.setattr(helpers, "get_program_path", mock_path)
     monkeypatch.setattr(subprocess, "run", mock_run)
 
-    assert local.diamond("fasta", "database") == ["line1", "line2", "line3"]
+    assert local.diamond("fasta", "database", cpus=1) == ["line1", "line2", "line3"]
 
 
 def test_search_ids(monkeypatch):
-    def mock_efetch(ids):
+    def mock_sequences(query_ids):
         return {"SEQ1": "ABCDEF", "SEQ2": "ABCDEF", "SEQ3": "ABCDEF"}
 
     def mock_search(file, db, **kwargs):
         with open(file) as handle:
             text = handle.read()
-        assert text == ">SEQ1\nABCDEF\n>SEQ2\nABCDEF\n>SEQ3\nABCDEF\n"
+        assert text == ">SEQ1\nABCDEF\n>SEQ2\nABCDEF\n>SEQ3\nABCDEF"
 
-    monkeypatch.setattr(helpers, "efetch_sequences", mock_efetch)
-    monkeypatch.setattr(local, "_search_file", mock_search)
+    def mock_parse(table):
+        return "results"
 
-    local._search_ids(["SEQ1", "SEQ2", "SEQ3"], "database")
+    monkeypatch.setattr(helpers, "get_sequences", mock_sequences)
+    monkeypatch.setattr(local, "diamond", mock_search)
+    monkeypatch.setattr(local, "parse", mock_parse)
+    local.search("database", query_ids=["SEQ1", "SEQ2", "SEQ3"])
 
 
 def test_search_no_input():
     with pytest.raises(ValueError):
         local.search(database="database")
-
-
-def test_search_query_ids(mocker):
-    mocker.patch("cblaster.local._search_ids")
-    local.search("database", query_ids=["test"])
-    local._search_ids.assert_called_once_with(["test"], "database")
-
-
-def test_search_query_files(mocker):
-    mocker.patch("cblaster.local._search_file")
-    local.search("database", query_file="test")
-    local._search_file.assert_called_once_with("test", "database")
