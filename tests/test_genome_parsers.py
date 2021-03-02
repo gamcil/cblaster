@@ -102,9 +102,12 @@ def test_find_regions(directives, result):
 
 def test_find_files(tmp_path):
     """find_files correctly parses directory for valid file paths"""
+    directory = tmp_path / "folder"
+    directory.mkdir()
+
     # Set up directory structure
     # Folder with 2 valid files, 1 invalid
-    one = tmp_path / "1"
+    one = directory / "1"
     one.mkdir()
     gbk = one / "file1.gbk"
     gbk.write_text("test")
@@ -113,15 +116,15 @@ def test_find_files(tmp_path):
     (one / "file2.invalid").write_text("test")
 
     # Empty folder
-    two = tmp_path / "2"
+    two = directory / "2"
     two.mkdir()
 
     # Valid file in root of given path
-    base = tmp_path / "file4.gbk"
+    base = directory / "file4.gbk"
     base.write_text("test")
 
-    assert gp.find_files([tmp_path], recurse=True) == [gbk, gff, base]
-    assert gp.find_files([tmp_path], recurse=False) == [base]
+    assert gp.find_files([directory], recurse=True) == [gbk, gff, base]
+    assert gp.find_files([directory], recurse=False) == [base]
 
 
 def test_parse_file_valid(tmp_path):
