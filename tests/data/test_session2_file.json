@@ -1,1 +1,158 @@
-{"queries": ["q1", "q2"], "sequences": {"q1": "SQMESEQVENCE", "q2": "SQMEOTHERSEQVENCE"}, "params": {"dummy1": 1}, "organisms": [{"name": "organism2", "strain": null, "scaffolds": [{"accession": "scaffold1", "subjects": [{"hits": [{"query": "q1", "subject": "s1", "identity": 70.9, "coverage": 54.6, "evalue": 0.0, "bitscore": 500.3}, {"query": "q1", "subject": "s2", "identity": 5.9, "coverage": 21.6, "evalue": 1.06e-29, "bitscore": 100.3}], "name": "subject1", "ipg": "ipg1", "start": 0, "end": 100, "strand": "-"}, {"hits": [{"query": "q1", "subject": "s2", "identity": 5.9, "coverage": 21.6, "evalue": 1.06e-29, "bitscore": 100.3}, {"query": "q1", "subject": "s1", "identity": 70.9, "coverage": 54.6, "evalue": 0.0, "bitscore": 500.3}], "name": "subject1", "ipg": "ipg1", "start": 0, "end": 100, "strand": "-"}, {"hits": [{"query": "q2", "subject": "s3", "identity": 2.9, "coverage": 34.6, "evalue": 1.02e-30, "bitscore": 200.3}], "name": "subject2", "ipg": "ipg2", "start": 1200, "end": 6000, "strand": "+"}, {"hits": [{"query": "q3", "subject": "s5", "identity": 1123.9, "coverage": 12.6, "evalue": 0.01, "bitscore": 500.3}], "name": "subject3", "ipg": "ipg3", "start": 500, "end": 1000, "strand": "+"}, {"hits": [{"query": "q4", "subject": "s1", "identity": 0.9, "coverage": 1.6, "evalue": 0.005, "bitscore": 500.3}], "name": "subject4", "ipg": "ipg4", "start": 6453, "end": 8000, "strand": "+"}], "clusters": [{"indices": [0, 2, 3, 4], "intermediate_genes": [], "score": 4.17012, "start": 0, "end": 8000, "number": 1}, {"indices": [0, 1], "intermediate_genes": [], "score": 2.10006, "start": 0, "end": 100, "number": 2}]}]}]}
+{
+  "queries": [
+    "q1",
+    "q2"
+  ],
+  "sequences": {
+    "q1": "SQMESEQVENCE",
+    "q2": "SQMEOTHERSEQVENCE"
+  },
+  "params": {
+    "dummy1": 1
+  },
+  "organisms": [
+    {
+      "name": "organism2",
+      "strain": null,
+      "scaffolds": [
+        {
+          "accession": "scaffold1",
+          "subjects": [
+            {
+              "hits": [
+                {
+                  "query": "q1",
+                  "subject": "s1",
+                  "identity": 70.9,
+                  "coverage": 54.6,
+                  "evalue": 0.0,
+                  "bitscore": 500.3
+                },
+                {
+                  "query": "q1",
+                  "subject": "s2",
+                  "identity": 5.9,
+                  "coverage": 21.6,
+                  "evalue": 1.06e-29,
+                  "bitscore": 100.3
+                }
+              ],
+							"id": "id1",
+              "name": "subject1",
+              "ipg": "ipg1",
+              "start": 0,
+              "end": 100,
+              "strand": "-"
+            },
+            {
+              "hits": [
+                {
+                  "query": "q1",
+                  "subject": "s2",
+                  "identity": 5.9,
+                  "coverage": 21.6,
+                  "evalue": 1.06e-29,
+                  "bitscore": 100.3
+                },
+                {
+                  "query": "q1",
+                  "subject": "s1",
+                  "identity": 70.9,
+                  "coverage": 54.6,
+                  "evalue": 0.0,
+                  "bitscore": 500.3
+                }
+              ],
+							"id": "id1",
+              "name": "subject1",
+              "ipg": "ipg1",
+              "start": 0,
+              "end": 100,
+              "strand": "-"
+            },
+            {
+              "hits": [
+                {
+                  "query": "q2",
+                  "subject": "s3",
+                  "identity": 2.9,
+                  "coverage": 34.6,
+                  "evalue": 1.02e-30,
+                  "bitscore": 200.3
+                }
+              ],
+							"id": "id2",
+              "name": "subject2",
+              "ipg": "ipg2",
+              "start": 1200,
+              "end": 6000,
+              "strand": "+"
+            },
+            {
+              "hits": [
+                {
+                  "query": "q3",
+                  "subject": "s5",
+                  "identity": 1123.9,
+                  "coverage": 12.6,
+                  "evalue": 0.01,
+                  "bitscore": 500.3
+                }
+              ],
+							"id": "id3",
+              "name": "subject3",
+              "ipg": "ipg3",
+              "start": 500,
+              "end": 1000,
+              "strand": "+"
+            },
+            {
+              "hits": [
+                {
+                  "query": "q4",
+                  "subject": "s1",
+                  "identity": 0.9,
+                  "coverage": 1.6,
+                  "evalue": 0.005,
+                  "bitscore": 500.3
+                }
+              ],
+							"id": "id4",
+              "name": "subject4",
+              "ipg": "ipg4",
+              "start": 6453,
+              "end": 8000,
+              "strand": "+"
+            }
+          ],
+          "clusters": [
+            {
+              "indices": [
+                0,
+                2,
+                3,
+                4
+              ],
+              "intermediate_genes": [],
+              "score": 4.17012,
+              "start": 0,
+              "end": 8000,
+              "number": 1
+            },
+            {
+              "indices": [
+                0,
+                1
+              ],
+              "intermediate_genes": [],
+              "score": 2.10006,
+              "start": 0,
+              "end": 100,
+              "number": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
