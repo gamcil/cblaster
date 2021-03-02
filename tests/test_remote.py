@@ -5,31 +5,15 @@ Test suite for remote module
 """
 
 import pytest
+import requests_mock
 
 from pathlib import Path
 
-import requests_mock
 
-from cblaster import remote
+from cblaster import remote, helpers
 
 
 TEST_DIR = Path(__file__).resolve().parent
-
-
-def test_prepare_input_file():
-    file = TEST_DIR / "test.faa"
-    assert remote._prepare_input(query_file=file) == file.read_text()
-
-
-def test_prepare_input_ids():
-    assert remote._prepare_input(query_ids=["SEQ1", "SEQ2", "SEQ3"]) == (
-        "SEQ1\nSEQ2\nSEQ3"
-    )
-
-
-def test_prepare_input_none():
-    with pytest.raises(ValueError):
-        remote._prepare_input()
 
 
 def test_start_no_input():
@@ -43,14 +27,22 @@ def start_response():
     return (TEST_DIR / "start_response.html").read_text()
 
 
-def test_start(start_response):
+def test_start(start_response, monkeypatch):
+    def mock_sequences(query_file, query_ids):
+        return {'seq1': 'TEST', 'seq2': 'TEST'}
+
+    monkeypatch.setattr(helpers, "get_sequences", mock_sequences)
+
     with requests_mock.Mocker() as mock:
         mock.post(remote.BLAST_API_URL, text=start_response)
 
         # Ensure RID/RTOE is returned
-        assert remote.start(
-            query_ids=["seq1", "seq2"], entrez_query="Aspergillus[ORGN]"
-        ) == ("VCZM3MWB014", 18)
+        result = remote.start(
+            query_ids=["seq1", "seq2"],
+            entrez_query="Aspergillus[ORGN]"
+        )
+
+        assert result == ("VCZM3MWB014", 18)
 
         # Check correct request URL
         assert mock.request_history[0].url == (
@@ -62,9 +54,9 @@ def test_start(start_response):
             "&EXPECT=10"
             "&GAPCOSTS=11+1"
             "&MATRIX=BLOSUM62"
-            "&HITLIST_SIZE=500"
-            "&ALIGNMENTS=500"
-            "&DESCRIPTIONS=500"
+            "&HITLIST_SIZE=5000"
+            "&ALIGNMENTS=5000"
+            "&DESCRIPTIONS=5000"
             "&WORD_SIZE=6"
             "&COMPOSITION_BASED_STATISTICS=2"
             "&ENTREZ_QUERY=Aspergillus%5BORGN%5D"
@@ -72,7 +64,12 @@ def test_start(start_response):
         )
 
 
-def test_start_blastn_options(start_response):
+def test_start_blastn_options(start_response, monkeypatch):
+    def mock_sequences(query_file, query_ids):
+        return {'seq1': 'TEST', 'seq2': 'TEST'}
+
+    monkeypatch.setattr(helpers, "get_sequences", mock_sequences)
+
     with requests_mock.Mocker() as mock:
         mock.post(remote.BLAST_API_URL, text=start_response)
 
@@ -151,9 +148,9 @@ def test_retrieve(retrieve_response):
             "&RID=RID"
             "&FORMAT_TYPE=Tabular"
             "&FORMAT_OBJECT=Alignment"
-            "&HITLIST_SIZE=500"
-            "&ALIGNMENTS=500"
-            "&DESCRIPTIONS=500"
+            "&HITLIST_SIZE=5000"
+            "&ALIGNMENTS=5000"
+            "&DESCRIPTIONS=5000"
             "&NCBI_GI=F"
         )
 

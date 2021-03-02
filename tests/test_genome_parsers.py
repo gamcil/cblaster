@@ -43,16 +43,16 @@ def test_find_gene_name(qualifiers, result):
         assert gp.find_gene_name(qualifiers) == result
 
 
-def test_find_fasta(tmpdir):
-    gff = tmpdir / "test.gff"
+def test_find_fasta(tmp_path):
+    gff = tmp_path / "test.gff"
     assert gp.find_fasta(gff) is None
 
-    bad = tmpdir / "test.blah"
-    bad.write("test")
+    bad = tmp_path / "test.blah"
+    bad.write_text("test")
     assert gp.find_fasta(gff) is None
 
-    fasta = tmpdir / "test.fasta"
-    fasta.write("test")
+    fasta = tmp_path / "test.fasta"
+    fasta.write_text("test")
     assert gp.find_fasta(gff) == fasta
 
 
@@ -68,21 +68,21 @@ def test_parse_fasta_str():
     assert exp.seq == srs[0].seq
 
 
-def test_parse_fasta(tmpdir):
+def test_parse_fasta(tmp_path):
     exp = SeqRecord("ACGTACGT", id="Testing")
 
     # Does not exist
     with pytest.raises(FileNotFoundError):
-        gp.parse_fasta(tmpdir / "doesntexist")
+        gp.parse_fasta(tmp_path / "doesntexist")
 
     # Invalid FASTA
-    bad = tmpdir / "fasta.fa"
-    bad.write("invalid")
+    bad = tmp_path / "fasta.fa"
+    bad.write_text("invalid")
     assert gp.parse_fasta(bad) == []
 
     # Valid FASTA
-    good = tmpdir / "fasta.fa"
-    good.write(">Testing\nACGTACGT")
+    good = tmp_path / "fasta.fa"
+    good.write_text(">Testing\nACGTACGT")
     srs = gp.parse_fasta(good)
     assert exp.id == srs[0].id
     assert exp.seq == srs[0].seq
@@ -100,57 +100,60 @@ def test_find_regions(directives, result):
     assert gp.find_regions(directives) == result
 
 
-def test_find_files(tmpdir):
+def test_find_files(tmp_path):
     """find_files correctly parses directory for valid file paths"""
+    directory = tmp_path / "folder"
+    directory.mkdir()
+
     # Set up directory structure
     # Folder with 2 valid files, 1 invalid
-    one = tmpdir / "1"
+    one = directory / "1"
     one.mkdir()
     gbk = one / "file1.gbk"
-    gbk.write("test")
+    gbk.write_text("test")
     gff = one / "file2.gff"
-    gff.write("test")
-    (one / "file2.invalid").write("test")
+    gff.write_text("test")
+    (one / "file2.invalid").write_text("test")
 
     # Empty folder
-    two = tmpdir / "2"
+    two = directory / "2"
     two.mkdir()
 
     # Valid file in root of given path
-    base = tmpdir / "file4.gbk"
-    base.write("test")
+    base = directory / "file4.gbk"
+    base.write_text("test")
 
-    assert gp.find_files([tmpdir]) == [gbk, gff, base]
-    assert gp.find_files([tmpdir], recurse=False) == [base]
+    assert gp.find_files([directory], recurse=True) == [gbk, gff, base]
+    assert gp.find_files([directory], recurse=False) == [base]
 
 
-def test_parse_file_valid(tmpdir):
+def test_parse_file_valid(tmp_path):
     """Files with valid extensions parsed correctly"""
     paths = [
-        tmpdir / "test.gbk",
-        tmpdir / "test.fasta",
-        tmpdir / "test.embl"
+        tmp_path / "test.gbk",
+        tmp_path / "test.fasta",
+        tmp_path / "test.embl"
     ]
     for path in paths:
-        path.write("content")
+        path.write_text("content")
         assert gp.parse_file(path) == dict(name="test", records=[])
 
 
-def test_parse_file_gff(tmpdir):
+def test_parse_file_gff(tmp_path):
     """GFF files are handled correctly with/without FASTA files"""
-    gff = tmpdir / "test.gff"
-    gff.write("content")
+    gff = tmp_path / "test.gff"
+    gff.write_text("content")
     with pytest.raises(FileNotFoundError):
         gp.parse_file(gff)
 
-    (tmpdir / "test.fasta").write("content")
+    (tmp_path / "test.fasta").write_text("content")
     assert gp.parse_file(gff) == dict(name="test", records=[])
 
 
-def test_parse_file_invalid_ext(tmpdir):
+def test_parse_file_invalid_ext(tmp_path):
     """parse_file throws ValueError on invalid extensions"""
-    invalid = tmpdir / "test.invalid"
-    invalid.write("content")
+    invalid = tmp_path / "test.invalid"
+    invalid.write_text("content")
     with pytest.raises(ValueError):
         gp.parse_file(invalid)
 

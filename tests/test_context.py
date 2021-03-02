@@ -46,11 +46,11 @@ def hit_dict(hits):
 @pytest.fixture()
 def subjects(hits):
     return [
-        classes.Subject(hits=[hits[0]], ipg="1", start=14044, end=14641, strand="-"),
-        classes.Subject(hits=[hits[1]], ipg="2", start=11815, end=13459, strand="+"),
-        classes.Subject(hits=[hits[2]], ipg="3", start=9656, end=11184, strand="+"),
-        classes.Subject(hits=[hits[3], hits[4], hits[5]], ipg="4", start=1234, end=5678, strand="+"),
-        classes.Subject(hits=[hits[3], hits[4], hits[5]], ipg="4", start=9656, end=11184, strand="+"),
+        classes.Subject(name="s1", hits=[hits[0]], ipg="1", start=14044, end=14641, strand="-"),
+        classes.Subject(name="s2", hits=[hits[1]], ipg="2", start=11815, end=13459, strand="+"),
+        classes.Subject(name="s3", hits=[hits[2]], ipg="3", start=9656, end=11184, strand="+"),
+        classes.Subject(name="s4", hits=[hits[3], hits[4], hits[5]], ipg="4", start=1234, end=5678, strand="+"),
+        classes.Subject(name="s5", hits=[hits[3], hits[4], hits[5]], ipg="4", start=9656, end=11184, strand="+"),
     ]
 
 
@@ -126,8 +126,7 @@ def test_efetch_IPGs_output(hits, tmp_path):
 
         test_out = tmp_path / "out.tsv"
 
-        with test_out.open("w") as handle:
-            context.efetch_IPGs([hit.subject for hit in hits], output_file=handle)
+        context.efetch_IPGs([hit.subject for hit in hits], output_file=test_out)
 
         assert test_out.read_text() == "test"
 
@@ -149,19 +148,23 @@ def test_parse_IPG_table(hits, subjects):
     assert len(two.scaffolds) == 1, "Expected 1 scaffold in organism 2"
 
     assert one.full_name == "Test organism STRAIN 1"
+
     assert len(one.scaffolds["scaffold_1"].subjects) == 2, "Expects 2 subjects on scaf 1"
+    assert one.scaffolds["scaffold_1"].subjects[0].name == subjects[0].name
+    assert one.scaffolds["scaffold_1"].subjects[1].name == subjects[2].name
+
     assert len(one.scaffolds["scaffold_2"].subjects) == 2, "Expects 2 subjects on scaf 2"
-    assert one.scaffolds["scaffold_1"].subjects == [subjects[0], subjects[2]]
-    assert one.scaffolds["scaffold_2"].subjects == [subjects[1], subjects[3]]
+    assert one.scaffolds["scaffold_2"].subjects[0].name == subjects[1].name
+    assert one.scaffolds["scaffold_2"].subjects[1].name == subjects[4].name
 
     assert two.full_name == "Test organism STRAIN 2"
-    assert two.scaffolds["scaffold_7"].subjects == [subjects[4]]
+    assert two.scaffolds["scaffold_7"].subjects[0].name == subjects[3].name
 
 
 def test_parse_IP_groups(ipg_table):
     x = context.parse_IP_groups(ipg_table)
     assert len(x) == 4, "Expected 4 groups"
-    assert len(x["2"]) == 1, "Group 2 has 2 rows but 1 missing scaffold"
+    assert len(x["2"]) == 2, "Group 2 has 2 rows"
 
 
 @pytest.mark.parametrize(

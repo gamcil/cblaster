@@ -56,9 +56,8 @@ def test_efetch_sequences():
 
 
 def test_get_sequences_query_file(mocker):
-    mocker.patch("cblaster.helpers.parse_fasta")
-    helpers.get_sequences(query_file=TEST_DIR / "test.faa")
-    helpers.parse_fasta.assert_called_once()
+    sequences = helpers.get_sequences(query_file=TEST_DIR / "test.faa")
+    assert {'QBE85648.1', 'QBE85647.1', 'QBE85646.1'}.issubset(sequences)
 
 
 def test_get_sequences_query_ids(mocker):
