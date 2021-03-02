@@ -178,8 +178,11 @@ def test_recompute_remote_search(tmpdir):
 
 
 def test_search_hmm(tmpdir):
+    # these tests cannot be run on windows since the hmm programs are not supported on windows
+    if OS_NAME == "windows":
+        return
     command = \
-        f"cblaster search -m hmm -qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta " \
+        f"cblaster search -m hmm -qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database.fasta " \
         f"-pfam {TEST_FILE_DIR} -o {str(tmpdir.join('summary.txt'))} -s {str(tmpdir.join('session.json'))} " \
         f"-b {str(tmpdir.join('binary.txt'))} -p {str(tmpdir.join('plot.html'))}"
     return_code, sdterr, stdout = run_command(command)
@@ -189,9 +192,12 @@ def test_search_hmm(tmpdir):
 
 
 def test_search_local_combi(tmpdir):
+    # these tests cannot be run on windows since the hmm programs are not supported on windows
+    if OS_NAME == "windows":
+        return
     command = \
         f"cblaster search -m combi_local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1 " \
-        f"-qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -pfam {TEST_FILE_DIR} " \
+        f"-qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database.fasta -pfam {TEST_FILE_DIR} " \
         f"-o {str(tmpdir.join('summary.txt'))} -s {str(tmpdir.join('session.json'))} " \
         f"-b {str(tmpdir.join('binary.txt'))} -p {str(tmpdir.join('plot.html'))}"
     return_code, sdterr, stdout = run_command(command)
