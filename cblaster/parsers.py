@@ -149,7 +149,7 @@ def add_input_group(search):
         "-qp",
         "--query_profiles",
         nargs="+",
-        help="A collection of valid Pfam profile identifiers to be searched",
+        help="A collection of valid Pfam profile identifiers to be searched "
     )
 
 
