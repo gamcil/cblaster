@@ -159,8 +159,7 @@ def find_files(paths, recurse=True, level=0):
         _path = Path(path)
         if _path.is_dir():
             if level == 0 or recurse:
-                new = Path(path).glob("*")
-                _files = find_files(new, recurse=recurse, level=level + 1)
+                _files = find_files(_path.iterdir(), recurse=recurse, level=level + 1)
                 files.extend(_files)
         else:
             ext = _path.suffix.lower()
