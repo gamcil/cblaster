@@ -66,7 +66,7 @@ def compare_files(actual_file_path, expected_file_path, out_dir):
 def test_gbk_query_local_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb -o " \
-        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh" \
+        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database.dmnd -ohh" \
         f" -ode , -odc 2 -osc -b {str(tmpdir.join('binary.txt'))} -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
         f" --blast_file {str(tmpdir.join('blast.txt'))} --ipg_file {str(tmpdir.join('ipgs.txt'))} " \
         f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {str(tmpdir.join('session.json'))} -ig -md 6000" \
@@ -81,7 +81,7 @@ def test_gbk_query_local_search(tmpdir):
 def test_embl_query_local_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.embl -o " \
-        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh" \
+        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database.dmnd -ohh" \
         f" -ode , -odc 2 -osc -b {str(tmpdir.join('binary.txt'))} -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
         f" --blast_file {str(tmpdir.join('blast.txt'))} --ipg_file {str(tmpdir.join('ipgs.txt'))} " \
         f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {str(tmpdir.join('session.json'))} -ig -md 6000" \
@@ -95,7 +95,7 @@ def test_embl_query_local_search(tmpdir):
 def test_fasta_query_local_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.fa -o " \
-        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh" \
+        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database.dmnd -ohh" \
         f" -ode , -odc 2 -osc -b {str(tmpdir.join('binary.txt'))} -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
         f" --blast_file {str(tmpdir.join('blast.txt'))} --ipg_file {str(tmpdir.join('ipgs.txt'))} " \
         f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {str(tmpdir.join('session.json'))} " \
@@ -109,7 +109,7 @@ def test_fasta_query_local_search(tmpdir):
 def test_query_ids_local_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1 -o " \
-        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -ohh" \
+        f"{str(tmpdir.join('summary.txt'))} -db {TEST_FILE_DIR}{os.sep}test_database.dmnd -ohh" \
         f" -ode , -odc 2 -osc -b {str(tmpdir.join('binary.txt'))} -bhh -bde _ -bdc 2 -bkey sum -bat coverage " \
         f" --blast_file {str(tmpdir.join('blast.txt'))} --ipg_file {str(tmpdir.join('ipgs.txt'))} " \
         f"-g 25000 -u 2 -mh 3 -r AEK75493.1 -me 0.01 -mi 30 -mc 50 -s {str(tmpdir.join('session.json'))} -ig -md 6000" \
@@ -125,7 +125,7 @@ def test_load_session_local_search(tmpdir):
         f"cblaster -d search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb "\
         f"-s {TEST_FILE_DIR}{os.sep}test_session_local_embl_{OS_NAME}.json " \
         f"{TEST_FILE_DIR}{os.sep}test_session_local_gbk_{OS_NAME}.json -db" \
-        f" {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {str(tmpdir.join('summary.txt'))} -ig -md 6000" \
+        f" {TEST_FILE_DIR}{os.sep}test_database.dmnd -o {str(tmpdir.join('summary.txt'))} -ig -md 6000" \
         f" -mic 2"
     return_code, sdterr, stdout = run_command(command)
     assert return_code == 0
@@ -138,7 +138,7 @@ def test_recompute_session_local_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m local -qf {TEST_FILE_DIR}{os.sep}test_query.gb " \
         f"-s {str(tmpdir.join('session.json'))} --recompute" \
-        f" -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.dmnd -o {str(tmpdir.join('summary.txt'))} " \
+        f" -db {TEST_FILE_DIR}{os.sep}test_database.dmnd -o {str(tmpdir.join('summary.txt'))} " \
         f"-g 50000 -u 5 -mh 3 -me 0.01 -mi 30 -mc 50 -b {str(tmpdir.join('binary.txt'))} -ig -md 2500" \
         f" -mic 2 -p {str(tmpdir.join('plot.html'))}"
     return_code, sdterr, stdout = run_command(command)
@@ -149,7 +149,7 @@ def test_recompute_session_local_search(tmpdir):
                         ["binary.txt", "binary_local_gbk_recompute.txt"]], tmpdir)
 
 
-def test_load_remote_session(tmpdir):
+def test_load_remote_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s " \
         f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json" \
@@ -163,7 +163,7 @@ def test_load_remote_session(tmpdir):
                         ["binary.txt", "binary_remote_fa.txt"]], tmpdir)
 
 
-def test_recompute_remote_session(tmpdir):
+def test_recompute_remote_search(tmpdir):
     command = \
         f"cblaster -d --testing search -m remote -qf {TEST_FILE_DIR}{os.sep}test_query.fa -s " \
         f"{TEST_FILE_DIR}{os.sep}test_session_remote_fa_{OS_NAME}.json" \
@@ -178,8 +178,11 @@ def test_recompute_remote_session(tmpdir):
 
 
 def test_search_hmm(tmpdir):
+    # these tests cannot be run on windows since the hmm programs are not supported on windows
+    if OS_NAME == "windows":
+        return
     command = \
-        f"cblaster search -m hmm -qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta " \
+        f"cblaster search -m hmm -qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database.fasta " \
         f"-pfam {TEST_FILE_DIR} -o {str(tmpdir.join('summary.txt'))} -s {str(tmpdir.join('session.json'))} " \
         f"-b {str(tmpdir.join('binary.txt'))} -p {str(tmpdir.join('plot.html'))}"
     return_code, sdterr, stdout = run_command(command)
@@ -189,9 +192,12 @@ def test_search_hmm(tmpdir):
 
 
 def test_search_local_combi(tmpdir):
+    # these tests cannot be run on windows since the hmm programs are not supported on windows
+    if OS_NAME == "windows":
+        return
     command = \
         f"cblaster search -m combi_local -qi AEK75490.1 AEK75490.1 AEK75500.1 AEK75516.1 AEK75516.1 " \
-        f"-qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database_{OS_NAME}.fasta -pfam {TEST_FILE_DIR} " \
+        f"-qp PF00491 PF05593 -db {TEST_FILE_DIR}{os.sep}test_database.fasta -pfam {TEST_FILE_DIR} " \
         f"-o {str(tmpdir.join('summary.txt'))} -s {str(tmpdir.join('session.json'))} " \
         f"-b {str(tmpdir.join('binary.txt'))} -p {str(tmpdir.join('plot.html'))}"
     return_code, sdterr, stdout = run_command(command)
@@ -203,7 +209,7 @@ def test_search_local_combi(tmpdir):
 def test_embl_gbk_makedb(tmpdir):
     command = \
         f"cblaster -d --testing makedb {TEST_FILE_DIR}{os.sep}test_query.gb" \
-        f" {TEST_FILE_DIR}{os.sep}test_query.embl -n {str(tmpdir.join('database'))} -b 3 -c 100"
+        f" {TEST_FILE_DIR}{os.sep}test_query.embl -n {str(tmpdir.join('database'))} -b 3 -cp 100"
     return_code, sdterr, stdout = run_command(command)
     assert return_code == 0
     expected_files = {"database.dmnd", "database.fasta", "database.sqlite3"}
@@ -214,7 +220,7 @@ def test_embl_gbk_makedb(tmpdir):
 def test_gff_fasta_makedb(tmpdir):
     command = \
         f"cblaster -d --testing makedb {TEST_FILE_DIR}{os.sep}test_gff_v_maris.fna" \
-        f" {TEST_FILE_DIR}{os.sep}test_gff_v_maris.gff -n {str(tmpdir.join('database'))} -b 3 -c 100"
+        f" {TEST_FILE_DIR}{os.sep}test_gff_v_maris.gff -n {str(tmpdir.join('database'))} -b 3 -cp 100"
     return_code, sdterr, stdout = run_command(command)
     assert return_code == 0
     expected_files = {"database.dmnd", "database.fasta", "database.sqlite3"}
