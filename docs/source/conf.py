@@ -13,6 +13,8 @@
 import os
 import sys
 
+from cblaster import __version__
+
 sys.path.insert(0, os.path.abspath("../../cblaster"))
 
 
@@ -23,7 +25,8 @@ copyright = "2021, Cameron Gilchrist"
 author = "Cameron Gilchrist"
 
 # The full version, including alpha/beta/rc tags
-release = "1.2.5"
+version = __version__
+release = version
 
 
 # -- General configuration ---------------------------------------------------
