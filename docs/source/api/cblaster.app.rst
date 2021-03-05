@@ -1,14 +1,3 @@
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   cblaster.gui
-
-Submodules
-----------
-
 cblaster.classes module
 -----------------------
 
@@ -141,15 +130,6 @@ cblaster.sql module
 -------------------
 
 .. automodule:: cblaster.sql
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: cblaster
    :members:
    :undoc-members:
    :show-inheritance:

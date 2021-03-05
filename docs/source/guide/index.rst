@@ -26,5 +26,7 @@ Table of Contents
 	makedb_module
 	gne_module
 	extract_module
+        extract_clusters_module
+        plot_clusters_module
 	gui
 	misc_functions

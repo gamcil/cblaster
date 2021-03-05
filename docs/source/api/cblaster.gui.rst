@@ -1,9 +1,3 @@
-cblaster.gui package
-====================
-
-Submodules
-----------
-
 cblaster.gui.citation module
 ----------------------------
 
@@ -72,15 +66,6 @@ cblaster.gui.search module
 --------------------------
 
 .. automodule:: cblaster.gui.search
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: cblaster.gui
    :members:
    :undoc-members:
    :show-inheritance:

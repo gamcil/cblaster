@@ -11,7 +11,14 @@ For example, generating a database from a set of genomes is as simple as:
 
         $ cblaster makedb one.gbk two.gbk three.gbk four.gbk myDb
 
-This will read in each GenBank file, then generate the files ``myDb.json`` and ``myDb.dmnd``.
+This will read in each GenBank file, then generate the files:
+
+================ ==================================================================
+``myDb.sqlite3`` Local database used for looking up genomic context of hits
+``myDb.dmnd``    DIAMOND sequence search database
+``myDb.fasta``   All protein sequences parsed from genomes; used for HMMER searches
+================ ==================================================================
+
 ``cblaster`` can also build databases from GFF3 files; however, currently the FASTA sequence must be embedded within the GFF3 (i.e. under a ``##FASTA`` directive).
 Typically it is easiest to have all your genome files within a folder and use a wildcard to avoid having to type every file name, like so:
 

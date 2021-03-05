@@ -53,13 +53,43 @@ See :ref:`remote_searches` for more details on remote searches.
 
 Searches against local sequence data
 ------------------------------------
-To run a local search, you will need to specify as such using the ``-m/--mode`` argument, as well as provide both a DIAMOND search database and a ``cblaster`` JSON database (see :ref:`makedb_module` for details on how to create these files).
-These are given to ``cblaster`` using the ``-db/--database`` and ``-jdb/--json_db`` arguments, respectively.
-A local search can be launched like so:
+To run a local search, you will need to specify as such using the ``-m/--mode`` argument, as well as provide both a DIAMOND search database and a ``cblaster`` SQL database (see :ref:`makedb_module` for details on how to create these files).
+However, only the DIAMOND database has to be specified in the command: ``cblaster`` will
+automatically look for a SQL database with the same name and ``.sqlite3`` suffix.
+An example command might look like this:
 
 ::
 
-        $ cblaster search -m local -db myDB.dmnd -jdb myDB.json ...
+        $ cblaster search -m local -db myDB.dmnd -qf myFile.gbk
+
+Functional domain searches using HMMER
+--------------------------------------
+To run a domain search, you need to specify the search mode as ``hmm``, provide an array
+of query Pfam domain profile names, a FASTA file containing sequences to be searched (produced using the
+``makedb`` module, see :ref:`makedb_module` for details) and the path to a folder
+containing a copy of the Pfam database.
+
+For example:
+
+::
+
+        $ cblaster search -m hmm -qp PF00001 PF00002 -db myDb.fasta -pfam pfamFolder/
+
+
+This will extract the specified domain profiles (``PF00001`` and ``PF00002``) from
+the Pfam database and search the sequences in ``myDb.fasta`` for any domain hits.
+
+Note that like in local searches, ``cblaster`` expects an SQL database in the same
+location as the FASTA file, with the same name and ``.sqlite3`` suffix.
+Additionally, ``cblaster`` requires two Pfam database files:
+
+================= ==============================================================
+Pfam-A.hmm.gz     Main database file containing HMM profiles
+Pfam-A.hmm.dat.gz File used for looking up domain families from query accessions
+================= ==============================================================
+
+The latest versions of these files are automatically downloaded when ``cblaster`` is
+given the path to a folder which does not contain them.
 
 .. _remote_searches:
 

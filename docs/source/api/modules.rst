@@ -1,7 +1,16 @@
-cblaster
-========
+cblaster.gui package
+====================
 
 .. toctree::
    :maxdepth: 4
 
-   cblaster
+   cblaster.gui
+
+
+cblaster package
+================
+
+.. toctree::
+   :maxdepth: 4
+
+   cblaster.app
