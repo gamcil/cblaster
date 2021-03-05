@@ -95,6 +95,7 @@ given the path to a folder which does not contain them.
 
 Remote searches against NCBI sequence databases
 -----------------------------------------------
+
 Remote search is the default mode in ``cblaster``.
 As such, in the basic search example:
 
@@ -112,7 +113,7 @@ Alternative databases can be specified using the ``-d/--database`` argument, for
 
         $ cblaster search -qf query.fasta -db refseq_protein
 
-Note: ``cblaster`` currently only supports protein sequence searches using ``BLASTp``, so you should choose protein sequence databases (e.g. nr, refseq_protein, swissprot, pdbaa).
+``cblaster`` currently only supports protein sequence searches using ``BLASTp``, so you should choose protein sequence databases (e.g. nr, refseq_protein, swissprot, pdbaa).
 
 If ``cblaster`` has been interrupted somehow during a remote search (i.e. search started but program is stopped before a session can be saved), it can be resumed using the Request Identifier (RID).
 Every remote search is automatically assigned an RID which can be used to retrieve results up to 36 hours after they have completed.
@@ -140,7 +141,14 @@ This is reported to the screen when a ``cblaster`` search starts:
         [13:56:23] INFO - Retrieving results for search RAV3P2F3014
         ...
 
-Note: the original query sequences must be provided alongside the RID.
+.. warning::
+    The NCBI prioritises searches started through it's interactive web interface over
+    searches launched via the BLAST API in ``cblaster``. This means that, particularly
+    for searches that return a lot of results, searches can take a very long time to
+    complete (hours!). In this case, start a search using the BLAST website
+    (https://blast.ncbi.nlm.nih.gov), make a note of the RID, and pass that to
+    ``cblaster`` using the ``--rid`` argument, as well as the file containing your query
+    sequences using the ``-qf/--query_file`` argument.
 
 Finally, NCBI allows for pre-filtering of search databases using NCBI Entrez search queries.
 Entrez is the NCBI's text search and retrieval system for all of the databases they provide.
