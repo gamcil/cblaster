@@ -143,6 +143,7 @@ def get_data(session, sort_clusters=False, max_clusters=None):
             "scaffold": scaffold.accession,
             "start": cluster.start,
             "end": cluster.end,
+            "number": cluster.number,
             "score": round(cluster.score, 3)
         }
 

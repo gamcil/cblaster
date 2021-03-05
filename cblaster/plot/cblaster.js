@@ -532,7 +532,7 @@ function plot(data) {
 			g.selectAll("text").remove()
 			let text = g.append("text")
 			text.append("tspan")
-				.text(d => `${data.labels[d].name} (${data.labels[d].score} score)`)
+        .text(d => `${data.labels[d].name} (Cluster ${data.labels[d].number}, score: ${data.labels[d].score})`)
 				.attr("x", 10)
 				.attr("dy", constants.multiLineLabels ? "-0.1em": ".3em")
 				.attr("text-anchor", "start")
@@ -563,7 +563,7 @@ function plot(data) {
 		const labelNoScaffold = (g) => {
 			g.selectAll("text").remove()
 			g.append("text")
-				.text(d => data.labels[d].name)
+        .text(d => `${data.labels[d].name} (Cluster ${data.labels[d].number}, score: ${data.labels[d].score})`)
 				.attr("x", 10)
 				.attr("dy", ".3em")
 				.attr("text-anchor", "start")
