@@ -240,12 +240,12 @@ def plot_clusters(
         cluster_numbers (list): cluster numbers to include
         score_threshold (float): minumum score in order for a cluster to be included
         organisms (list): Organism filtering regular expressions, clusters for
-         these organisms are included
+        these organisms are included
         scaffolds(list): clusters on these scaffolds are included
         plot_outfile (str): path to a file for the final plot
         max_clusters (int): the maximum amount of clusters plotted regardless of filters
         testing (bool): argument to switch of plotting when testing making sure that no dynamioc plot
-         is served since this will crash the testing.
+        is served since this will crash the testing.
     """
     LOG.info("Starting generation of cluster plot with clinker.")
     session = Session.from_file(session)

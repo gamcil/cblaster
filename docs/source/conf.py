@@ -13,13 +13,13 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath("../../cblaster"))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "cblaster"
-copyright = "2019, Cameron Gilchrist"
+copyright = "2021, Cameron Gilchrist"
 author = "Cameron Gilchrist"
 
 # The full version, including alpha/beta/rc tags

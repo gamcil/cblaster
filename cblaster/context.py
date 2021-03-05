@@ -161,11 +161,12 @@ def parse_IPG_table(results, hits):
     This function:
     1. Parses entries from the table, grouped by IPG number with parse_IP_groups()
     2. For each group:
-       a) Find Hit objects linked to any member of the group with find_IPG_hits()
-       b) For each group member, create a Subject object, then place it on its
-          corresponding Scaffold and Organism objects (creating new objects when new
-          scaffolds and organisms are encountered)
-       c) Add Hit objects to every Subject object in the group
+
+    a) Find Hit objects linked to any member of the group with find_IPG_hits()
+    b) For each group member, create a Subject object, then place it on its
+       corresponding Scaffold and Organism objects (creating new objects when new
+       scaffolds and organisms are encountered)
+    c) Add Hit objects to every Subject object in the group
 
     Args:
         results (list): Results from IPG search.
