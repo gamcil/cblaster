@@ -3,7 +3,7 @@ Ga naar de map Executables/MacOs in de Cblaster folder en open een terminal
 
 #2 
 Voer commando uit: 
-pyinstaller -F -n Cblaster <path to cblaster Gui>/main.py
+pyinstaller -F -n Cblaster <path to cblaster>/cblaster/gui/main.py
 
 #3
 open het .exe bestand in de dist folder en check of deze werkt 
