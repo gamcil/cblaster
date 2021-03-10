@@ -1,2 +1,14 @@
 [run]
-omit = cblaster/gui/*
+branch = True
+source = cblaster/
+
+[report]
+exclude_lines =
+    if self.debug:
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+ignore_errors = True
+omit =
+    tests/*
+    cblaster/gui/*
