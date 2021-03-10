@@ -46,6 +46,26 @@ def set_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
         ]
 
 
+def intermediate_genes_request(accession, start, stop):
+    response = requests.post(
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        params={
+            "db": "nuccore",
+            "rettype": "ft",
+            "from": str(start),
+            "to": str(stop),
+        },
+        files={"id": accession},
+    )
+    LOG.info(f"Fetching intermediate genes from NCBI from {accession}")
+    LOG.debug(f"Efetch URL: {response.url}")
+    if response.status_code != 200:
+        raise requests.HTTPError(
+            f"Error fetching intermediate genes for NCBI [code {response.status_code}]."
+        )
+    return response
+
+
 def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
     """Adds intermediate genes to clusters in the cluster_hierarchy from NCBI feature tables.
 
@@ -61,28 +81,52 @@ def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
         search_start = max(0, cluster.start - gene_distance)
         search_stop = cluster.end + gene_distance
         start_time = time.time()
-        response = requests.post(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
-            params={
-                "db": "nuccore",
-                "rettype": "ft",
-                "from": str(search_start),
-                "to": str(search_stop),
-            },
-            files={"id": scaffold_accession},
+        response = intermediate_genes_request(
+            scaffold_accession, search_start, search_stop
         )
-        LOG.info(f"Fetching intermediate genes from NCBI from {scaffold_accession}")
-        LOG.debug(f"Efetch URL: {response.url}")
-
-        if response.status_code != 200:
-            raise requests.HTTPError(
-                f"Error fetching intermediate genes for NCBI [code {response.status_code}]."
-            )
-
         subjects = genes_from_feature_table(response.text, search_start)
         cluster.intermediate_genes = get_remote_intermediate_genes(subjects, cluster)
-
         passed_time = time.time() - start_time
+
+
+def replace_cds_coordinates(genes, cdss):
+    """Replaces CDS coordinates with gene coordinates, if they are available."""
+    if genes:
+        for cds in cdss:
+            for gene in genes:
+                if gene["start"] <= cds["start"] and cds["end"] <= gene["end"]:
+                    cds["start"] = gene["start"]
+                    cds["end"] = gene["end"]
+                    break
+
+
+def parse_table_features(table_text):
+    """Parse features into dictionaries containing start, end and qualifiers """
+    features = []
+    feature = {}
+    for line in table_text.split("\n"):
+        tabs = line.split("\t")
+        if len(tabs) == 3:
+            if feature:
+                features.append(feature)
+            start, end, ftype = tabs
+            start, end, strand = get_start_end_strand(start, end)
+            feature = dict(type=ftype, start=start, end=end, strand=strand, name=None)
+        elif len(tabs) == 2 and feature:
+            start, end = tabs
+            start, end, _ = get_start_end_strand(start, end) 
+            feature["start"] = min(feature["start"], start)
+            feature["end"] = max(feature["end"], end)
+        elif len(tabs) == 5:
+            *_, key, value = tabs
+            if key == "protein_id":
+                feature["name"] = value
+
+    genes = [f for f in features if f["type"]  == "gene"]
+    cdss = [f for f in features if f["type"]  == "CDS"]
+    replace_cds_coordinates(genes, cdss)
+
+    return cdss
 
 
 def genes_from_feature_table(table_text, search_start):
@@ -98,23 +142,23 @@ def genes_from_feature_table(table_text, search_start):
     Returns:
         List of cblaster Subject objects containing the intermediate genes.
     """
-    start = end = name = strand = None
-    intermediate_genes = []
-    for line in table_text.split("\n"):
-        tabs = line.split("\t")
-        if len(tabs) < 3:
-            continue
-        elif tabs[2] == "CDS":
-            if name is not None:
-                subject = Subject(name=name, start=start, end=end, strand=strand)
-                intermediate_genes.append(subject)
-                name = None
-            start, end, strand = get_start_end_strand(tabs[0], tabs[1])
-            start += search_start
-            end += search_start
-        elif len(tabs) == 5 and tabs[3] == "protein_id":
-            name = re.search(r"\|([A-Za-z0-9\._]+)\|", tabs[4]).group(1)
-    return intermediate_genes
+
+    # Parse features into dictionaries containing start, end and qualifiers
+    features = parse_table_features(table_text)
+
+    # Instantiate Subject objects
+    # - Add scaffold search start to gene start/end
+    # - Extract protein IDs from protein_id qualifiers
+    subjects = []
+    for feature in features:
+        feature.pop("type")
+        feature["start"] += search_start
+        feature["end"] += search_start
+        feature["name"] = re.search(r"\|([A-Za-z0-9\._-]+)(\||$)", feature["name"]).group(1)
+        subject = Subject(**feature)
+        subjects.append(subject)
+
+    return subjects
 
 
 def get_start_end_strand(start, end):
