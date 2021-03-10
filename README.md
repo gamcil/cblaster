@@ -1,6 +1,6 @@
 # cblaster
 ![Build Status](https://github.com/gamcil/cblaster/workflows/Python%20application/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/gamcil/cblaster/badge.svg?branch=master)](https://coveralls.io/github/gamcil/cblaster?branch=master)
+[![codecov](https://codecov.io/gh/gamcil/cblaster/branch/master/graph/badge.svg?token=O61R3ORNDT)](https://codecov.io/gh/gamcil/cblaster)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/cblaster.svg)](https://badge.fury.io/py/cblaster)
 [![Documentation Status](https://readthedocs.org/projects/cblaster/badge/?version=latest)](https://cblaster.readthedocs.io/en/latest/?badge=latest)
