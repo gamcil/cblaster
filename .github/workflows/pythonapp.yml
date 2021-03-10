@@ -33,8 +33,6 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov=cblaster/
-        
-    - name: Upload coverage data to coveralls.io
-      run: coveralls
+        coveralls
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
