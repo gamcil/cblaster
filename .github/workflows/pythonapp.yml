@@ -20,7 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-mock pytest-cov requests-mock coveralls
+        pip install coverage pytest pytest-mock pytest-cov requests-mock coveralls
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     - name: Generate coverage report
