@@ -1,5 +1,5 @@
-cblaster package
-================
+API Documentation
+=================
 
 .. toctree::
    :maxdepth: 4
