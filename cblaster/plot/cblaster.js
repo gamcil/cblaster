@@ -11,7 +11,8 @@ const constants = {
 	"showCounts": true,
 	"showCountBorders": true,
 	"xAxisOnTop": true,
-	"sorted": false
+	"sorted": false,
+	"fontFamily": 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Oxygen, Cantarell, sans-serif'
 }
 
 if (typeof data === 'undefined') {
@@ -115,7 +116,7 @@ function colourBar() {
 		.attr("y", 25)
 		.attr("text-anchor", "end")
 	cbar.selectAll("text")
-		.style("font-family", "sans-serif")
+		.style("font-family", constants.fontFamily)
 		.style("font-size", "12px")
 	return cbar.node();
 }
@@ -432,7 +433,7 @@ function plot(data) {
 					enter.append("text")
 						.attr("class", "heatmap-count")
 						.style("text-anchor", "middle")
-						.style("font-family", "sans-serif")
+						.style("font-family", constants.fontFamily)
 					enter.call(updateCell)
 					return enter
 				},
@@ -537,7 +538,7 @@ function plot(data) {
 				.attr("dy", constants.multiLineLabels ? "-0.1em": ".3em")
 				.attr("text-anchor", "start")
 				.style("fill", "#31363b")
-				.style("font-family", "sans-serif")
+				.style("font-family", constants.fontFamily)
 				.style("font-style", "italic")
 				.style(
 					"font-size",
@@ -551,7 +552,7 @@ function plot(data) {
 				.attr("dy", constants.multiLineLabels ? "1.1em": null) 
 				.attr("text-anchor", "start")
 				.style("font-style", "normal")
-				.style("font-family", "sans-serif")
+				.style("font-family", constants.fontFamily)
 				.style(
 					"font-size",
 					constants.multiLineLabels
@@ -568,7 +569,7 @@ function plot(data) {
 				.attr("dy", ".3em")
 				.attr("text-anchor", "start")
 				.style("fill", "#31363b")
-				.style("font-family", "sans-serif")
+				.style("font-family", constants.fontFamily)
 				.style("font-style", "italic")
 				.style("font-size", `${0.7 * constants.cellHeight}px`)
 		}
