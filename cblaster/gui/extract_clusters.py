@@ -9,11 +9,12 @@ sg.theme("Lightgrey1")
 extract_clusters_frame = sg.Frame(
     "Extract Clusters",
     layout=[
-        [sg.Text("This module allows you to extract clusters from a session.json file into a genbank file"
-                 " for each separate cluster. The genbank files can be formatted to include qualifiers "
-                 "to make them readable by bigscape.",
-                 size=(TEXT_WIDTH, 5)
-                 )],
+        [sg.Text(
+            "This module allows you to extract clusters from a session file into"
+            " GenBank files for each separate cluster. The GenBank files can also be"
+            " formatted to include qualifiers to make them readable by BiG-SCAPE.",
+         size=(TEXT_WIDTH, 5)
+         )],
         [TextLabel("Session file"),
          sg.InputText(size=(34, 1), key="extract_clusters_session"),
          sg.FileBrowse(key="extract_clusters_session")],
@@ -34,15 +35,17 @@ extract_clusters_frame = sg.Frame(
          sg.InputText(key="prefix", size=(34, 1))
          ],
         [sg.Text(
-            "Start of the name for each cluster file, the base name is cluster'clutser.number'",
-            size=(TEXT_WIDTH, 1)
+            "Start of the name for each cluster file. The generated name will resemble"
+            " '<prefix>cluster<number>.gbk'",
+            size=(TEXT_WIDTH, 2)
         )],
 
         [TextLabel("Output format"),
          sg.Drop(key="output format", default_value="genbank", values=("genbank", "bigscape"))],
         [sg.Text(
-            "The format of the resulting files. The options are genbank and bigscape.",
-            size=(TEXT_WIDTH, 1)
+            "The format of the resulting files. Selecting 'bigscape' mode adds"
+            "'product' qualifiers necessary for files to be read by BiG-SCAPE.",
+            size=(TEXT_WIDTH, 2)
         )],
 
         [TextLabel("Clusters"), sg.InputText(key="clusters ec")],

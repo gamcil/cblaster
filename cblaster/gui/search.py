@@ -117,10 +117,10 @@ search_frame = Frame(
             " In remote mode, the database value should correspond to a BLAST"
             " database hosted by the NCBI. In local mode, the database arguments"
             " should refer to files generated using cblaster makedb. When using any"
-            " of the hmm modes a local pfam databse will be saved at the given "
-            "location or extracted from there. The fasta database should refer to "
-            "the fasta file generated using cblaster makedb.",
-            size=(TEXT_WIDTH, 5))],
+            " of the hmm modes a local pfam database will be saved at the given"
+            " location or extracted from there. The fasta database should refer to"
+            " the fasta file generated using cblaster makedb.",
+            size=(TEXT_WIDTH, 6))],
         [search_tabgroup]
     ]
 )
@@ -132,11 +132,11 @@ input_frame = Frame(
         [sg.Text(
             "Specify the protein sequences that you want to search. These can"
             " be provided by either using a FASTA file or entering the NCBI"
-            " accessions of sequences. When running any of the HMM at least "
-            "one HMM profiles has to be defined. Alternatively, a session file"
-            " generated in a previous cblaster run can be loaded so that you "
-            "do not have to repeat a search.",
-            size=(TEXT_WIDTH, 4),
+            " accessions of sequences. When running any of the HMM modes, at least"
+            " one HMM profile must be defined. Alternatively, a session file"
+            " generated in a previous cblaster run can be loaded so that you"
+            " do not have to repeat a search.",
+            size=(TEXT_WIDTH, 6),
         )],
         [TextLabel("File"),
          sg.InputText(size=(34, 1), key="query_file"),
@@ -229,8 +229,8 @@ summary_frame = Frame(
 
         [TextLabel("Sort clusters"),  sg.Checkbox("", key="sort_clusters")],
         [sg.Text(
-            "Sorts the clusters of the final output on score. This means that clusters of the same organism are not"
-            " neccesairily close together in the output",
+            "Sorts the clusters of the final output on score. This means that clusters"
+            "of the same organism are not necessarily close together in the output.",
             size=(TEXT_WIDTH, 2)
         )],
 

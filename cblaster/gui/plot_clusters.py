@@ -9,12 +9,16 @@ sg.theme("Lightgrey1")
 plot_clusters_frame = sg.Frame(
     "Plot Clusters",
     layout=[
-        [sg.Text("This module allows for plotting of a subset of clusters using clinker (see citation tab"
-                 " for more information). Running clinker using a cblaster session file is significantly"
-                 " faster then running clinker with separate genbank files extracted using the Extract"
-                 " Clusters module, because the all vs all allignment of clinker can be skipped.",
-                 size=(TEXT_WIDTH, 6)
-                 )],
+        [sg.Text(
+            "This module allows for plotting of a subset of clusters using clinker (see citation tab"
+            " for more information). Running clinker using a cblaster session file is significantly"
+            " faster then running clinker with separate genbank files extracted using the Extract"
+            " Clusters module, as it skips the all vs all alignment phase of the clinker pipeline."
+            " However, as clusters are not directly compared, this visualisation will only"
+            " show similarity to the query cluster; genes between cblaster hits will not"
+            " be displayed.",
+         size=(TEXT_WIDTH, 7)
+         )],
         [TextLabel("Session file"),
          sg.InputText(size=(34, 1), key="plot_clusters_session"),
          sg.FileBrowse(key="plot_clusters_session")],
@@ -32,16 +36,17 @@ plot_clusters_frame = sg.Frame(
         )],
 
         [TextLabel("Clusters"), sg.InputText(key="clusters pc")],
-        [sg.Text("Cluster numbers/ ranges provided by the summary file of the 'search' command. "
-                 "For example to include clusters 1 to 4 use '1-4'. Multiple values can be"
-                 " supplied separated by spaces.",
-                 size=(TEXT_WIDTH, 3)
-                 )],
+        [sg.Text(
+            "Cluster numbers/ ranges provided by the summary file of the 'search' command."
+            " For example to include clusters 1 to 4, use '1-4'. Multiple values can be"
+            " supplied separated by spaces.",
+         size=(TEXT_WIDTH, 3)
+         )],
 
         [TextLabel("Score threshold"), sg.InputText(key="score threshold pc")],
         [sg.Text("The minimum required score of a cluster in order to be extracted.",
-                 size=(TEXT_WIDTH, 1)
-                 )],
+         size=(TEXT_WIDTH, 1)
+         )],
 
         [TextLabel("Organisms"), sg.InputText(key="organisms pc")],
         [sg.Text(

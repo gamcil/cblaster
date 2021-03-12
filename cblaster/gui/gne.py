@@ -29,7 +29,7 @@ gne_frame = sg.Frame(
          sg.InputText(key="output gne", size=(34, 1)),
          sg.FileSaveAs(key="output gne")],
         [sg.Text(
-            "output file for the summary table.",
+            "Output file for the summary table.",
             size=(TEXT_WIDTH, 1)
         )],
 
@@ -59,7 +59,7 @@ gne_frame = sg.Frame(
          sg.InputText(key="plot gne", size=(34, 1)),
          sg.FileSaveAs(key="plot gne")],
         [sg.Text(
-            "File path to save the plot HTML file too. This will combine all the necessary"
+            "File path to save the plot HTML file to. This will combine all the necessary"
             " parts to generate a fully usable static HTML file. If this is not"
             " specified, the plot will be saved in a plot.html in the temporary folder.",
             size=(TEXT_WIDTH, 3)
