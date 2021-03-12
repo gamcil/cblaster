@@ -330,3 +330,52 @@ You can temporarily recompute (i.e. don't save) to generate a new visualisation:
         $ cblaster search -s session.json -rcp -g 40000 -mh 4 -p plot.html
 
 Note: filtering this way is not destructive (i.e. does not modify the original file); all data is loaded, filtered and recomputed within the program itself.
+
+
+Finding intermediate genes between hits
+---------------------------------------
+The default output for ``cblaster`` is the cluster heatmap, which shows the absence or
+presence of your query sequences. While we find this is generally the easiest way to
+pick up on patterns of cluster conservation, we also like to be able to visualise our
+results in their own genomic contexts so we can see the differences in gene order,
+orientation, size and so on.
+
+For this reason, we added integration to the ``clinker`` tool (https://github.com/gamcil/clinker),
+which can generate highly interactive gene cluster comparison plots. However, in a
+regular ``cblaster`` search, we do not have access to any information about the genes
+**between** the BLAST hits shown in the heatmap. This means that if you were to run the
+``plot_clusters`` module on your session file
+(see :ref:`guide/plot_clusters_module:Plotting extracted clusters using ``plot_clusters```),
+you would produce a figure where most of the clusters are missing genes!
+
+To get around this, you can use the ``-ig/--intermediate_genes`` argument when
+performing a ``cblaster`` search. After the search has completed, genomic regions
+corresponding to the detected gene clusters are retrieved from the NCBI, and used to
+fill in the missing genes.
+
+.. note::
+        If you forgot to use ``-ig/--intermediate_genes`` during your search, don't
+        fret. You can also use it on an existing session file alongside the
+        ``-rcp/--recompute`` argument, to generate a new session file containing the
+        missing genes. For example:
+
+     ``cblaster -s session.json -rcp new_session.json -ig``
+
+The intermediate genes feature has two other arguments:
+
+============================ ================================================================================   ===========
+**Argument**                 **Description**                                                                    **Default**
+============================ ================================================================================   ===========
+``-md/--max_distance``       The maximum distance between the start/end of a cluster and an intermediate gene   5000bp
+``--mic/--maximum_clusters`` The maximum amount of clusters to find intermediate genes for                      100
+============================ ================================================================================   ===========
+
+``-md/--max-distance`` enables you to control how far ``cblaster`` will look for
+intermediate genes. By default, it is set to 5000bp, which covers the main cluster
+region (from the first hit to the last) plus some leeway on either side. Setting this to
+a higher value will allow for a broader analysis of the genome neighbourhood of each
+cluster.
+
+``-mic/--maximum_clusters`` controls how many clusters ``cblaster`` will attempt to find
+intermediate genes for. As each cluster has to be queried against the NCBI individually,
+this can take some time, so by default ``cblaster`` caps this at 100.
