@@ -89,15 +89,13 @@ def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
         passed_time = time.time() - start_time
 
 
-def replace_cds_coordinates(genes, cdss):
-    """Replaces CDS coordinates with gene coordinates, if they are available."""
-    if genes:
+def transfer_protein_ids(genes, cdss):
+    """Transfers protein_id qualifier from CDS to matching gene features."""
+    for gene in genes:
         for cds in cdss:
-            for gene in genes:
-                if gene["start"] <= cds["start"] and cds["end"] <= gene["end"]:
-                    cds["start"] = gene["start"]
-                    cds["end"] = gene["end"]
-                    break
+            if gene["start"] <= cds["start"] and cds["end"] <= gene["end"]:
+                gene["protein_id"] = cds["protein_id"]
+                break
 
 
 def parse_table_features(table_text):
@@ -111,7 +109,14 @@ def parse_table_features(table_text):
                 features.append(feature)
             start, end, ftype = tabs
             start, end, strand = get_start_end_strand(start, end)
-            feature = dict(type=ftype, start=start, end=end, strand=strand, name=None)
+            feature = dict(
+                type=ftype,
+                start=start,
+                end=end,
+                strand=strand,
+                locus_tag=None,
+                protein_id=None,
+            )
         elif len(tabs) == 2 and feature:
             start, end = tabs
             start, end, _ = get_start_end_strand(start, end) 
@@ -119,14 +124,46 @@ def parse_table_features(table_text):
             feature["end"] = max(feature["end"], end)
         elif len(tabs) == 5:
             *_, key, value = tabs
-            if key == "protein_id":
-                feature["name"] = value
+            if key in ("locus_tag", "protein_id"):
+                feature[key] = value
 
+    # Make sure we catch the last feature
+    if feature:
+        features.append(feature)
+
+    # If there are gene features, prefer using their coordinates instead of CDS.
+    # Just transfer protein_ids from matching CDS features and return.
+    # Otherwise, just return CDS features.
     genes = [f for f in features if f["type"]  == "gene"]
     cdss = [f for f in features if f["type"]  == "CDS"]
-    replace_cds_coordinates(genes, cdss)
-
+    if genes:
+        transfer_protein_ids(genes, cdss)
+        return genes
     return cdss
+
+
+def set_gene_name(feature):
+    """Sets the name of a gene feature.
+
+    Tries to extract protein_id from feature table protein_id qualifier,
+    which takes the form:
+        source database|protein_id|additional qualifiers
+
+    For example:
+        ref|WP_063781455.1|
+        gb|ACG70812.1|
+        emb|SPB51992.1||gnl|WGS:OGUI|SPB51992
+        dbj|GAQ43934.1|
+
+    If this fails, falls back to locus_tag.
+    """
+    pattern = re.compile(r"^\w+\|(?P<protein_id>[A-Za-z0-9\._-]+)(?:\||$)")
+    protein_id = feature.pop("protein_id", None)
+    locus_tag = feature.pop("locus_tag", None)
+    try:
+        feature["name"] = pattern.search(protein_id).group("protein_id")
+    except:
+        feature["name"] = locus_tag
 
 
 def genes_from_feature_table(table_text, search_start):
@@ -154,7 +191,7 @@ def genes_from_feature_table(table_text, search_start):
         feature.pop("type")
         feature["start"] += search_start
         feature["end"] += search_start
-        feature["name"] = re.search(r"\|([A-Za-z0-9\._-]+)(\||$)", feature["name"]).group(1)
+        set_gene_name(feature)
         subject = Subject(**feature)
         subjects.append(subject)
 
