@@ -164,10 +164,10 @@ def create_genbanks_from_clusters(
 
     # Generate genbank files for all the required clusters
     for cluster, scaffold, organism in cluster_hierarchy:
-        cluster_proteins = {
-            getattr(subject, name_attr): proteins[getattr(subject, name_attr)]
-            for subject in [*cluster.subjects, *cluster.intermediate_genes]
-        }
+        cluster_proteins = {}
+        for subject in [*cluster.subjects, *cluster.intermediate_genes]:
+            name = getattr(subject, name_attr)
+            cluster_proteins[name] = proteins.get(name, "pseudo")
         output_file = output_dir / f"{prefix}cluster{cluster.number}.gbk"
         with output_file.open("w") as fp:
             record = cluster_to_record(
@@ -338,8 +338,10 @@ def cluster_to_record(
 
     if format_ == "bigscape":
         region_feature = SeqFeature(
-            FeatureLocation(start=cluster.start - cluster.intermediate_start,
-                            end=cluster.end - cluster.intermediate_start),
+            FeatureLocation(
+                start=cluster.start - cluster.intermediate_start,
+                end=cluster.end - cluster.intermediate_start,
+            ),
             type="region",
             qualifiers={"product": "other"},
         )
@@ -353,8 +355,11 @@ def cluster_to_record(
     }
     for key, sequence in cluster_prot_sequences.items():
         subject = subjects[key]
-        qualifiers = {"protein_id": subject.name, "translation": sequence}
-
+        qualifiers = dict(protein_id=subject.name)
+        if sequence == "pseudo":
+            qualifiers["pseudo"] = True
+        else:
+            qualifiers["translation"] = sequence
         top_hit = None
         if len(subject.hits) > 0:
             top_hit = max(subject.hits, key=lambda x: x.bitscore)
