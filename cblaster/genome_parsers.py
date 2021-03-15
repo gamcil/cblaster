@@ -153,19 +153,20 @@ def parse_gff(path):
     return fasta
 
 
-def find_files_at_path(path, recurse=True):
-    root = Path(path)
-    glob = root.rglob("*.*") if recurse else root.glob("*.*")
-    suffixes = GBK_SUFFIXES + GFF_SUFFIXES + EMBL_SUFFIXES
-    return [p for p in glob if p.exists() and p.suffix in suffixes]
-
-
 def find_files(paths, recurse=True, level=0):
-    genome_files = []
+    files = []
     for path in paths:
-        files = find_files_at_path(path, recurse=recurse)
-        genome_files.extend(files)
-    return genome_files
+        _path = Path(path)
+        if _path.is_dir():
+            if level == 0 or recurse:
+                _files = find_files(_path.iterdir(), recurse=recurse, level=level + 1)
+                files.extend(_files)
+        else:
+            ext = _path.suffix.lower()
+            valid = ext in GBK_SUFFIXES + GFF_SUFFIXES + EMBL_SUFFIXES
+            if _path.exists() and valid:
+                files.append(path)
+    return files
 
 
 def parse_file(path):
