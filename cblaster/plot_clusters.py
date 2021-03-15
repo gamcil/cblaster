@@ -78,21 +78,25 @@ def cblaster_to_clinker_cluster(cluster, scaffold_accession="", organism_name=""
     )
 
 
-def query_to_clinker_cluster(query_file):
+def query_to_clinker_cluster(session):
     """Turn a query file of a cblaster Session object into a clinker.Cluster object
     Args:
         query_file (str): Path to the query file
     Returns:
         a clinker.Cluster object
     """
-    with open(query_file) as query:
-        if any(query_file.endswith(ext) for ext in GBK_SUFFIXES):
-            seqrecord = SeqIO.parse(query, "genbank")
-        elif any(query_file.endswith(ext) for ext in EMBL_SUFFIXES):
-            seqrecord = SeqIO.parse(query, "embl")
-        else:
-            return fasta_to_cluster(query)
-        return _seqrecord_to_clinker_cluster(seqrecord)
+    query_file = session.params.get("query_file", None)
+
+    if query_file:
+        with open(query_file) as query:
+            if any(query_file.endswith(ext) for ext in GBK_SUFFIXES):
+                seqrecord = SeqIO.parse(query, "genbank")
+            elif any(query_file.endswith(ext) for ext in EMBL_SUFFIXES):
+                seqrecord = SeqIO.parse(query, "embl")
+            else:
+                return fasta_to_cluster(query)
+            return _seqrecord_to_clinker_cluster(seqrecord)
+    return query_sequences_to_cluster(session.queries, session.sequences)
 
 
 def _seqrecord_to_clinker_cluster(seqrecord):
@@ -135,6 +139,24 @@ def _seqrecord_to_clinker_cluster(seqrecord):
         locus = ClinkerLocus(f"Locus{locus_nr + 1}", locus_genes, start=locus_start, end=locus_end)
         loci.append(locus)
     return ClinkerCluster("Query_cluster", loci)
+
+
+def query_sequences_to_cluster(query_ids, sequences, spacing=500):
+    """Generates a clinker Cluster object from query IDs/sequences.
+
+    Used as a fallback when a session file does not have a query_file path
+    saved in it's parameters (i.e. search from --query_ids).
+    """
+    genes = []
+    start = 0
+    for query in query_ids:
+        sequence = sequences[query]
+        length = len(sequence) * 3
+        gene = ClinkerGene(label=query, start=start, end=start + length, strand=1)
+        genes.append(gene)
+        start += length + spacing
+    locus = ClinkerLocus("Query locus", genes, start=0, end=genes[-1].end)
+    return ClinkerCluster("Query cluster", [locus])
 
 
 def fasta_to_cluster(fasta_handle):
@@ -261,7 +283,7 @@ def plot_clusters(
     )
 
     # Form the query cluster from the session query file
-    clinker_query_cluster = query_to_clinker_cluster(session.params["query_file"])
+    clinker_query_cluster = query_to_clinker_cluster(session)
 
     # Create a Globaligner object containing mocked clusters/alignments/links
     globaligner = clusters_to_clinker_globaligner(clinker_query_cluster, cluster_hierarchies)
