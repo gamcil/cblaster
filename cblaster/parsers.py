@@ -374,6 +374,13 @@ def add_clustering_group(search):
         nargs="+",
         help="Names of query sequences that must be represented in a hit cluster",
     )
+    group.add_argument(
+        "-per",
+        "--percentage",
+        type=int,
+        default=0,
+        help="Filter on % of query genes needed to be present in cluster",
+    )
 
 
 def add_filtering_group(search):

@@ -88,6 +88,7 @@ def cblaster(
     min_identity=30,
     min_coverage=50,
     max_evalue=0.01,
+    percentage=None,
     entrez_query=None,
     output=None,
     output_hide_headers=False,
@@ -133,6 +134,7 @@ def cblaster(
         min_identity (float): Minumum identity (%) cutoff
         min_coverage (float): Minumum coverage (%) cutoff
         max_evalue (float): Maximum e-value threshold
+        percentage (int): % of query genes needed to be present in cluster
         entrez_query (str): NCBI Entrez query to filter search database
         output (str): Path to cblaster summary output file
         output_hide_headers (bool): Hide headers in summary table
@@ -181,6 +183,7 @@ def cblaster(
                 unique,
                 min_hits,
                 require,
+                percentage,
             )
 
             if intermediate_genes:
@@ -245,6 +248,7 @@ def cblaster(
                     require,
                     ipg_file,
                     session,
+                    percentage,
                 )
             )
 
@@ -283,6 +287,7 @@ def cblaster(
                     require,
                     ipg_file,
                     session,
+                    percentage,
                 )
             )
 
@@ -316,6 +321,7 @@ def cblaster(
                     require,
                     ipg_file,
                     session,
+                    percentage,
                 )
             )
 
@@ -373,7 +379,7 @@ def cblaster(
     return session
 
 
-def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session):
+def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session, percentage):
     organisms = context.search(
         results,
         sqlite_db=sqlite_db,
@@ -383,6 +389,7 @@ def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, se
         require=require,
         ipg_file=ipg_file,
         query_sequence_order=list(session.sequences),
+        percentage=percentage
     )
     return organisms
 
@@ -415,6 +422,7 @@ def main():
             unique=args.unique,
             min_hits=args.min_hits,
             require=args.require,
+            percentage=args.percentage,
             min_identity=args.min_identity,
             min_coverage=args.min_coverage,
             max_evalue=args.max_evalue,

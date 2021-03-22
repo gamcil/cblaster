@@ -294,13 +294,14 @@ def query_local_DB(hits, db):
     return [organism for organism in organisms.values()]
 
 
-def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3):
+def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3, percentage=None):
     """Tests if a cluster of Subjects meets query conditions.
 
     Finds all unique query sequences in hits, then returns True if total number is above
     unique threshold, and any required queries are represented.
     """
     queries = set(hit.query for subject in cluster for hit in subject.hits)
+    #overlap = queries.intersection(cluster)
     return (
         len(cluster) >= minimum
         and len(queries) >= unique
@@ -308,7 +309,8 @@ def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3):
     )
 
 
-def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
+def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000,
+                  percentage=None):
     """Finds clusters of Hit objects matching user thresholds.
 
     Args:
@@ -341,7 +343,8 @@ def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000):
         cluster_satisfies_conditions,
         require=require,
         unique=unique,
-        minimum=min_hits
+        minimum=min_hits,
+        percentage=percentage
     )
 
     for subject in sorted_subjects:
@@ -397,7 +400,8 @@ def find_clusters_in_organism(
     gap=20000,
     require=None,
     remote=True,
-    query_sequence_order=None
+    query_sequence_order=None,
+    percentage=None
 ):
     """Runs find_clusters() on all scaffolds in an organism."""
     for scaffold in organism.scaffolds.values():
@@ -407,6 +411,7 @@ def find_clusters_in_organism(
             min_hits=min_hits,
             gap=gap,
             require=require,
+            percentage=percentage
         )
         scaffold.add_clusters(clusters, query_sequence_order=query_sequence_order)
         LOG.debug(
@@ -513,6 +518,7 @@ def search(
     require=None,
     ipg_file=None,
     query_sequence_order=None,
+    percentage=None,
 ):
     """Gets the genomic context for a collection of Hit objects.
 
@@ -559,6 +565,7 @@ def search(
             require=require,
             query_sequence_order=query_sequence_order,
             remote=sqlite_db is None,
+            percentage=percentage,
         )
 
     return organisms
