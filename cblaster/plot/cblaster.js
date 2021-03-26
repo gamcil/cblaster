@@ -180,10 +180,10 @@ function getTooltipHTML(d, data) {
 				</td>
 				<td>${h.strand === "+" ? h.start : h.end}</td>
 				<td>${h.strand === "+" ? h.end : h.start}</td>
-				<td>${h.identity.toFixed(2)}</td>
-				<td>${h.coverage.toFixed(2)}</td>
-				<td>${h.bitscore.toFixed(2)}</td>
-				<td>${h.evalue}</td>
+				<td>${h.identity ? h.identity.toFixed(2) : "-"}</td>
+				<td>${h.coverage ? h.coverage.toFixed(2) : "-"}</td>
+				<td>${h.bitscore ? h.bitscore.toFixed(2) : "-"}</td>
+				<td>${h.evalue ? h.evalue : "-"}</td>
 			</tr>
 		`)).join("")}
 	</tbody>
