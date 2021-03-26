@@ -86,10 +86,8 @@ def max_cpus(value):
 
 
 def add_makedb_subparser(subparsers):
-    makedb = subparsers.add_parser(
-        "makedb",
-        help="Generate local databases from genome files"
-    )
+    description = "Generate local databases from genome files"
+    makedb = subparsers.add_parser("makedb", help=description, description=description)
     makedb.add_argument(
         "paths",
         type=lambda x: full_path(x, os.R_OK),
@@ -132,7 +130,6 @@ def add_gui_subparser(subparsers):
 
 def add_input_group(search):
     group = search.add_argument_group("Input")
-
     group.add_argument(
         "-qf",
         "--query_file",
@@ -626,18 +623,18 @@ def add_extract_clusters_subparser(subparsers):
         help="Extract clusters from a session file in genbank format",
         description="Extract clusters from a session file",
         epilog="Example usage\n-------------\n"
-               "Extract all clusters (carfull this can take a while for a remote session):\n"
+               "Extract all clusters (this can take a while for remote sessions):\n"
                "  $ cblaster extract_clusters session.json -o example_directory\n\n"
-               "Extract cluster 1 trough 10 and cluster 25 (these numbers can be found in the summary file of the "
-               "'search' command):\n"
+               "Extract clusters 1 through 10 + cluster 25 (numbers found in cblaster"
+               " search output):\n"
                "  $ cblaster extract_clusters session.json -c 1-10 25 -o example_directory\n\n"
-               "Extract only from a specific organisms (regular expressions):\n"
+               "Extract only from specific organism/s (using regular expressions):\n"
                "  $ cblaster extract_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" "
                "-o example_directory\n\n"
-               "Extract only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
+               "Extract clusters from a specific range on scaffold_123 + all clusters on scaffold_234:\n"
                "  $ cblaster extract_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o "
                "example_directory\n\n"
-               "Cameron Gilchrist, 2020",
+               "Cameron Gilchrist, 2021",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -703,19 +700,20 @@ def add_extract_clusters_subparser(subparsers):
 
 
 def add_plot_clusters_subparser(subparsers):
+    desc = "Plot clusters using clinker"
     parser = subparsers.add_parser(
         "plot_clusters",
-        help="Plot clusters using clinker",
-        description="Plot clusters of a session",
+        help=desc,
+        description=desc,
         epilog="Example usage\n-------------\n"
-               "Minimum working example:\n"
+               "Plot all clusters (up to --maximum_clusters):\n"
                " $ cblaster plot_clusters session.json\n\n"
-               "Plot cluster 1 trough 10 and cluster 25 (these numbers can be"
-               "found in the summary file of the 'search' command):\n"
+               "Plot clusters 1 through 10 + cluster 25 (numbers found in cblaster"
+               " search output):\n"
                " $ cblaster plot_clusters session.json -c 1-10 25 -o plot.html\n\n"
-               "Plot only from specific organisms (regular expressions):\n"
+               "Plot only specific organism/s (using regular expressions):\n"
                " $ cblaster plot_clusters session.json -or \"Aspergillus.*\" \"Penicillium.*\" -o plot.html\n\n"
-               "Plot only clusters from a specific range on scaffold_123 and all clusters on scaffold_234:\n"
+               "Plot clusters from a specific range on scaffold_123 + all clusters on scaffold_234:\n"
                "  $ cblaster plot_clusters session.json -sc scaffold_123:1-80000 scaffold_234 -o plot.html\n\n"
                "Cameron Gilchrist, 2020",
         formatter_class=argparse.RawDescriptionHelpFormatter,
