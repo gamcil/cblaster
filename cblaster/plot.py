@@ -8,6 +8,7 @@ import logging
 from functools import partial
 from collections import defaultdict
 
+import numpy as np
 import scipy
 from scipy.cluster.hierarchy import linkage
 
@@ -48,9 +49,9 @@ def generate_linkage_matrix(array):
         [cell["value"] for cell in cells]
         for cells in array
     ]
-    matrix = linkage(array, "ward")
-    matrix[:, 2] /= matrix[:, 2].max()
-    return matrix
+    array = np.array(array)
+    array = array / np.max(array)
+    return linkage(array, "ward")
 
 
 def get_cell(query, cluster, cluster_id):
@@ -70,7 +71,12 @@ def get_cell(query, cluster, cluster_id):
         for hit in subject.hits
         if hit.query == query
     ]
-    value = max(hit["identity"] for hit in hits) if hits else 0
+    if not hits:
+        value = 0
+    elif not hits[0].get("identity", None):
+        value = len(hits) * 100
+    else:
+        value = max(hit["identity"] for hit in hits)
     cell = {
         "query": query,
         "cluster": cluster_id,
