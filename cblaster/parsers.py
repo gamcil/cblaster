@@ -700,12 +700,13 @@ def add_extract_clusters_subparser(subparsers):
 
 
 def add_plot_clusters_subparser(subparsers):
+    desc = "Plot clusters using clinker"
     parser = subparsers.add_parser(
         "plot_clusters",
-        help="Plot clusters using clinker",
-        description="Plot clusters of a session",
+        help=desc,
+        description=desc,
         epilog="Example usage\n-------------\n"
-               "Plot all clusters (up to --max_plot_clusters):\n"
+               "Plot all clusters (up to --maximum_clusters):\n"
                " $ cblaster plot_clusters session.json\n\n"
                "Plot clusters 1 through 10 + cluster 25 (numbers found in cblaster"
                " search output):\n"
