@@ -521,6 +521,7 @@ function plot(data) {
       })
 		}
 		heatmapX.selectAll("text")
+			.style("font-family", constants.fontFamily)
 			.style("font-size", `${Math.min(constants.cellWidth * 0.35, 14)}px`)
 			.style("text-anchor", (constants.xAxisOnTop) ? "start" : "end")
 			.attr("dy", (constants.xAxisOnTop) ? "" : ".6em")
