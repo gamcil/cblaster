@@ -10,16 +10,13 @@ makedb_frame = sg.Frame(
     "makedb",
     layout=[
         [sg.Text(
-            "This workflow will allow you to create a local"
-            " database for cblaster from a collection of genome"
-            " files in GenBank or GFF3+FASTA formats. It will"
-            " produce a formatted DIAMOND database (.dmnd)"
-            " containing protein sequences in the supplied"
-            " genomes, as well as a sqlite3 file which stores"
-            " genomic coordinates for these proteins. To use"
-            " these files in a cblaster run, choose a local"
-            " search, then supply the DIAMOND (.dmnd) file"
-            " using the Database field.",
+            "This workflow will allow you to create a local database for cblaster "
+            "from a collection of genome files in GenBank or GFF3+FASTA formats. "
+            "It will produce a formatted DIAMOND database (.dmnd) containing "
+            "protein sequences in the supplied genomes, as well as an sqlite3 "
+            "file that stores genomic coordinates for these proteins. To use "
+            "these files in a cblaster run, choose a local search, then supply "
+            "the DIAMOND (.dmnd) file using the Database field",
             size=(TEXT_WIDTH, 8)
         )],
         [TextLabel("Select genome files"),

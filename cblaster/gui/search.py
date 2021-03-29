@@ -113,13 +113,13 @@ search_frame = Frame(
     key="searching_frame",
     layout=[
         [sg.Text(
-            "Specify the search mode and databases to be used in the cblaster run."
-            " In remote mode, the database value should correspond to a BLAST"
-            " database hosted by the NCBI. In local mode, the database arguments"
-            " should refer to files generated using cblaster makedb. When using any"
-            " of the hmm modes a local pfam database will be saved at the given"
-            " location or extracted from there. The fasta database should refer to"
-            " the fasta file generated using cblaster makedb.",
+            "Specify the search mode and databases to be used in the cblaster "
+            "run. In remote mode, the database value should correspond to a BLAST "
+            "database hosted by the NCBI. In local mode, the database arguments "
+            "should refer to files generated using cblaster makedb. When using any "
+            "of the HMM modes, a local copy of the Pfam database will be stored at "
+            "the indicated location or extracted from there. The FASTA database "
+            "should refer to the FASTA file generated using cblaster makedb.",
             size=(TEXT_WIDTH, 6))],
         [search_tabgroup]
     ]
@@ -130,12 +130,11 @@ input_frame = Frame(
     key="input_frame",
     layout=[
         [sg.Text(
-            "Specify the protein sequences that you want to search. These can"
-            " be provided by either using a FASTA file or entering the NCBI"
-            " accessions of sequences. When running any of the HMM modes, at least"
-            " one HMM profile must be defined. Alternatively, a session file"
-            " generated in a previous cblaster run can be loaded so that you"
-            " do not have to repeat a search.",
+            "Specify the protein sequences that you want to search. These can be "
+            "provided by either using a FASTA file or entering the NCBI accessions "
+            "of sequences. When running any of the HMMs, at least one HMM profile "
+            "has to be defined. Alternatively, a session file generated in a previous "
+            "cblaster run can be loaded so that you do not have to repeat a search",
             size=(TEXT_WIDTH, 6),
         )],
         [TextLabel("File"),
@@ -184,10 +183,10 @@ filtering_frame = Frame(
          sg.In(key="recompute_text", size=(28, 1), disabled=True, enable_events=True),
          sg.FileSaveAs(key="recompute_browse", disabled=True)],
         [sg.Text(
-            "Recompute previous search session using new thresholds. The filtered"
-            " session will be written to the file specified by this argument. If this"
-            " argument is specified with no value, the session will be filtered but"
-            " not saved (e.g. for plotting purposes).",
+            "Recompute a previous search session using new thresholds. The "
+            "filtered session will be written to the file specified by this argument. "
+            "If this argument is specified with no value, the session will be "
+            "filtered but not saved (e.g. for plotting purposes).",
             size=(TEXT_WIDTH, 3)
         )],
     ],
@@ -198,10 +197,10 @@ summary_frame = Frame(
     key="summary_frame",
     layout=[
         [sg.Text(
-            "This is the standard cblaster results table that is shown at the"
-            " end of each run. To save this table to a file, pick a file path"
-            " using the option below. If no path is provided, the table will"
-            " be printed in the terminal.",
+            "This is the standard cblaster results table that is shown at the "
+            "end of each run. To save this table to a file, pick a file path using "
+            "the option below. If no path is provided, the table will be printed"
+            " in the terminal",
             size=(TEXT_WIDTH, 3)
         )],
         [TextLabel("Generate summary table"),
