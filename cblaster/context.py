@@ -306,6 +306,7 @@ def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3, per
         len(cluster) >= minimum
         and len(queries) >= unique
         and (queries.issuperset(require) if require else True)
+        #and (overlap/len(queries)) >= int(percentage)/100
     )
 
 
