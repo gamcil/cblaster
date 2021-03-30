@@ -62,13 +62,17 @@ def efetch_IPGs(ids, output_file=None):
     table = []
     for start in range(0, len(ids), 10000):
         chunk = ids[start: start + 10000]
-        fetch = Entrez.efetch(
-            "protein",
-            rettype="ipg",
-            retmode="text",
-            id=chunk,
-            retmax=10000,
-        )
+        try:
+            fetch = Entrez.efetch(
+                "protein",
+                rettype="ipg",
+                retmode="text",
+                id=chunk,
+                retmax=10000,
+            )
+        except IOError:
+            LOG.exception("Network error while retrieving genomic context")
+            raise
         lines = [line.decode() for line in fetch.readlines()]
         table.extend(lines)
 
