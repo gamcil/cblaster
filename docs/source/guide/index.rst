@@ -22,6 +22,7 @@ Table of Contents
 
 	what_is_cblaster
 	installation
+        config_module
 	search_module
 	makedb_module
 	gne_module
