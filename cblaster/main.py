@@ -6,18 +6,20 @@ import sys
 
 from pathlib import Path
 
+from Bio import Entrez
 
 from cblaster import (
+    config,
     context,
     database,
-    helpers,
-    local,
-    remote,
-    parsers,
     extract,
     extract_clusters,
-    plot_clusters,
+    helpers,
     hmm_search,
+    local,
+    parsers,
+    plot_clusters,
+    remote,
 )
 from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
@@ -288,6 +290,15 @@ def cblaster(
 
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
+
+            # Set up mandatory Entrez params
+            cfg = config.get_config_parser()
+            Entrez.email = cfg["cblaster"].get("email", None)
+            Entrez.api_key = cfg["cblaster"].get("api_key", None)
+
+            if not Entrez.email and not Entrez.api_key:
+                raise IOError("No e-mail or NCBI API key found, please run cblaster config")
+
             if entrez_query:
                 session.params["entrez_query"] = entrez_query
             rid, results = remote.search(
@@ -501,6 +512,9 @@ def main():
             max_clusters=args.maximum_clusters,
             testing=args.testing,
         )
+
+    elif args.subcommand == "config":
+        config.write_config_file(email=args.email)
 
 
 if __name__ == "__main__":
