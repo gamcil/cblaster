@@ -767,6 +767,36 @@ def add_plot_clusters_subparser(subparsers):
     )
 
 
+def add_config_subparser(subparsers):
+    desc = "Configure cblaster"
+    parser = subparsers.add_parser(
+        "config",
+        help=desc,
+        description="Configure cblaster (e.g. for setting NCBI e-mail addresses or API keys)",
+        epilog=(
+            "Example usage\n-------------\n"
+            "Set an e-mail address:\n"
+            " $ cblaster config --email \"foo@bar.com\"\n\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--email",
+        help="Your e-mail address, required by NCBI to prevent abuse",
+        type=str,
+    )
+    parser.add_argument(
+        "--api_key",
+        help="NCBI API key",
+        type=str,
+    )
+    parser.add_argument(
+        "--max_tries",
+        help="How many times failed requests are retried (def. 3)",
+        type=int,
+    )
+
+
 def get_parser():
     parser = argparse.ArgumentParser(
         "cblaster",
@@ -798,6 +828,7 @@ def get_parser():
     add_extract_subparser(subparsers)
     add_extract_clusters_subparser(subparsers)
     add_plot_clusters_subparser(subparsers)
+    add_config_subparser(subparsers)
     return parser
 
 
@@ -809,7 +840,15 @@ def parse_args(args):
         parser.print_help()
         raise SystemExit
 
-    if arguments.subcommand in ("gui", "makedb", "gne", "extract", "extract_clusters", "plot_clusters"):
+    if arguments.subcommand in (
+        "gui",
+        "makedb",
+        "gne",
+        "extract",
+        "extract_clusters",
+        "plot_clusters",
+        "config",
+    ):
         return arguments
 
     if getattr(arguments, "query_file") and getattr(arguments, "query_ids"):
