@@ -57,7 +57,9 @@ def write_config_file(**kwargs):
 
     # Set new values
     for key, value in kwargs.items():
-        config_parser["cblaster"][key] = value
+        if not value:
+            continue
+        config_parser["cblaster"][key] = str(value)
 
     # Write new config file
     LOG.info("Writing configuration to %s", config_ini)
