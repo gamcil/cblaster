@@ -514,7 +514,11 @@ def main():
         )
 
     elif args.subcommand == "config":
-        config.write_config_file(email=args.email)
+        config.write_config_file(
+            email=args.email,
+            api_key=args.api_key,
+            max_tries=args.max_tries,
+        )
 
 
 if __name__ == "__main__":
