@@ -55,11 +55,6 @@ def find_fasta(gff_path):
             return path
 
 
-def parse_fasta_str(fasta):
-    with io.StringIO(fasta) as fp:
-        return list(SeqIO.parse(fp, "fasta"))
-
-
 def parse_fasta(path):
     with open(path) as fp:
         return list(SeqIO.parse(fp, "fasta"))
