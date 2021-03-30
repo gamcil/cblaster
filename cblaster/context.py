@@ -32,7 +32,6 @@ from collections import defaultdict, namedtuple
 from itertools import combinations, product
 from operator import attrgetter
 from functools import partial
-from urllib.error import HTTPError
 
 import requests
 import numpy as np
