@@ -8,13 +8,12 @@ import time
 from collections import OrderedDict
 from pathlib import Path
 
-from cblaster import genome_parsers as gp
+from Bio import SeqIO, Entrez
+
+from cblaster import config, genome_parsers as gp
 
 
 LOG = logging.getLogger(__name__)
-# from https://www.ncbi.nlm.nih.gov/books/NBK25497/
-MAX_REQUEST_SIZE = 500
-MIN_TIME_BETWEEN_REQUEST = 0.34  # seconds
 
 
 def get_program_path(aliases):
@@ -45,34 +44,6 @@ def form_command(parameters):
     return command
 
 
-def efetch_sequences_request(headers):
-    """Launch E-Fetch request for a list of sequence accessions.
-
-    Parameters:
-        headers (list): NCBI sequence accessions.
-    Raises:
-        requests.HTTPError: Received bad status code from NCBI.
-    Returns:
-        requests.models.Response: Response returned by requests library.
-    """
-    response = requests.post(
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-        params={"db": "protein", "rettype": "fasta"},
-        files={"id": ",".join(headers)},
-    )
-
-    LOG.debug("Efetch IDs: %s", headers)
-    LOG.debug("Efetch URL: %s", response.url)
-
-    if response.status_code != 200:
-        raise requests.HTTPError(
-            f"Error fetching sequences from NCBI [code {response.status_code}]."
-            " Bad query IDs? Or the NCBI servers are down?"
-        )
-
-    return response
-
-
 def efetch_sequences(headers):
     """Retrieve protein sequences from NCBI for supplied accessions.
 
@@ -89,21 +60,20 @@ def efetch_sequences(headers):
         a dictionary of sequences keyed on header id
     """
     LOG.info("Querying NCBI for %d sequences.", len(headers))
-    sequence_records = {}
-    passed_time = 0
-
-    # request sequences in batces of MAX_REQUEST_SIZE every 0.34 seconds (no more then 3 requests per second)
-    for i in range(int(len(headers) / MAX_REQUEST_SIZE) + 1):
-        if passed_time < MIN_TIME_BETWEEN_REQUEST:
-            time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
-        start_time = time.time()
-        subset_headers = headers[i * MAX_REQUEST_SIZE: (i + 1) * MAX_REQUEST_SIZE]
-        response = efetch_sequences_request(subset_headers)
-        records = gp.parse_fasta_str(response.text)
-        for record in records:
-            sequence_records[record.id] = str(record.seq)
-        passed_time = time.time() - start_time
-    return sequence_records
+    try:
+        handle = Entrez.efetch(
+            db="protein",
+            id=headers,
+            rettype="fasta",
+            retmode="text",
+        )
+    except IOError:
+        LOG.exception("Failed to fetch sequences")
+        raise
+    return {
+        record.name: str(record.seq)
+        for record in SeqIO.parse(handle, 'fasta')
+    }
 
 
 def sequences_to_fasta(sequences):
