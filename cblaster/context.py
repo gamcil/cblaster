@@ -32,9 +32,12 @@ from collections import defaultdict, namedtuple
 from itertools import combinations, product
 from operator import attrgetter
 from functools import partial
+from urllib.error import HTTPError
 
 import requests
 import numpy as np
+
+from Bio import Entrez
 
 from cblaster import database
 from cblaster.classes import Organism, Scaffold, Subject
@@ -56,36 +59,26 @@ def efetch_IPGs(ids, output_file=None):
     Returns:
         List of rows from resulting IPG table, split by newline.
     """
-
-    # Split into chunks since retmax=10000
-    chunks = [ids[i: i + 10000] for i in range(0, len(ids), 10000)]
-
-    table = ""
-    for ix, chunk in enumerate(chunks, 1):
-        response = requests.post(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-            params={
-                "db": "protein",
-                "rettype": "ipg",
-                "retmode": "text",
-                "retmax": 10000,
-            },
-            data={"id": ",".join(chunk)},
+    table = []
+    for start in range(0, len(ids), 10000):
+        chunk = ids[start: start + 10000]
+        fetch = Entrez.efetch(
+            "protein",
+            rettype="ipg",
+            retmode="text",
+            id=chunk,
+            retmax=10000,
         )
-
-        if response.status_code != 200:
-            raise requests.HTTPError(
-                f"Error fetching sequences from NCBI [code {response.status_code}]."
-            )
-
-        table += response.text
+        lines = [line.decode() for line in fetch.readlines()]
+        table.extend(lines)
 
     if output_file:
         LOG.info("Writing IPG table to %s", output_file)
-        with open(output_file, "w") as f:
-            f.write(table)
+        with open(output_file, "w") as fp:
+            for line in table:
+                fp.write(line)
 
-    return table.split("\n")
+    return table
 
 
 def parse_IP_groups(results):
