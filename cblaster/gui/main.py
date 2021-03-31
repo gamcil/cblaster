@@ -9,7 +9,16 @@ from queue import Queue, Empty
 import PySimpleGUI as sg
 
 from cblaster import __version__
-from cblaster.gui import search, makedb, citation, gne, extract, extract_clusters, plot_clusters
+from cblaster.gui import (
+    search,
+    makedb,
+    citation,
+    gne,
+    extract,
+    extract_clusters,
+    plot_clusters,
+    config,
+)
 
 
 sg.theme("Lightgrey1")
@@ -40,7 +49,7 @@ def run_cblaster(values, textbox):
         args = dict(
             query_file=values["query_file"],
             query_ids=values["query_ids"],
-            query_profiles=values["query_profiles"].split(" "),
+            query_profiles=values["query_profiles"],
             session_file=values["session_file"],
             mode=values["search_mode"],
             gap=values["gap"],
@@ -179,9 +188,18 @@ def run_cblaster(values, textbox):
             scaffolds=values["scaffolds pc"],
         )
         subcommand = "plot_clusters"
+    elif values["cblaster_tabs"] == "Config":
+        args = dict(
+            email=values["email"],
+            api_key=values["api_key"],
+            max_tries=values["max_tries"],
+        )
+        subcommand = "config"
     else:
-        raise ValueError("Expected 'Search', 'Makedb', 'Neighbourhood', 'Extract', 'Extract Clusters' or"
-                         " 'Plot Clusters'")
+        raise ValueError(
+            "Expected 'Search', 'Makedb', 'Neighbourhood', 'Extract', "
+            "'Extract Clusters', 'Plot Clusters' or 'Config'"
+        )
 
     return create_cblaster_command(subcommand, args, textbox)
 
@@ -197,6 +215,7 @@ main_gui_layout = [
         [sg.Tab("Extract", [[Column(extract.layout, scrollable=True)]])],
         [sg.Tab("Extract Clusters", [[Column(extract_clusters.layout, scrollable=True)]])],
         [sg.Tab("Plot Clusters", [[Column(plot_clusters.layout, scrollable=True)]])],
+        [sg.Tab("Config", [[Column(config.layout, scrollable=True)]])],
         [sg.Tab("Citation", [[Column(citation.layout, scrollable=True)]])],
     ], enable_events=True, key="cblaster_tabs"
     )],
@@ -206,7 +225,6 @@ main_gui_layout = [
 
 
 def cblaster_gui():
-
     main_window = sg.Window(
         "cblaster",
         main_gui_layout,
@@ -239,7 +257,15 @@ def cblaster_gui():
         # Disable start button when on citation tab
         main_window["start_button"].update(
             disabled=values["cblaster_tabs"]
-            not in ("Search", "Makedb", "Neighbourhood", "Extract", "Extract Clusters", "Plot Clusters")
+            not in (
+                "Search",
+                "Makedb",
+                "Neighbourhood",
+                "Extract",
+                "Extract Clusters",
+                "Plot Clusters",
+                "Config",
+            )
         )
 
         if event == "start_button":
@@ -345,6 +371,8 @@ def create_cblaster_command(subcommand, arguments, textbox):
         elif "blank" in key:
             command += f" {value}"
         else:
+            if isinstance(value, list):
+                value = " ".join(value)
             command += f" --{key} {value}"
     return CommandThread(command, textbox)
 
