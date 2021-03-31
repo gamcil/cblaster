@@ -9,7 +9,7 @@ LOG = logging.getLogger(__name__)
 
 
 def get_config_dir():
-    path = appdirs.user_config_dir(appname="cblaster", appauthor="gamcil")
+    path = appdirs.user_config_dir(appname="cblaster")
     return Path(path)
 
 
@@ -41,7 +41,7 @@ def write_config_file(**kwargs):
     # Make directory, if it doesn't exist
     if not config_dir.is_dir():
         LOG.info("No config directory found, creating %s", config_dir)
-        config_dir.mkdir()
+        config_dir.mkdir(parents=True)
 
     # Initialise the ConfigParser object
     config_ini = config_dir / "config.ini"
