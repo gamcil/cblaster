@@ -200,8 +200,8 @@ main_gui_layout = [
         [sg.Tab("Citation", [[Column(citation.layout, scrollable=True)]])],
     ], enable_events=True, key="cblaster_tabs"
     )],
-    [sg.Button("Start", key="start_button", button_color=("white", "green")),
-     sg.Button("Exit", key="exit_button", button_color=("white", "red"))],
+    [sg.Button("Start", key="start_button"),
+     sg.Button("Exit", key="exit_button")],
 ]
 
 
@@ -267,7 +267,8 @@ def create_command_window():
         [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
         [sg.Multiline(default_text="Welcome to cblaster", key="textbox", size=(500, 45),
                       disabled=True, autoscroll=True)],
-        [sg.Button("Exit", key="exit_button", button_color=("white", "red"))],
+
+        [sg.Button("Exit", key="exit_button")],
     ]
     command_window = sg.Window(
         "cblaster command",

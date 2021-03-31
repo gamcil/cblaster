@@ -10,11 +10,12 @@ extract_frame = sg.Frame(
     "Extract",
     layout=[
         [sg.Text(
-            "This module will allow you to extract sequences from saved cblaster"
-            " session files. You can filter sequences by the queries they hit,"
-            " or the organisms and scaffolds they belong to. This module is designed"
-            " to answer a question like: 'how can I get all of the methyltransferase"
-            " sequences from homologous gene clusters in Aspergillus genomes?'",
+            "This module will allow you to extract sequences from saved cblaster "
+            "session files. You can filter sequences by the queries they hit, "
+            "or by the organisms and scaffolds they belong to. This module is "
+            "designed to answer questions like: 'how can I get all of the "
+            "methyltransferase sequences from homologous gene clusters in "
+            "Aspergillus genomes?",
             size=(TEXT_WIDTH, 6)
         )],
 
@@ -44,23 +45,23 @@ extract_frame = sg.Frame(
 
         [TextLabel("Organisms"), sg.InputText(key="organisms")],
         [sg.Text(
-            "Organisms that extracted sequences must be from. These take the form"
-            " of regular expression patterns and are therefore quite flexible."
-            " You can provide more than one pattern."
-            " For example, to extract sequences only from Aspergillus and Penicillium"
-            " genomes, you might specify: 'Aspergillus.*' 'Penicillium.*'"
-            " See the user guide for more examples.",
+            "Organisms that extracted sequences must be from. These take the "
+            "form of regular expression patterns and are therefore quite "
+            "flexible. You can provide more than one pattern. For example, to "
+            "extract sequences only from Aspergillus and Penicillium genomes, "
+            "you might specify: 'Aspergillus.*' 'Penicillium.* See the user "
+            "guide for more examples.",
             size=(TEXT_WIDTH, 5)
         )],
 
         [TextLabel("Scaffolds"), sg.InputText(key="scaffolds")],
         [sg.Text(
-            "Scaffolds that extracted sequences must be on. These can be scaffold"
-            " names or names AND coordinate ranges. For example, you could specify"
-            " scaffold_1, which would retrieve ALL clusters on scaffold_1, or"
-            " scaffold_1:10000-50000, which would retrieve only those from position"
-            " 10000 to 50000. This can be used to extract sequences from specific"
-            " clusters.",
+            "Scaffolds that extracted sequences must be on. These can be "
+            "scaffold names or names AND coordinate ranges. For example, you "
+            "could specify ‘scaffold_1’, which would retrieve ALL clusters on "
+            "scaffold_1, or scaffold_1:10000-50000, which would retrieve only "
+            "those from position 10000 to 50000. This can be used to extract "
+            "sequences from specific clusters.",
             size=(TEXT_WIDTH, 5)
         )],
 

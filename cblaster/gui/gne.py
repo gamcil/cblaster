@@ -10,12 +10,12 @@ gne_frame = sg.Frame(
     "Gene neighbourhood plot",
     layout=[
         [sg.Text(
-            "This workflow will allow you to plot the effect of increasing the"
-            " intergenic distance threshold on the size and amount of detected"
-            " hit clusters. This is helpful mainly as a sanity check, to ensure"
-            " you are not missing clusters due to a bad threshold value. However,"
-            " it can also give you an idea of the approximate size of the"
-            " 'neighbourhood' of your query proteins.",
+            "This workflow will allow you to plot the effect of increasing the "
+            "intergenic distance threshold on the size and amount of detected "
+            "hit clusters. This is helpful mainly as a sanity check, to ensure "
+            "you are not missing clusters due to a bad threshold value. However, "
+            "it can also give you an idea of the approximate size of the "
+            "'neighbourhood' of your query proteins.",
             size=(TEXT_WIDTH, 7)
         )],
         [TextLabel("Session file"),
@@ -36,7 +36,7 @@ gne_frame = sg.Frame(
         [TextLabel("Delimiter"),
          sg.InputText(key="delimiter gne", size=(34, 1))],
         [sg.Text(
-            "Character used to delimit values in the summary table. If no delimiter,"
+            "Character used to delimit values in the summary table. If no delimiter"
             " is specified, the table will be generated in human-readable format.",
             size=(TEXT_WIDTH, 2)
         )],
@@ -59,9 +59,10 @@ gne_frame = sg.Frame(
          sg.InputText(key="plot gne", size=(34, 1)),
          sg.FileSaveAs(key="plot gne")],
         [sg.Text(
-            "File path to save the plot HTML file to. This will combine all the necessary"
-            " parts to generate a fully usable static HTML file. If this is not"
-            " specified, the plot will be saved in a plot.html in the temporary folder.",
+            "File path to save the plot HTML file too. This will combine all the "
+            "necessary parts to generate a fully usable static HTML file. If this"
+            " is not specified, the plot will be saved in a plot.html in the "
+            "temporary folder.",
             size=(TEXT_WIDTH, 3)
         )],
 
