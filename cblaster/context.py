@@ -337,8 +337,10 @@ def find_clusters(
     Returns:
         Clusters of Hit objects.
     """
-    if unique < 0 or min_hits < 0 or gap < 0:
-        raise ValueError("Expected positive integer")
+    if any(value < 0 for value in [min_hits, gap, unique, percentage]):
+        raise ValueError("Expected positive integers")
+    if percentage > 100:
+        raise ValueError("Expected percentage between 0 and 100")
 
     total_subjects = len(subjects)
 
