@@ -294,24 +294,38 @@ def query_local_DB(hits, db):
     return [organism for organism in organisms.values()]
 
 
-def cluster_satisfies_conditions(cluster, require=None, unique=3, minimum=3, percentage=None):
+def cluster_satisfies_conditions(
+    cluster,
+    queries,
+    require=None,
+    unique=3,
+    minimum=3,
+    percentage=50,
+):
     """Tests if a cluster of Subjects meets query conditions.
 
     Finds all unique query sequences in hits, then returns True if total number is above
     unique threshold, and any required queries are represented.
     """
-    queries = set(hit.query for subject in cluster for hit in subject.hits)
-    #overlap = queries.intersection(cluster)
+    hit_queries = set(hit.query for subject in cluster for hit in subject.hits)
+    hit_overlap = hit_queries.intersection(queries)
     return (
-        len(cluster) >= minimum
-        and len(queries) >= unique
-        and (queries.issuperset(require) if require else True)
-        #and (overlap/len(queries)) >= int(percentage)/100
+        len(cluster) >= minimum  # Minimum hits
+        and len(hit_queries) >= unique  # Unique hits
+        and len(hit_overlap) / len(queries) >= percentage / 100  # Min % of queries
+        and (hit_queries.issuperset(require) if require else True)  # Required queries
     )
 
 
-def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000,
-                  percentage=None):
+def find_clusters(
+    subjects,
+    require=None,
+    unique=3,
+    min_hits=3,
+    gap=20000,
+    percentage=None,
+    queries=None
+):
     """Finds clusters of Hit objects matching user thresholds.
 
     Args:
@@ -345,7 +359,8 @@ def find_clusters(subjects, require=None, unique=3, min_hits=3, gap=20000,
         require=require,
         unique=unique,
         minimum=min_hits,
-        percentage=percentage
+        percentage=percentage,
+        queries=queries,
     )
 
     for subject in sorted_subjects:
@@ -412,7 +427,8 @@ def find_clusters_in_organism(
             min_hits=min_hits,
             gap=gap,
             require=require,
-            percentage=percentage
+            percentage=percentage,
+            queries=query_sequence_order,
         )
         scaffold.add_clusters(clusters, query_sequence_order=query_sequence_order)
         LOG.debug(
@@ -434,6 +450,7 @@ def filter_session(
     unique=3,
     min_hits=3,
     require=None,
+    percentage=50,
 ):
     """Filter a Session object with new thresholds.
 
@@ -459,9 +476,10 @@ def filter_session(
                 min_hits=min_hits,
                 require=require,
                 unique=unique,
+                percentage=percentage,
+                queries=session.queries,
             )
             scaffold.clusters = []
-
             scaffold.add_clusters(clusters, query_sequence_order=session.queries)
         deduplicate(organism)
 
@@ -520,6 +538,7 @@ def search(
     ipg_file=None,
     query_sequence_order=None,
     percentage=None,
+
 ):
     """Gets the genomic context for a collection of Hit objects.
 
