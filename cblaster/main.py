@@ -389,7 +389,7 @@ def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, se
         require=require,
         ipg_file=ipg_file,
         query_sequence_order=list(session.sequences),
-        percentage=percentage
+        percentage=percentage,
     )
     return organisms
 
