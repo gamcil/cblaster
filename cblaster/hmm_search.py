@@ -132,19 +132,18 @@ def parse_hmmer_output(results):
     """
     hit_info = []
     for record in SearchIO.parse(results, 'hmmer3-text'):
-        hits = record.hits
-        num_hits = len(hits)
-        if num_hits > 0:
-            for hit in hits:
-                hit_class = Hit(
-                    query=record.accession,  # Pfam id
-                    subject=hit.id,  # Hit id
-                    identity=None,  # Not present
-                    coverage=None,  # Not present
-                    evalue=hit.evalue,  # E-value of hit
-                    bitscore=hit.bitscore,  # Bit score of hit
-                )
-                hit_info.append(hit_class)
+        if not record.hits:
+            continue
+        for hit in record.hits:
+            hit_class = Hit(
+                query=record.accession,  # Pfam id
+                subject=hit.id,  # Hit id
+                identity=None,  # Not present
+                coverage=None,  # Not present
+                evalue=hit.evalue,  # E-value of hit
+                bitscore=hit.bitscore,  # Bit score of hit
+            )
+            hit_info.append(hit_class)
     if not hit_info:
         LOG.error("No hits have been found")
     return hit_info
@@ -161,24 +160,26 @@ def perform_hmmer(fasta, query_profiles, pfam, session):
         hit_res: List of class objects with the hits
 
     """
-    # 1. Check if program exist else give error message and stop program
+    LOG.info("Starting hmmer search")
+
+    # Make sure we can find hmmfetch and hmmsearch on PATH
     helpers.get_program_path(["hmmfetch", "hmmsearch"])
 
-    # 2. run check_pfam_d
-    LOG.info("Starting hmmer search")
+    # Find Pfam database (.dat and .hmm)
     hmm, dat = check_pfam_db(pfam)
 
-    # 3. get_full_acc_number and run hmmfetch
+    # Find real Pfam accessions
     session.queries = get_full_accession_number(dat, query_profiles)
 
     if not session.queries:
         LOG.error("No valid profiles could be selected")
         return
 
+    # Extract HMM profiles from database
     query = fetch_profiles(hmm, dat, session.queries)
 
-    # 4. run hmmsearch
+    # Run search
     results = run_hmmsearch(hmm, fasta, query)
 
-    # 5. Parse hmm output, needs to be the same as blast output
+    # Parse results and return
     return parse_hmmer_output(results)

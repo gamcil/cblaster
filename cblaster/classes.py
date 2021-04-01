@@ -349,7 +349,10 @@ class Cluster(Serializer):
             subject (Subject): cblaster Subject object
             scaffold_index (int): the index of the subject in the scaffold it is saved in
         """
-        remove_index = self.subjects.index(subject)
+        try:
+            remove_index = self.subjects.index(subject)
+        except ValueError:
+            return
         for index, index_value in enumerate(self.indices):
             if index_value > scaffold_index:
                 self.indices[index] -= 1
