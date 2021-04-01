@@ -294,9 +294,10 @@ def add_searching_group(search):
     group.add_argument(
         "-pfam",
         "--database_pfam",
-        help="Path to Pfam database. If not present, the latest version of the"
-        " Pfam database will be downloaded. This option is required when running"
-        " HMM or combi search modes.",
+        help="Path to folder containing Pfam database files (Pfam-A.hmm.gz and"
+        " Pfam-A.dat.gz). If not found, cblaster will download the latest Pfam"
+        " release to this folder. This option is required when running HMM or"
+        " combi search modes.",
     )
     group.add_argument(
         "-eq",
