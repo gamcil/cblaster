@@ -225,34 +225,34 @@ def cblaster(
 
         sqlite_db = None
         session.params["rid"] = rid
-        organisms = []
 
         if mode in ("hmm", "combi_local", "combi_remote"):
             sqlite_db = Path(databases[0]).with_suffix(".sqlite3")
             results = hmm_search.perform_hmmer(
-                database=databases[0],
+                fasta=databases[0],
                 query_profiles=query_profiles,
-                database_pfam=database_pfam,
+                pfam=database_pfam,
+                session=session
             )
             LOG.info(
                 "Found %i hits meeting score thresholds for hmm search", len(results)
             )
             LOG.info("Fetching genomic context of hits")
-            organisms.extend(
-                get_context(
-                    results,
-                    sqlite_db,
-                    unique,
-                    min_hits,
-                    gap,
-                    require,
-                    ipg_file,
-                    session,
-                    percentage,
-                )
+            sqlite_db = helpers.find_sqlite_db(databases[0])
+            organisms = context.search(
+                results,
+                sqlite_db=sqlite_db,
+                unique=unique,
+                min_hits=min_hits,
+                gap=gap,
+                require=require,
+                ipg_file=ipg_file,
+                query_sequence_order=session.queries,
+                percentage=percentage,
             )
+            session.organisms.extend(organisms)
 
-        # when running combi modes run a local or remote search right after the hmm search
+        # When running combined modes, run local/remote search right after HMM search
         if mode == "combi_local":
             mode = "local"
         elif mode == "combi_remote":
@@ -260,10 +260,7 @@ def cblaster(
 
         if mode == "local":
             LOG.info("Starting cblaster in local mode")
-            sqlite_db = Path(databases[0]).with_suffix(".sqlite3")
-            if not sqlite_db.exists():
-                LOG.error("Could not find matching SQlite3 database, exiting")
-                raise SystemExit
+            sqlite_db = helpers.find_sqlite_db(databases[0])
             results = local.search(
                 databases[0],
                 sequences=session.sequences,
@@ -277,19 +274,18 @@ def cblaster(
                 "Found %i hits meeting score thresholds for local search", len(results)
             )
             LOG.info("Fetching genomic context of hits")
-            organisms.extend(
-                get_context(
-                    results,
-                    sqlite_db,
-                    unique,
-                    min_hits,
-                    gap,
-                    require,
-                    ipg_file,
-                    session,
-                    percentage,
-                )
+            organisms = context.search(
+                results,
+                sqlite_db=sqlite_db,
+                unique=unique,
+                min_hits=min_hits,
+                gap=gap,
+                require=require,
+                ipg_file=ipg_file,
+                query_sequence_order=session.queries,
+                percentage=percentage,
             )
+            session.organisms.extend(organisms)
 
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
@@ -311,21 +307,18 @@ def cblaster(
                 "Found %i hits meeting score thresholds for remote search", len(results)
             )
             LOG.info("Fetching genomic context of hits")
-            organisms.extend(
-                get_context(
-                    results,
-                    sqlite_db,
-                    unique,
-                    min_hits,
-                    gap,
-                    require,
-                    ipg_file,
-                    session,
-                    percentage,
-                )
+            organisms = context.search(
+                results,
+                sqlite_db=sqlite_db,
+                unique=unique,
+                min_hits=min_hits,
+                gap=gap,
+                require=require,
+                ipg_file=ipg_file,
+                query_sequence_order=session.queries,
+                percentage=percentage,
             )
-
-        session.organisms = organisms
+            session.organisms.extend(organisms)
 
         if sqlite_db:
             session.params["sqlite_db"] = str(sqlite_db)
@@ -377,21 +370,6 @@ def cblaster(
 
     LOG.info("Done.")
     return session
-
-
-def get_context(results, sqlite_db, unique, min_hits, gap, require, ipg_file, session, percentage):
-    organisms = context.search(
-        results,
-        sqlite_db=sqlite_db,
-        unique=unique,
-        min_hits=min_hits,
-        gap=gap,
-        require=require,
-        ipg_file=ipg_file,
-        query_sequence_order=list(session.sequences),
-        percentage=percentage,
-    )
-    return organisms
 
 
 def main():

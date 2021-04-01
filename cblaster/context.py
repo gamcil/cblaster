@@ -465,12 +465,12 @@ def filter_session(
                     hit
                     for hit in subject.hits
                     if (
-                        hit.identity > min_identity
-                        and hit.coverage > min_coverage
+                        hit.identity > min_identity if hit.identity else True
+                        and hit.coverage > min_coverage if hit.coverage else True
                         and hit.evalue < max_evalue
                     )
                 ]
-                if len(subject.hits) == 0:
+                if not subject.hits:
                     scaffold.remove_subject(subject)
             clusters = find_clusters(
                 scaffold.subjects,
@@ -540,7 +540,6 @@ def search(
     ipg_file=None,
     query_sequence_order=None,
     percentage=None,
-
 ):
     """Gets the genomic context for a collection of Hit objects.
 
