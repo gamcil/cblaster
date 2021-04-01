@@ -34,7 +34,7 @@ def init_sqlite_db(path, force=False):
             raise FileExistsError(f"File {path} already exists but force=False")
     else:
         LOG.info("Initialising cblaster SQLite3 database to %s", path)
-    with sqlite3.connect(path) as con:
+    with sqlite3.connect(str(path)) as con:
         con.executescript(sql.SCHEMA)
 
 
@@ -46,7 +46,7 @@ def seqrecords_to_sqlite(tuples, database):
         database (str): Path to SQLite3 database
     """
     try:
-        with sqlite3.connect(database) as con:
+        with sqlite3.connect(str(database)) as con:
             cur = con.cursor()
             cur.executemany(sql.INSERT, tuples)
     except sqlite3.IntegrityError:
@@ -60,14 +60,14 @@ def sqlite_to_fasta(path, database):
         path (str): Path to output FASTA file
         database (str): Path to SQLite3 database
     """
-    with sqlite3.connect(database) as con, open(path, "w") as fasta:
+    with sqlite3.connect(str(database)) as con, open(path, "w") as fasta:
         cur = con.cursor()
         for (record,) in cur.execute(sql.FASTA):
             fasta.write(record)
 
 
 def _query(query, values, database, fetch="all"):
-    with sqlite3.connect(database) as con:
+    with sqlite3.connect(str(database)) as con:
         cur = con.cursor()
         query = cur.execute(query, values)
         return query.fetchall() if fetch == "all" else query.fetchone()
@@ -128,7 +128,7 @@ def diamond_makedb(fasta, name):
     """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
     subprocess.run(
-        [diamond, "makedb", "--in", fasta, "--db", name],
+        [diamond, "makedb", "--in", str(fasta), "--db", name],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -179,6 +179,8 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     init_sqlite_db(sqlite_path, force=force)
 
     paths = gp.find_files(paths)
+    if len(paths) == 0:
+        raise RuntimeError("No valid files provided expected genbank, embl or gff with accompanying fasta file.")
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
