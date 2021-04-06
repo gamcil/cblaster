@@ -115,7 +115,11 @@ def parse_IP_groups(results):
                 or "skipping" in line:
             continue
         ipg, *fields = line.strip("\n").split("\t")
-        entry = Entry(*fields)
+        try:
+            entry = Entry(*fields)
+        except ValueError:
+            LOG.warning("Failed to parse row in IPG table: %s", fields)
+            continue
         groups[ipg].append(entry)
     return groups
 
