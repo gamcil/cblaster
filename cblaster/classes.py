@@ -72,13 +72,18 @@ class Session(Serializer):
         queries (list): Names of query sequences.
         params (dict): Search parameters.
         organisms (list): Organism objects created in a search.
+        sequences (dict): Query sequence translations
+        query (Cluster): cblaster Cluster object for query
     """
 
-    def __init__(self, queries=None, sequences=None, params=None, organisms=None):
+    def __init__(
+        self, queries=None, sequences=None, params=None, organisms=None, query=None
+    ):
         self.queries = queries if queries else []
         self.params = params if params else {}
         self.organisms = organisms if organisms else []
         self.sequences = sequences if sequences else {}
+        self.query = query
 
     def __add__(self, other):
         if not isinstance(other, Session):
@@ -87,6 +92,7 @@ class Session(Serializer):
             raise ValueError("Query sequences do not match")
         return Session(
             queries=self.queries,
+            query=self.query,
             sequences=self.sequences,
             params=self.params,
             organisms=self.organisms + other.organisms,
@@ -94,8 +100,8 @@ class Session(Serializer):
 
     def to_dict(self):
         return {
+            "query": self.query.to_dict(save_subjects=True),
             "queries": self.queries,
-            "sequences": self.sequences,
             "params": self.params,
             "organisms": [o.to_dict() for o in self.organisms],
         }
@@ -119,8 +125,8 @@ class Session(Serializer):
     @classmethod
     def from_dict(cls, d):
         return cls(
+            query=Cluster.from_dict(d["query"]),
             queries=d.get("queries", None),
-            sequences=d.get("sequences", None),
             params=d.get("params", None),
             organisms=[Organism.from_dict(o) for o in d.get("organisms", [])],
         )
@@ -250,7 +256,9 @@ class Scaffold(Serializer):
         for subjects in subject_lists:
             indices = [self.subjects.index(subject) for subject in subjects]
             cluster = Cluster(
-                indices, subjects, query_sequence_order=query_sequence_order
+                indices,
+                subjects,
+                query_sequence_order=query_sequence_order,
             )
             self.clusters.append(cluster)
         self.clusters.sort(key=lambda x: x.score, reverse=True)
@@ -286,7 +294,7 @@ class Scaffold(Serializer):
         clusters = [None] * len(d["clusters"])
         for index, cluster in enumerate(d["clusters"]):
             cluster_subjects = [subjects[ix] for ix in cluster["indices"]]
-            clusters[index] = Cluster.from_dict(cluster, *cluster_subjects)
+            clusters[index] = Cluster.from_dict(cluster, subjects=cluster_subjects)
         return cls(accession=d["accession"], subjects=subjects, clusters=clusters)
 
 
@@ -304,7 +312,7 @@ class Cluster(Serializer):
         number (int): number that is unique for each cluster in order to identify them
     """
 
-    NUMBER = itertools.count(1, 1)
+    NUMBER = itertools.count()
 
     def __init__(
         self,
@@ -320,10 +328,17 @@ class Cluster(Serializer):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
         self.intermediate_genes = intermediate_genes if intermediate_genes else []
-        self.score = score if score else self.calculate_score(query_sequence_order)
-        self.start = start if start else self.subjects[0].start
-        self.end = end if end else self.subjects[-1].end
+        self.score = score 
+        self.start = start
+        self.end = end
         self.number = number if number is not None else next(self.NUMBER)
+
+        if query_sequence_order:
+            self.score = self.calculate_score(query_sequence_order)
+
+        if self.subjects and not (self.start or self.end):
+            self.start = self.subjects[0].start
+            self.end = self.subjects[-1].end
 
     def __iter__(self):
         return iter(self.subjects)
@@ -339,6 +354,17 @@ class Cluster(Serializer):
 
     def __hash__(self):
         return hash(id(self))
+
+    @property
+    def sequences(self):
+        return {
+            subject.name: subject.sequence
+            for subject in self.subjects
+        }
+
+    @property
+    def names(self):
+        return [subject.name for subject in self.subjects]
 
     def remove_subject(self, subject, scaffold_index):
         """Safely remove a subject from a cluster.
@@ -414,10 +440,11 @@ class Cluster(Serializer):
         bitscore = self.__calculate_bitscore()
         return bitscore / 10000 + len(self.subjects) + synteny_score
 
-    def to_dict(self):
+    def to_dict(self, save_subjects=False):
         return {
             "indices": self.indices,
-            "intermediate_genes": [gene.to_dict() for gene in self.intermediate_genes],
+            "subjects": [s.to_dict() for s in self.subjects] if save_subjects else [],
+            "intermediate_genes": [g.to_dict() for g in self.intermediate_genes],
             "score": self.score,
             "start": self.start,
             "end": self.end,
@@ -425,11 +452,11 @@ class Cluster(Serializer):
         }
 
     @classmethod
-    def from_dict(cls, d, *subjects):
+    def from_dict(cls, d, subjects=None):
         return cls(
             indices=d["indices"],
+            subjects=subjects or [Subject.from_dict(d) for d in d["subjects"]],
             intermediate_genes=[Subject.from_dict(d) for d in d["intermediate_genes"]],
-            subjects=list(subjects),
             score=d["score"],
             start=d["start"],
             end=d["end"],
@@ -460,7 +487,8 @@ class Subject(Serializer):
         ipg=None,
         start=None,
         end=None,
-        strand=None
+        strand=None,
+        sequence=None,
     ):
         self.id = id
         self.hits = hits if hits else []
@@ -469,6 +497,7 @@ class Subject(Serializer):
         self.start = int(start) if start is not None else None
         self.end = int(end) if end is not None else None
         self.strand = strand
+        self.sequence = sequence
 
     def __key(self):
         # make equals behaviour of higher classes consistent with different instances
@@ -498,6 +527,7 @@ class Subject(Serializer):
             "start": self.start,
             "end": self.end,
             "strand": self.strand,
+            "sequence": self.sequence,
         }
 
     def values(self, decimals=4):
@@ -534,6 +564,7 @@ class Subject(Serializer):
             start=d.get("start"),
             end=d.get("end"),
             strand=d.get("strand"),
+            sequence=d.get("sequence"),
         )
 
 
