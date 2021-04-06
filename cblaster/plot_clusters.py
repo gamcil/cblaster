@@ -27,7 +27,12 @@ LOG = logging.getLogger(__name__)
 FASTA_SPACE = 500
 
 
-def cblaster_to_clinker_cluster(cluster, scaffold_accession="", organism_name=""):
+def cblaster_to_clinker_cluster(
+    cluster,
+    cluster_label=None,
+    scaffold_accession="",
+    organism_name="",
+):
     """Convert this cluster to a clinker format cluster
 
     Args:
@@ -37,14 +42,13 @@ def cblaster_to_clinker_cluster(cluster, scaffold_accession="", organism_name=""
     """
     clinker_genes = []
     for subject in cluster.subjects:
-        best_hit = max(subject.hits, key=lambda x: x.bitscore)
-        tooltip_dict = {
-            "accession": subject.name,
-            "identity": f"{best_hit.identity:.2f}",
-            "bitscore": best_hit.bitscore,
-            "coverage": f"{best_hit.coverage:.2f}",
-            "e-value": best_hit.evalue if best_hit.evalue != 0 else "0.0"
-        }
+        tooltip_dict = dict(accession=subject.name)
+        if subject.hits:
+            best_hit = max(subject.hits, key=lambda x: x.bitscore)
+            for key in ["identity", "coverage", "evalue", "bitscore"]:
+                value = getattr(best_hit, key)
+                if value:
+                    tooltip_dict[key] = value
         clinker_gene = ClinkerGene(
             label=subject.name,
             start=subject.start,
@@ -72,130 +76,17 @@ def cblaster_to_clinker_cluster(cluster, scaffold_accession="", organism_name=""
         end=cluster.intermediate_end
     )
 
-    return ClinkerCluster(
-        f"{organism_name} Cluster {cluster.number} ({cluster.score:.2f} score)",
-        [clinker_locus],
-    )
+    if cluster_label:
+        label = cluster_label
+    else:
+        inner = (
+            f"Cluster {cluster.number}" + f", {cluster.score:.2f} score"
+            if cluster.score
+            else ""
+        )
+        label = f"{organism_name} ({inner})"
 
-
-def query_to_clinker_cluster(session):
-    """Turn a query file of a cblaster Session object into a clinker.Cluster object
-    Args:
-        query_file (str): Path to the query file
-    Returns:
-        a clinker.Cluster object
-    """
-    query_file = session.params.get("query_file", None)
-
-    if query_file:
-        with open(query_file) as query:
-            if any(query_file.endswith(ext) for ext in GBK_SUFFIXES):
-                seqrecord = SeqIO.parse(query, "genbank")
-            elif any(query_file.endswith(ext) for ext in EMBL_SUFFIXES):
-                seqrecord = SeqIO.parse(query, "embl")
-            else:
-                return fasta_to_cluster(query)
-            return _seqrecord_to_clinker_cluster(seqrecord)
-    return query_sequences_to_cluster(session.queries, session.sequences)
-
-
-def _seqrecord_to_clinker_cluster(seqrecord):
-    """Transform a Bio.Seqrecord into a clinker cluster so clinker can plot it easily
-    Args:
-        seqrecord (Bio.Seqrecord): seqrecord object
-    Returns:
-        A cinker cluster object
-    """
-    identifiers = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
-    loci = []
-    count = 1
-    for locus_nr, record in enumerate(seqrecord):
-        locus_genes = []
-        locus_start = locus_end = None
-        for feature in record.features:
-            if feature.type != "CDS":
-                continue
-            name = None
-            for identifier in identifiers:
-                if identifier not in feature.qualifiers:
-                    continue
-                name = feature.qualifiers[identifier][0]
-                break
-            if name is None:
-                name = f"protein_{count}"
-                count += 1
-            if locus_start is None or feature.location.start < locus_start:
-                locus_start = feature.location.start
-            if locus_end is None or feature.location.end > locus_end:
-                locus_end = feature.location.end
-            gene = ClinkerGene(
-                label=name,
-                start=feature.location.start,
-                end=feature.location.end,
-                strand=feature.location.strand,
-                names={"accession": name}
-            )
-            locus_genes.append(gene)
-        locus = ClinkerLocus(f"Locus{locus_nr + 1}", locus_genes, start=locus_start, end=locus_end)
-        loci.append(locus)
-    return ClinkerCluster("Query_cluster", loci)
-
-
-def query_sequences_to_cluster(query_ids, sequences, spacing=500):
-    """Generates a clinker Cluster object from query IDs/sequences.
-
-    Used as a fallback when a session file does not have a query_file path
-    saved in it's parameters (i.e. search from --query_ids).
-    """
-    genes = []
-    start = 0
-    for query in query_ids:
-        sequence = sequences[query]
-        length = len(sequence) * 3
-        gene = ClinkerGene(label=query, start=start, end=start + length, strand=1)
-        genes.append(gene)
-        start += length + spacing
-    locus = ClinkerLocus("Query locus", genes, start=0, end=genes[-1].end)
-    return ClinkerCluster("Query cluster", [locus])
-
-
-def fasta_to_cluster(fasta_handle):
-    """Convert a fasta text into a clinker.Cluster
-    Args:
-        fasta_handle (TextIOWrapper): handle for the fasta text
-    Returns:
-        a clinker.Cluster object
-    """
-    name = None
-    start = end = 0
-    sequence_length = 0
-    locus_genes = []
-    for line in fasta_handle:
-        if line.startswith(">"):
-            # if a sequence was found
-            if sequence_length != 0:
-                gene = ClinkerGene(label=name, start=start, end=end, strand=1)
-                locus_genes.append(gene)
-                # space the genes a bit
-                end += FASTA_SPACE
-                start = end
-            name = line[1:].strip()
-            sequence_length = 0
-        else:
-            # do not count the newline character and get in nucleotide numbers
-            sequence_length += (len(line) - 1) * 3
-            end += (len(line) - 1) * 3
-
-    clinker_gene = ClinkerGene(
-        label=name,
-        start=start,
-        end=end,
-        strand=1,
-        names={"accession": name}
-    )
-    locus_genes.append(clinker_gene)
-    locus = ClinkerLocus("Locus1", locus_genes, start=0, end=end)
-    return ClinkerCluster("Query_cluster", [locus])
+    return ClinkerCluster(label, [clinker_locus])
 
 
 def clusters_to_clinker_globaligner(clinker_query_cluster, cluster_hierarchies):
@@ -215,17 +106,19 @@ def clusters_to_clinker_globaligner(clinker_query_cluster, cluster_hierarchies):
     """
     globaligner = ClinkerGlobalaligner()
 
+    # Form gene groupings based on query genes
     groups = {
         gene.label: ClinkerGroup(label=gene.label, genes=[gene.uid])
         for locus in clinker_query_cluster.loci
         for gene in locus.genes
     }
 
+    # Iterate all cblaster Clusters, convert to clinker Clusters and mock alignments
     for cblaster_cluster, scaffold, organism_name in cluster_hierarchies:
         clinker_cluster = cblaster_to_clinker_cluster(
             cblaster_cluster,
-            scaffold.accession,
-            organism_name,
+            scaffold_accession=scaffold.accession,
+            organism_name=organism_name,
         )
         alignment = ClinkerAlignment(query=clinker_query_cluster, target=clinker_cluster)
 
@@ -283,13 +176,19 @@ def plot_clusters(
     )
 
     # Form the query cluster from the session query file
-    clinker_query_cluster = query_to_clinker_cluster(session)
+    query_cluster = cblaster_to_clinker_cluster(
+        session.query,
+        cluster_label="Query Cluster",
+        scaffold_accession=session.params.get("query_file", "N.A."),
+    )
 
     # Create a Globaligner object containing mocked clusters/alignments/links
-    globaligner = clusters_to_clinker_globaligner(clinker_query_cluster, cluster_hierarchies)
+    globaligner = clusters_to_clinker_globaligner(query_cluster, cluster_hierarchies)
 
     if not testing:
         clinker_plot_clusters(globaligner, plot_outfile, use_file_order=True)
+
     if plot_outfile:
         LOG.info(f"Plot file can be found at {plot_outfile}")
+
     LOG.info("Done!")
