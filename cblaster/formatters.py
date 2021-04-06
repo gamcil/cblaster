@@ -5,7 +5,7 @@ def get_maximum_row_lengths(rows):
     """Finds the longest lengths of fields per column in a collection of rows."""
     lengths, total = [], len(rows[0])
     for index in range(total):
-        largest = max(len(row[index]) for row in rows)
+        largest = max(len(str(row[index])) for row in rows)
         lengths.append(largest)
     return lengths
 
