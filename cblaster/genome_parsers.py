@@ -160,7 +160,7 @@ def find_files(paths, recurse=True, level=0):
             ext = _path.suffix.lower()
             valid = ext in GBK_SUFFIXES + GFF_SUFFIXES + EMBL_SUFFIXES
             if _path.exists() and valid:
-                files.append(path)
+                files.append(_path)
     return files
 
 
