@@ -190,7 +190,71 @@ def parse_file(path):
     return dict(name=name, records=records)
 
 
+def iter_overlapping_features(features):
+    if not features:
+        return
+
+    sorted_features = sorted(features, key=lambda f: f.location.start)
+    first = sorted_features.pop(0)
+    group, border = [first], first.location.end
+
+    for feature in sorted_features:
+        if feature.location.end <= border:
+            group.append(feature)
+            border = max(border, feature.location.end)
+        else:
+            yield group
+            group, border = [feature], feature.location.end
+    yield group
+
+
 def seqrecord_to_tuples(record, source):
+    features = [f for f in record.features if f.type in ("CDS", "gene")]
+
+    rows = []
+    for group in iter_overlapping_features(features):
+        # Pull out gene and CDS features
+        gene = [f for f in group if f.type == "gene"]
+        cds = [f for f in group if f.type == "CDS"]
+
+        # Get coordinates; prefer gene instead of CDS
+        base = gene[0] if gene else cds[0]
+        start = int(base.location.start)
+        end = int(base.location.end)
+        strand = int(base.location.strand)
+
+        # Get name and translation, prefer CDS instead of gene
+        name = find_gene_name(cds[0].qualifiers if cds else gene[0].qualifiers)[0]
+        translation = (
+            cds[0].qualifiers.pop("translation", None)
+            or cds[0].extract(record.seq).translate()
+        ) if cds else None
+        if translation:
+            translation = translation[0]
+
+        # Keep track of record ID and source
+        record_id = str(record.id)
+        source_id = str(source)
+
+        # Create the actual tuple
+        row = ("gene", name, start, end, strand, translation, record_id, source_id)
+        rows.append(row)
+
+    scaffold = (
+        "scaffold",
+        str(record.id),
+        0,
+        len(record.seq),
+        None,
+        str(record.seq),
+        str(record.id),
+        str(source),
+    )
+
+    return [scaffold, *rows]
+
+
+def seqrecord_to_tuples2(record, source):
     """Generates insertion tuples for genes in a SeqRecord object.
 
     Args:
