@@ -202,13 +202,17 @@ def cblaster(
                 with open(recompute, "w") as fp:
                     session.to_json(fp, indent=indent)
     else:
+        # Create a cblaster Cluster object from query input
+        query = helpers.parse_query_sequences(
+            query_file=query_file,
+            query_ids=query_ids,
+            query_profiles=query_profiles,
+        )
+        
+        # Create a cblaster Session
         session = Session(
-            queries=query_ids if query_ids else [],
-            sequences=helpers.get_sequences(
-                query_file=query_file,
-                query_ids=query_ids,
-                query_profiles=query_profiles,
-            ),
+            query=query,
+            queries=query.names,
             params={
                 "mode": mode,
                 "database": databases,
@@ -222,7 +226,6 @@ def cblaster(
         if query_file:
             # get_sequences() returns OrderedDict, so save keys to
             # preserve query order
-            session.queries = list(session.sequences)
             session.params["query_file"] = query_file
 
         sqlite_db = None
@@ -236,9 +239,7 @@ def cblaster(
                 pfam=database_pfam,
                 session=session
             )
-            LOG.info(
-                "Found %i hits meeting score thresholds for hmm search", len(results)
-            )
+            LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
             LOG.info("Fetching genomic context of hits")
             sqlite_db = helpers.find_sqlite_db(databases[0])
             organisms = context.search(
@@ -265,7 +266,7 @@ def cblaster(
             sqlite_db = helpers.find_sqlite_db(databases[0])
             results = local.search(
                 databases[0],
-                sequences=session.sequences,
+                sequences=session.query.sequences,
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
@@ -303,7 +304,7 @@ def cblaster(
             if entrez_query:
                 session.params["entrez_query"] = entrez_query
             rid, results = remote.search(
-                sequences=session.sequences,
+                sequences=session.query.sequences,
                 rid=rid,
                 database=databases[0],
                 min_identity=min_identity,

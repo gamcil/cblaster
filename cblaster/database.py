@@ -195,7 +195,9 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
 
     with Pool(cpus) as pool:
         for index, group in enumerate(path_groups, 1):
-            LOG.info("Batch %i: %s", index, [str(p) for p in group])
+            LOG.info("Processing batch %i", index)
+            for path in group:
+                LOG.info("  %s", str(path.name))
             organisms = pool.map(gp.parse_file, group)
             tuples = gp.organisms_to_tuples(organisms)
 

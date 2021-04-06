@@ -88,4 +88,12 @@ WHERE
 """
 
 # Write database sequences in FASTA format
-FASTA = 'SELECT ">"||feature.id||"\n"||feature.sequence||"\n" FROM feature WHERE feature_type = \"gene\"'
+FASTA = """\
+SELECT
+    ">"||id||"\n"||sequence||"\n"
+FROM
+    feature
+WHERE
+    feature_type = \"gene\"
+    AND sequence IS NOT NULL
+"""

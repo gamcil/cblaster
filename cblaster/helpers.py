@@ -11,6 +11,7 @@ from pathlib import Path
 from Bio import SeqIO, Entrez
 
 from cblaster import config, genome_parsers as gp
+from cblaster.classes import Cluster, Subject
 
 
 LOG = logging.getLogger(__name__)
@@ -94,6 +95,81 @@ def sequences_to_fasta(sequences):
 
 def get_project_root():
     return Path(__file__).resolve().parent
+
+
+def dict_to_cluster(sequences, spacing=500):
+    """Creates a mock Cluster from a sequence dictionary."""
+    start = 0
+    subjects = []
+    for name, sequence in sequences.items():
+        length = len(sequence) * 3 if sequence else 1000
+        end = start + length
+        subject = Subject(name=name, start=start, end=end, strand=1)
+        subjects.append(subject)
+        start += length + spacing
+    return Cluster(subjects=subjects)
+
+
+def fasta_seqrecords_to_cluster(records, spacing=500):
+    """Creates a mock Cluster from a SeqIO FASTA parser handle."""
+    start = 0
+    subjects = []
+    for record in records:
+        length = len(record) * 3
+        end = start + length
+        subject = Subject(
+            name=record.id,
+            start=start,
+            end=end,
+            strand=1,
+            sequence=str(record.seq)
+        )
+        subjects.append(subject)
+        start += length + spacing
+    return Cluster(subjects=subjects)
+
+
+def seqrecord_to_cluster(record):
+    """Creates a Cluster object from a SeqIO GenBank/EMBL parser handle."""
+    _, *features = gp.seqrecord_to_tuples(record, "")
+    subjects = []
+    intermediate = []
+    for _, name, start, end, strand, translation, *_ in features:
+        subject = Subject(
+            name=name,
+            start=start,
+            end=end,
+            strand=strand,
+            sequence=translation
+        )
+        if translation:
+            subjects.append(subject)
+        else:
+            intermediate.append(subject)
+    return Cluster(subjects=subjects, intermediate_genes=intermediate)
+
+
+def parse_query_sequences(query_file=None, query_ids=None, query_profiles=None):
+    """Creates a Cluster object from query sequences.
+
+    If EMBL/GenBank, Cluster will use exact genomic coordinates parsed from file.
+    Otherwise, a fake Cluster will be created where genes are drawn to scale,
+    but always on positive strand and with fixed intergenic distance.
+    """
+    if query_file:
+        organism = gp.parse_file(query_file)
+        if Path(query_file).suffix.lower() in gp.FASTA_SUFFIXES:
+            cluster = fasta_seqrecords_to_cluster(organism["records"])
+        else:
+            cluster = seqrecord_to_cluster(organism["records"][0])
+    elif query_ids:
+        sequences = efetch_sequences(query_ids)
+        cluster = dict_to_cluster(sequences)
+    elif query_profiles:
+        cluster = dict_to_cluster({key: None for key in query_profiles})
+    else:
+        raise ValueError("Expected 'query_file', 'query_ids' or 'query_profiles'")
+    return cluster
 
 
 def get_sequences(query_file=None, query_ids=None, query_profiles=None):
