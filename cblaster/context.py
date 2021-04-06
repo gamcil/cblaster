@@ -227,7 +227,7 @@ def parse_IPG_table(results, hits):
                 ipg=ipg,
                 end=int(entry.end),
                 start=int(entry.start),
-                strand=entry.strand,
+                strand=1 if entry.strand == "+" else -1,
             )
 
             organisms[org][st].scaffolds[acc].subjects.append(subject)
@@ -288,7 +288,7 @@ def query_local_DB(hits, db):
             hits=hits,
             start=int(start_pos),
             end=int(end_pos),
-            strand="+" if strand == 1 else "-"
+            strand=strand,
         )
         organisms[organism].scaffolds[scaffold].subjects.append(subject)
     return [organism for organism in organisms.values()]

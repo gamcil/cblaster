@@ -53,7 +53,7 @@ def cblaster_to_clinker_cluster(
             label=subject.name,
             start=subject.start,
             end=subject.end,
-            strand=1 if subject.strand == '+' else -1,
+            strand=subject.strand,
             names=tooltip_dict
         )
         clinker_genes.append(clinker_gene)
@@ -64,7 +64,7 @@ def cblaster_to_clinker_cluster(
             label=gene.name,
             start=gene.start,
             end=gene.end,
-            strand=1 if gene.strand == '+' else -1,
+            strand=gene.strand,
             names=tooltip_dict
         )
         clinker_genes.append(clinker_gene)

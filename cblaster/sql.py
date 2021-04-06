@@ -88,7 +88,7 @@ WHERE
 """
 
 # Write database sequences in FASTA format
-FASTA = """
+FASTA = """\
 SELECT
     ">"||id||"\n"||sequence||"\n"
 FROM
