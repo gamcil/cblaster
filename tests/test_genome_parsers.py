@@ -111,7 +111,8 @@ def test_find_files(tmp_path):
     base = directory / "file4.gbk"
     base.write_text("test")
 
-    assert gp.find_files([directory], recurse=True) == [base, gbk, gff]
+    recursed = gp.find_files([directory], recurse=True)
+    assert all(f in recursed for f in [base, gbk, gff])
     assert gp.find_files([directory], recurse=False) == [base]
 
 
