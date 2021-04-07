@@ -74,9 +74,9 @@ def _query(query, database, values=None, fetch="all"):
 
 
 def query_sequences(ids, database):
-    if not all(isinstance(idx, int) for idx in ids):
-        raise TypeError("Expected ids of type int")
-    inner = ", ".join(idx for idx in ids)
+    if not all(idx.isdigit() for idx in ids):
+        raise TypeError("Expected numeric ids")
+    inner = ", ".join(str(idx) for idx in ids)
     query = sql.SEQUENCE_QUERY.format(inner)
     return _query(query, database)
 
@@ -91,8 +91,8 @@ def query_genes(ids, database):
         list: Result tuples returned by the query
     """
     if not all(idx.isdigit() for idx in ids):
-        raise TypeError("Expected ids of type int")
-    inner = ", ".join(idx for idx in ids)
+        raise TypeError("Expected numeric ids")
+    inner = ", ".join(str(idx) for idx in ids)
     query = sql.GENE_QUERY.format(inner)
     return _query(query, database)
 
