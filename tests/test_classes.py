@@ -35,11 +35,11 @@ def hits():
 @pytest.fixture
 def subjects(hits):
     return [
-        classes.Subject("id1", hits[:2], "subject1", "ipg1", "0", "100", "-"),
-        classes.Subject("id1", [hits[1], hits[0]], "subject1", "ipg1", 0, 100, "-"),
-        classes.Subject("id2", hits[2:3], "subject2", "ipg2", 1200, 6000, "+"),
-        classes.Subject("id3", hits[3:4], "subject3", "ipg3", 500, "1000", "+"),
-        classes.Subject("id4", hits[4:5], "subject4", "ipg4", 6453, 8000, "+"),
+        classes.Subject("id1", hits[:2], "subject1", "ipg1", "0", "100", -1),
+        classes.Subject("id1", [hits[1], hits[0]], "subject1", "ipg1", 0, 100, -1),
+        classes.Subject("id2", hits[2:3], "subject2", "ipg2", 1200, 6000, 1),
+        classes.Subject("id3", hits[3:4], "subject3", "ipg3", 500, "1000", 1),
+        classes.Subject("id4", hits[4:5], "subject4", "ipg4", 6453, 8000, 1),
         classes.Subject("id5", name="intermediate subject", start=8100, end=9000),
     ]
 
@@ -205,7 +205,7 @@ def test_hit_from_dict():
 # SUBJECT TESTS
 def test_subject_instantiation(subjects):
     assert isinstance(subjects[0], classes.Serializer)
-    assert [list, str, str, int, int, str] == [
+    assert [list, str, str, int, int, int] == [
         type(getattr(subjects[0], val))
         for val in ["hits", "ipg", "name", "start", "end", "strand"]
     ]
@@ -233,7 +233,7 @@ def test_subject_to_dict(hits, subjects):
         "ipg": "ipg3",
         "start": 500,
         "end": 1000,
-        "strand": "+",
+        "strand": 1,
         "sequence": None,
     }
 
@@ -415,15 +415,6 @@ def test_scaffold_summary(
     result_index,
     scaffold_summaries,
 ):
-    a = scaffolds[index].summary(hide_headers, delimiter, decimals)
-    b = scaffold_summaries[result_index]
-    for i, s in enumerate(difflib.ndiff(a, b)):
-        if s[0]==' ': continue
-        elif s[0]=='-':
-            print(u'Delete "{}" from position {}'.format(s[-1],i))
-        elif s[0]=='+':
-            print(u'Add "{}" to position {}'.format(s[-1],i))    
- 
     assert (
         scaffolds[index].summary(hide_headers, delimiter, decimals)
         == scaffold_summaries[result_index]
@@ -639,7 +630,10 @@ def test_session_from_file(sessions):
 
 
 def test_session_from_files(sessions):
-    files = [DATA_DIR / "test_session1_file.json", DATA_DIR / "test_session2_file.json"]
+    files = [
+        DATA_DIR / "test_session1_file.json",
+        DATA_DIR / "test_session2_file.json",
+    ]
     from_files_session = classes.Session.from_files(files)
     combined_session = sessions[0] + sessions[1]
     compare_sessions(combined_session, from_files_session)

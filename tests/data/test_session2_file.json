@@ -29,7 +29,7 @@
         "ipg": "ipg1",
         "start": 0,
         "end": 100,
-        "strand": "-",
+        "strand": -1,
         "sequence": null
       },
       {
@@ -56,7 +56,7 @@
         "ipg": "ipg1",
         "start": 0,
         "end": 100,
-        "strand": "-",
+        "strand": -1,
         "sequence": null
       }
     ],
@@ -100,12 +100,12 @@
                   "bitscore": 100.3
                 }
               ],
-							"id": "id1",
+	      "id": "id1",
               "name": "subject1",
               "ipg": "ipg1",
               "start": 0,
               "end": 100,
-              "strand": "-"
+              "strand": -1
             },
             {
               "hits": [
@@ -126,12 +126,12 @@
                   "bitscore": 500.3
                 }
               ],
-							"id": "id1",
+	      "id": "id1",
               "name": "subject1",
               "ipg": "ipg1",
               "start": 0,
               "end": 100,
-              "strand": "-"
+              "strand": -1
             },
             {
               "hits": [
@@ -144,12 +144,12 @@
                   "bitscore": 200.3
                 }
               ],
-							"id": "id2",
+	      "id": "id2",
               "name": "subject2",
               "ipg": "ipg2",
               "start": 1200,
               "end": 6000,
-              "strand": "+"
+              "strand": 1
             },
             {
               "hits": [
@@ -162,12 +162,12 @@
                   "bitscore": 500.3
                 }
               ],
-							"id": "id3",
+	      "id": "id3",
               "name": "subject3",
               "ipg": "ipg3",
               "start": 500,
               "end": 1000,
-              "strand": "+"
+              "strand": 1
             },
             {
               "hits": [
@@ -180,12 +180,12 @@
                   "bitscore": 500.3
                 }
               ],
-							"id": "id4",
+	      "id": "id4",
               "name": "subject4",
               "ipg": "ipg4",
               "start": 6453,
               "end": 8000,
-              "strand": "+"
+              "strand": 1
             }
           ],
           "clusters": [
