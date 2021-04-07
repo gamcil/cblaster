@@ -1,12 +1,75 @@
 {
+  "query": {
+    "indices": [
+      0,
+      1
+    ],
+    "subjects": [
+      {
+        "id": "id1",
+        "hits": [
+          {
+            "query": "q1",
+            "subject": "s1",
+            "identity": 70.9,
+            "coverage": 54.6,
+            "evalue": 0.0,
+            "bitscore": 500.3
+          },
+          {
+            "query": "q1",
+            "subject": "s2",
+            "identity": 5.9,
+            "coverage": 21.6,
+            "evalue": 1.06e-29,
+            "bitscore": 100.3
+          }
+        ],
+        "name": "subject1",
+        "ipg": "ipg1",
+        "start": 0,
+        "end": 100,
+        "strand": "-",
+        "sequence": null
+      },
+      {
+        "id": "id1",
+        "hits": [
+          {
+            "query": "q1",
+            "subject": "s2",
+            "identity": 5.9,
+            "coverage": 21.6,
+            "evalue": 1.06e-29,
+            "bitscore": 100.3
+          },
+          {
+            "query": "q1",
+            "subject": "s1",
+            "identity": 70.9,
+            "coverage": 54.6,
+            "evalue": 0.0,
+            "bitscore": 500.3
+          }
+        ],
+        "name": "subject1",
+        "ipg": "ipg1",
+        "start": 0,
+        "end": 100,
+        "strand": "-",
+        "sequence": null
+      }
+    ],
+    "intermediate_genes": [],
+    "score": 100,
+    "start": 50,
+    "end": 200,
+    "number": 2
+  },
   "queries": [
     "q1",
     "q2"
   ],
-  "sequences": {
-    "q1": "SQMESEQVENCE",
-    "q2": "SQMEOTHERSEQVENCE"
-  },
   "params": {
     "dummy1": 1
   },
