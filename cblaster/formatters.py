@@ -169,11 +169,18 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
         summary table
     """
 
+    if isinstance(cluster, tuple):
+        cluster, scaffold, organism = cluster
+        header = "{} {} [Cluster {}, score {:.{}f}]\n".format(
+            organism,
+            scaffold,
+            cluster.number,
+            cluster.score,
+            decimals
+        )
+    else:
+        header = f"Cluster {cluster.number}, score {cluster.score:.{decimals}f}:\n"
     rows = []
-
-    general_information = (
-        f"Cluster {cluster.number} with score {cluster.score:.{decimals}f}:\n"
-    )
     sorted_clusters = sorted(
         list(cluster.subjects) + list(cluster.intermediate_genes),
         key=lambda x: (x.start, x.end),
@@ -197,21 +204,25 @@ def summarise_cluster(cluster, decimals=4, hide_headers=True, delimiter=None):
     if not delimiter:
         delimiter = "  "
         rows = humanise(rows)
-    return general_information + "\n".join(delimiter.join(hit) for hit in rows)
+    return header + "\n".join(delimiter.join(hit) for hit in rows)
 
 
 def summary(
-    session, hide_headers=False, delimiter=None, decimals=4, sort_clusters=False
+    session,
+    hide_headers=False,
+    delimiter=None,
+    decimals=4,
+    sort_clusters=False,
 ):
     if sort_clusters:
         sorted_clusters = sorted(
             [
-                cluster
+                (cluster, scaffold.accession, organism.full_name)
                 for organism in session.organisms
                 for scaffold in organism.scaffolds.values()
                 for cluster in scaffold.clusters
             ],
-            key=lambda x: (x.score, x.start, x.end),
+            key=lambda x: (x[0].score, x[0].start, x[0].end),
             reverse=True,
         )
         return _summarise(
