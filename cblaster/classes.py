@@ -328,13 +328,10 @@ class Cluster(Serializer):
         self.indices = indices if indices else []
         self.subjects = subjects if subjects else []
         self.intermediate_genes = intermediate_genes if intermediate_genes else []
-        self.score = score 
+        self.score = score if score else self.calculate_score(query_sequence_order)
         self.start = start
         self.end = end
         self.number = number if number is not None else next(self.NUMBER)
-
-        if query_sequence_order:
-            self.score = self.calculate_score(query_sequence_order)
 
         if self.subjects and not (self.start or self.end):
             self.start = self.subjects[0].start
@@ -407,6 +404,7 @@ class Cluster(Serializer):
         return sum(
             max(hit.bitscore for hit in subject.hits)
             for subject in self.subjects
+            if subject.hits
         )
 
     @property
@@ -631,10 +629,10 @@ class Hit(Serializer):
         return [
             self.query,
             self.subject,
-            f"{round(self.identity, decimals):g}" if self.identity else "",
-            f"{round(self.coverage, decimals):g}" if self.coverage else "",
-            f"{self.evalue:.{decimals}g}" if self.evalue else "",
-            f"{round(self.bitscore, decimals):g}" if self.bitscore else "",
+            f"{round(self.identity, decimals):g}" if self.identity is not None else "",
+            f"{round(self.coverage, decimals):g}" if self.coverage is not None else "",
+            f"{self.evalue:.{decimals}g}" if self.evalue is not None else "",
+            f"{round(self.bitscore, decimals):g}" if self.bitscore is not None else "",
         ]
 
     def to_dict(self):
