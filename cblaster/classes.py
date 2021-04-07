@@ -535,11 +535,10 @@ class Subject(Serializer):
                     *hit.values(decimals),
                     str(self.start),
                     str(self.end),
-                    str(self.strand),
+                    "+" if self.strand == 1 else "-",
                 )
                 for hit in self.hits
             ]
-
         # If no hits, this is an intermediate
         record = (
             "intermediate",
@@ -548,7 +547,7 @@ class Subject(Serializer):
             "-", "-",
             str(self.start),
             str(self.end),
-            self.strand
+            "+" if self.strand == 1 else "-",
         )
         return [record]
 
