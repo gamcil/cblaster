@@ -529,25 +529,24 @@ class Subject(Serializer):
         }
 
     def values(self, decimals=4):
+        start = str(self.start)
+        end = str(self.end)
+        strand = "+" if self.strand == 1 else "-"
+        # If hits, this was found during the search 
+        # Otherwise, it's an intermediate
         if len(self.hits) > 0:
             return [
-                (
-                    *hit.values(decimals),
-                    str(self.start),
-                    str(self.end),
-                    "+" if self.strand == 1 else "-",
-                )
+                (*hit.values(decimals), start, end, strand)
                 for hit in self.hits
             ]
-        # If no hits, this is an intermediate
         record = (
             "intermediate",
             self.name,
             "-", "-",
             "-", "-",
-            str(self.start),
-            str(self.end),
-            "+" if self.strand == 1 else "-",
+            start,
+            end,
+            strand,
         )
         return [record]
 
