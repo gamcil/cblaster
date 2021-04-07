@@ -28,7 +28,7 @@ jobs:
         
     - name: Generate coverage report
       run: |
-        pytest --cov=cblaster/ --cov-report=xml
+        pytest --cov=cblaster/ --cov-report=xml --basetemp=cblaster_pytest
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
