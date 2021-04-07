@@ -56,18 +56,6 @@ def test_find_fasta(tmp_path):
     assert gp.find_fasta(gff) == fasta
 
 
-def test_parse_fasta_str():
-    # Invalid string
-    assert gp.parse_fasta_str("abc") == []
-
-    # Actual test case
-    fasta = ">Testing\nACGTACGT"
-    srs = gp.parse_fasta_str(fasta)
-    exp = SeqRecord("ACGTACGT", id="Testing")
-    assert exp.id == srs[0].id
-    assert exp.seq == srs[0].seq
-
-
 def test_parse_fasta(tmp_path):
     exp = SeqRecord("ACGTACGT", id="Testing")
 
