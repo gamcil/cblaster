@@ -58,6 +58,8 @@ def efetch_IPGs(ids, output_file=None):
     Returns:
         List of rows from resulting IPG table, split by newline.
     """
+    if not ids:
+        raise ValueError("No ids specified")
     table = []
     for start in range(0, len(ids), 10000):
         chunk = ids[start: start + 10000]
@@ -312,8 +314,8 @@ def cluster_satisfies_conditions(
     return (
         len(cluster) >= minimum  # Minimum hits
         and len(hit_queries) >= unique  # Unique hits
-        and len(hit_overlap) / len(queries) >= percentage / 100  # Min % of queries
         and (hit_queries.issuperset(require) if require else True)  # Required queries
+        and len(hit_overlap) / len(queries) >= percentage / 100 # Min % of queries
     )
 
 
@@ -323,7 +325,7 @@ def find_clusters(
     unique=3,
     min_hits=3,
     gap=20000,
-    percentage=None,
+    percentage=50,
     queries=None
 ):
     """Finds clusters of Hit objects matching user thresholds.
