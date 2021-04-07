@@ -5,6 +5,7 @@ Test suite for classes.
 """
 
 import pytest
+import difflib
 
 from abc import ABC
 from pathlib import Path
@@ -70,7 +71,7 @@ def scaffolds(subjects, clusters):
 def scaffold_summaries():
     with (DATA_DIR / "scaffold_summaries.txt").open() as fp:
         summary_text = fp.read()
-    return [s for s in summary_text.split("\n>>\n") if len(s) > 0]
+    return [s.strip("\n") for s in summary_text.split("\n>>\n") if len(s) > 0]
 
 
 @pytest.fixture
@@ -96,21 +97,23 @@ def organisms(scaffolds):
 def organism_summaries():
     with (DATA_DIR / "organism_summaries.txt").open() as fp:
         summary_text = fp.read()
-    return [s for s in summary_text.split("\n>>\n") if len(s) > 0]
+    return [s.strip("\n") for s in summary_text.split("\n>>\n") if len(s) > 0]
 
 
 @pytest.fixture
-def sessions(organisms):
+def sessions(organisms, clusters):
     return [
         classes.Session(
+            query=clusters[0],
             queries=["q1", "q2"],
             organisms=organisms[0:1],
-            sequences={"q1": "PRQTEINQNE", "q2": "PRQTEINTWQ"},
+            # sequences={"q1": "PRQTEINQNE", "q2": "PRQTEINTWQ"},
         ),
         classes.Session(
+            query=clusters[1],
             queries=["q1", "q2"],
             organisms=organisms[2:3],
-            sequences={"q1": "SQMESEQVENCE", "q2": "SQMEOTHERSEQVENCE"},
+            # sequences={"q1": "SQMESEQVENCE", "q2": "SQMEOTHERSEQVENCE"},
             params={"dummy1": 1},
         ),
     ]
@@ -231,6 +234,7 @@ def test_subject_to_dict(hits, subjects):
         "start": 500,
         "end": 1000,
         "strand": "+",
+        "sequence": None,
     }
 
 
@@ -333,6 +337,7 @@ def test_cluster_to_dict(clusters):
         "score": 2.10006,
         "start": 0,
         "end": 100,
+        "subjects": []
     }
 
 
@@ -346,7 +351,7 @@ def test_cluster_from_dict(subjects):
             "end": 100,
             "number": 100,
         },
-        *subjects[:2]
+        subjects=subjects[:2],
     )
     assert [[0, 1], subjects[:2], [], 2.10006, 0, 100, 100] == [
         getattr(from_dict_class, val)
@@ -386,7 +391,9 @@ def test_scaffold_add_clusters(subjects, scaffolds):
     scaffolds[0].add_clusters([subjects[1:4]])
     assert len(scaffolds[0].clusters) == 3
     assert all(
-        subject in subjects[1:4] for subject in scaffolds[0].clusters[1].subjects
+        subject
+        in subjects[1:4]
+        for subject in scaffolds[0].clusters[1].subjects
     )
 
 
@@ -408,6 +415,15 @@ def test_scaffold_summary(
     result_index,
     scaffold_summaries,
 ):
+    a = scaffolds[index].summary(hide_headers, delimiter, decimals)
+    b = scaffold_summaries[result_index]
+    for i, s in enumerate(difflib.ndiff(a, b)):
+        if s[0]==' ': continue
+        elif s[0]=='-':
+            print(u'Delete "{}" from position {}'.format(s[-1],i))
+        elif s[0]=='+':
+            print(u'Add "{}" to position {}'.format(s[-1],i))    
+ 
     assert (
         scaffolds[index].summary(hide_headers, delimiter, decimals)
         == scaffold_summaries[result_index]
@@ -549,9 +565,9 @@ def test_session_empty_instantiation():
 
 def test_session_add(sessions, organisms):
     combined_session_1_2 = sessions[0] + sessions[1]
-    assert [["q1", "q2"], {}, {"q1": "PRQTEINQNE", "q2": "PRQTEINTWQ"}] == [
+    assert [["q1", "q2"], {}] == [
         getattr(combined_session_1_2, val)
-        for val in ["queries", "params", "sequences",]
+        for val in ["queries", "params"]
     ]
     # same organism names can assume same organisms in this case
     assert all(
@@ -563,10 +579,9 @@ def test_session_add(sessions, organisms):
     assert [
         ["q1", "q2"],
         {"dummy1": 1},
-        {"q1": "SQMESEQVENCE", "q2": "SQMEOTHERSEQVENCE"},
     ] == [
         getattr(combined_session_2_1, val)
-        for val in ["queries", "params", "sequences"]
+        for val in ["queries", "params"]
     ]
     # same organism names can assume same organisms in this case
     assert all(
@@ -575,10 +590,10 @@ def test_session_add(sessions, organisms):
     )
 
 
-def test_session_to_dict(sessions):
+def test_session_to_dict(sessions, clusters):
     assert sessions[1].to_dict() == {
+        "query": clusters[1].to_dict(save_subjects=True),
         "queries": ["q1", "q2"],
-        "sequences": {"q1": "SQMESEQVENCE", "q2": "SQMEOTHERSEQVENCE"},
         "params": {"dummy1": 1},
         "organisms": [organism.to_dict() for organism in sessions[1].organisms],
     }
@@ -588,7 +603,7 @@ def compare_sessions(one, two):
     """Compares two Session objects"""
 
     # Compare search attributes
-    attributes = ["queries", "params", "sequences"]
+    attributes = ["queries", "params"]
     for attr in attributes:
         assert getattr(one, attr) == getattr(two, attr)
 
@@ -630,10 +645,10 @@ def test_session_from_files(sessions):
     compare_sessions(combined_session, from_files_session)
 
 
-def test_session_from_dict(sessions):
+def test_session_from_dict(sessions, clusters):
     data = {
+        "query": clusters[0].to_dict(),
         "queries": ["q1", "q2"],
-        "sequences": {"q1": "PRQTEINQNE", "q2": "PRQTEINTWQ"},
         "params": {},
         "organisms": [organism.to_dict() for organism in sessions[0].organisms],
     }
