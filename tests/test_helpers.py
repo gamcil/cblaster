@@ -6,6 +6,7 @@ Test suite for classes
 
 from pathlib import Path
 
+import io
 import shutil
 
 import pytest
@@ -20,39 +21,17 @@ from cblaster import helpers
 TEST_DIR = Path(__file__).resolve().parent
 
 
-def test_efetch_sequences_request():
-    with requests_mock.Mocker() as mock:
-        mock.post("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?")
-
-        helpers.efetch_sequences_request(["Seq1", "Seq2", "Seq3"])
-
-        assert mock.request_history[0].url == (
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
-            "db=protein"
-            "&rettype=fasta"
-        )
-
-
-def test_efetch_sequences_request_error():
-    with requests_mock.Mocker() as mock, pytest.raises(requests.HTTPError):
-        mock.post(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-            status_code=400,
-        )
-        helpers.efetch_sequences_request(["Seq1", "Seq2", "Seq3"])
-
-
-def test_efetch_sequences():
-    with requests_mock.Mocker() as mock:
-        mock.post(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-            text=">seq1\nABC\n>seq2\nDEF\n>seq3\nGHI",
-        )
-        assert helpers.efetch_sequences(["seq1", "seq2", "seq3"]) == {
-            "seq1": "ABC",
-            "seq2": "DEF",
-            "seq3": "GHI",
-        }
+def test_efetch_sequences(monkeypatch):
+    def mock_sequences(*args, **kwargs):
+        return io.StringIO(">seq1\nABC\n>seq2\nDEF\n>seq3\nGHI")
+    from Bio import Entrez
+    monkeypatch.setattr(Entrez, "efetch", mock_sequences)
+    assert helpers.efetch_sequences(["seq1", "seq2", "seq3"]) == {
+        "seq1": "ABC",
+        "seq2": "DEF",
+        "seq3": "GHI",
+    }
+    return
 
 
 def test_get_sequences_query_file(mocker):
