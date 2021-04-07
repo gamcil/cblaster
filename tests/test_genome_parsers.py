@@ -88,9 +88,9 @@ def test_find_regions(directives, result):
     assert gp.find_regions(directives) == result
 
 
-@pytest.fixture(scope="session")
-def genome_folder(tmp_path_factory):
-    directory = tmp_path_factory.mktemp("genomes") / "folder"
+def test_find_files(tmp_path):
+    """find_files correctly parses directory for valid file paths"""
+    directory = tmp_path / "folder"
     directory.mkdir()
 
     # Set up directory structure
@@ -111,17 +111,8 @@ def genome_folder(tmp_path_factory):
     base = directory / "file4.gbk"
     base.write_text("test")
 
-    return directory
-
-
-def test_find_files(genome_folder):
-    """find_files correctly parses directory for valid file paths"""
-    base = genome_folder / "file4.gbk"
-    gbk = genome_folder / "1" / "file1.gbk"
-    gff = genome_folder / "1" / "file2.gff"
-
-    assert gp.find_files([genome_folder], recurse=True) == [base, gbk, gff]
-    assert gp.find_files([genome_folder], recurse=False) == [base]
+    assert gp.find_files([directory], recurse=True) == [base, gbk, gff]
+    assert gp.find_files([directory], recurse=False) == [base]
 
 
 def test_parse_file_valid(tmp_path):
