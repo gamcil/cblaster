@@ -34,6 +34,15 @@ def test_efetch_sequences(monkeypatch):
     return
 
 
+def test_efetch_sequences_IOError(monkeypatch):
+    def mock_ioerror(*args, **kwargs):
+        raise IOError
+    from Bio import Entrez
+    monkeypatch.setattr(Entrez, "efetch", mock_ioerror)
+    with pytest.raises(IOError):
+        helpers.efetch_sequences(["seq"])
+
+
 def test_get_sequences_query_file(mocker):
     sequences = helpers.get_sequences(query_file=TEST_DIR / "test.faa")
     assert {'QBE85648.1', 'QBE85647.1', 'QBE85646.1'}.issubset(sequences)
