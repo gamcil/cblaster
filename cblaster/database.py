@@ -66,17 +66,19 @@ def sqlite_to_fasta(path, database):
             fasta.write(record)
 
 
-def _query(query, values, database, fetch="all"):
+def _query(query, database, values=None, fetch="all"):
     with sqlite3.connect(str(database)) as con:
         cur = con.cursor()
-        query = cur.execute(query, values)
+        query = cur.execute(query, values) if values else cur.execute(query)
         return query.fetchall() if fetch == "all" else query.fetchone()
 
 
 def query_sequences(ids, database):
-    marks = ", ".join("?" for _ in ids)
-    query = sql.SEQUENCE_QUERY.format(marks)
-    return _query(query, ids, database)
+    if not all(isinstance(idx, int) for idx in ids):
+        raise TypeError("Expected ids of type int")
+    inner = ", ".join(idx for idx in ids)
+    query = sql.SEQUENCE_QUERY.format(inner)
+    return _query(query, database)
 
 
 def query_genes(ids, database):
@@ -88,9 +90,11 @@ def query_genes(ids, database):
     Returns:
         list: Result tuples returned by the query
     """
-    marks = ", ".join("?" for _ in ids)
-    query = sql.GENE_QUERY.format(marks)
-    return _query(query, ids, database)
+    if not all(idx.isdigit() for idx in ids):
+        raise TypeError("Expected ids of type int")
+    inner = ", ".join(idx for idx in ids)
+    query = sql.GENE_QUERY.format(inner)
+    return _query(query, database)
 
 
 def query_intermediate_genes(
@@ -110,13 +114,13 @@ def query_intermediate_genes(
     """
     marks = ", ".join("?" for _ in names)
     query = sql.INTERMEDIATE_GENES_QUERY.format(marks)
-    return _query(query, [*names, scaffold, organism, start, end], database)
+    return _query(query, database, values=[*names, scaffold, organism, start, end])
 
 
 def query_nucleotides(scaffold, organism, start, end, database):
     """Queries a database for a """
     query = sql.SCAFFOLD_QUERY.format(start, end - start)
-    return _query(query, [scaffold, organism], database, fetch="one")
+    return _query(query, database, values=[scaffold, organism], fetch="one")
 
 
 def diamond_makedb(fasta, name):
