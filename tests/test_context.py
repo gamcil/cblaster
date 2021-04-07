@@ -8,6 +8,7 @@ import pytest
 
 from pathlib import Path
 
+import io
 import requests
 import requests_mock
 
@@ -46,22 +47,11 @@ def hit_dict(hits):
 @pytest.fixture()
 def subjects(hits):
     return [
-        classes.Subject(name="s1", hits=[hits[0]], ipg="1", start=14044, end=14641, strand="-"),
-        classes.Subject(name="s2", hits=[hits[1]], ipg="2", start=11815, end=13459, strand="+"),
-        classes.Subject(name="s3", hits=[hits[2]], ipg="3", start=9656, end=11184, strand="+"),
-        classes.Subject(name="s4", hits=[hits[3], hits[4], hits[5]], ipg="4", start=1234, end=5678, strand="+"),
-        classes.Subject(name="s5", hits=[hits[3], hits[4], hits[5]], ipg="4", start=9656, end=11184, strand="+"),
-    ]
-
-
-@pytest.fixture()
-def subjects_clustering():
-    return [
-        classes.Subject(start=0, end=1000, strand="+"),
-        classes.Subject(start=2000, end=3000, strand="+"),
-        classes.Subject(start=5000, end=6000, strand="+"),
-        classes.Subject(start=9000, end=10000, strand="+"),
-        classes.Subject(start=14000, end=15000, strand="+"),
+        classes.Subject(name="s1", hits=[hits[0]], ipg="1", start=0, end=1000, strand="-"),
+        classes.Subject(name="s2", hits=[hits[1]], ipg="2", start=2000, end=3000, strand="+"),
+        classes.Subject(name="s3", hits=[hits[2]], ipg="3", start=5000, end=6000, strand="+"),
+        classes.Subject(name="s4", hits=[hits[3], hits[4], hits[5]], ipg="4", start=9000, end=10000, strand="+"),
+        classes.Subject(name="s5", hits=[hits[3], hits[4], hits[5]], ipg="4", start=14000, end=15000, strand="+"),
     ]
 
 
@@ -78,19 +68,27 @@ def groups(ipg_table):
 
 
 @pytest.mark.parametrize(
-    "unique, gap, results",
+    "unique, gap, minimum, percentage, results",
     [
-        (0, 999, [[0], [1], [2], [3], [4]]),
-        (0, 1000, [[0, 1], [2], [3], [4]]),
-        (2, 2000, [[0, 1, 2]]),
-        (4, 2000, []),
-        (6, 2000, []),
+        (0, 999, 1, 0, [[0], [1], [2], [3], [4]]),
+        (0, 1000, 1, 0, [[0, 1], [2], [3], [4]]),
+        (2, 2000, 3, 0, [[0, 1, 2]]),
+        (4, 2000, 0, 0, []),
+        (6, 2000, 0, 0, []),
+        (0, 1000, 0, 100, [[0, 1]]),
     ],
 )
-def test_find_clusters(subjects_clustering, unique, gap, results):
-    groups = list(context.find_clusters(subjects_clustering, unique=unique, gap=gap))
+def test_find_clusters(subjects, unique, gap, minimum, percentage, results):
+    groups = context.find_clusters(
+        subjects,
+        queries=["q1", "q2"],
+        unique=unique,
+        min_hits=minimum,
+        gap=gap,
+        percentage=percentage
+    )
     for group, result in zip(groups, results):
-        assert group == [subjects_clustering[i] for i in result]
+        assert group == [subjects[i] for i in result]
 
 
 @pytest.mark.parametrize("unique, gap", [(-1, 100), (1, -1)])
@@ -99,36 +97,47 @@ def test_find_clusters_negative_input(subjects, unique, gap):
         x = list(context.find_clusters(subjects, unique=unique, gap=gap))
 
 
-def test_efetch_IPGs(hits):
-    with requests_mock.Mocker() as mock:
-        mock.post("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?")
-        context.efetch_IPGs([hit.subject for hit in hits])
-        assert mock.request_history[0].url == (
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
-            "db=protein&rettype=ipg&retmode=text&retmax=10000"
-        )
+def test_efetch_IPGs_no_ids():
+    with pytest.raises(ValueError):
+        context.efetch_IPGs([])
 
 
-def test_efetch_IPGs_error(hits):
-    with requests_mock.Mocker() as mock, pytest.raises(requests.HTTPError):
-        mock.post(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?",
-            status_code=400,
-        )
+def test_efetch_IPGs_IOError(hits, monkeypatch):
+    def mock_ioerror(*args, **kwargs):
+        raise IOError
+    from Bio import Entrez
+    monkeypatch.setattr(Entrez, "efetch", mock_ioerror)
+    with pytest.raises(IOError):
         context.efetch_IPGs([hit.subject for hit in hits])
 
 
-def test_efetch_IPGs_output(hits, tmp_path):
-    with requests_mock.Mocker() as mock:
-        mock.post(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?", text="test"
-        )
+def test_efetch_IPGs_chunks(monkeypatch):
+    def mock_chunks(
+        _,
+        rettype=None,
+        retmode=None,
+        retmax=None,
+        id=None,
+    ):
+        text = "\n".join(id).encode("utf-8")
+        return io.BytesIO(text)
+    from Bio import Entrez
+    monkeypatch.setattr(Entrez, "efetch", mock_chunks)
+    for num in [500, 10001, 1]:
+        ids = ["id"] * num
+        table = context.efetch_IPGs(ids)
+        assert len(table) == num
 
-        test_out = tmp_path / "out.tsv"
 
-        context.efetch_IPGs([hit.subject for hit in hits], output_file=test_out)
-
-        assert test_out.read_text() == "test"
+def test_efetch_IPGs_output(tmp_path, monkeypatch):
+    def mock_output(*args, **kwargs):
+        text = "testing".encode("utf-8")
+        return io.BytesIO(text)
+    from Bio import Entrez
+    monkeypatch.setattr(Entrez, "efetch", mock_output)
+    test_out = tmp_path / "out.tsv"
+    context.efetch_IPGs(["placeholder"], output_file=test_out)
+    assert test_out.read_text() == "testing"
 
 
 def test_parse_IPG_table(hits, subjects):
