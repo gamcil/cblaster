@@ -535,7 +535,7 @@ class Subject(Serializer):
                     *hit.values(decimals),
                     str(self.start),
                     str(self.end),
-                    self.strand,
+                    str(self.strand),
                 )
                 for hit in self.hits
             ]
