@@ -38,6 +38,8 @@ $ cd cblaster/
 $ pip3 install .
 ```
 
+Additionally, we provide executables for Windows and Mac which can be downloaded [from here](https://github.com/gamcil/cblaster/releases/latest).
+
 ## Dependencies
 `cblaster` is tested on Python 3.6, and its only external Python dependency is
 the `requests` module (used for interaction with NCBI APIs).
