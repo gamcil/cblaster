@@ -344,17 +344,8 @@ def find_clusters(
     if percentage > 100:
         raise ValueError("Expected percentage between 0 and 100")
 
-    total_subjects = len(subjects)
-
-    if total_subjects < unique:
-        return []
-
-    if total_subjects == 1:
-        if unique == 1 or min_hits == 1:
-            return [subjects]
-        return []
-
     sorted_subjects = sorted(subjects, key=attrgetter("start"))
+
     first = sorted_subjects.pop(0)
     group, border = [first], first.end
 
@@ -421,7 +412,7 @@ def find_clusters_in_organism(
     require=None,
     remote=True,
     query_sequence_order=None,
-    percentage=None
+    percentage=50
 ):
     """Runs find_clusters() on all scaffolds in an organism."""
     for scaffold in organism.scaffolds.values():
@@ -467,21 +458,22 @@ def filter_session(
                     hit
                     for hit in subject.hits
                     if (
-                        hit.identity > min_identity if hit.identity else True
-                        and hit.coverage > min_coverage if hit.coverage else True
-                        and hit.evalue < max_evalue
+                        hit.identity >= min_identity if hit.identity else True
+                        and hit.coverage >= min_coverage if hit.coverage else True
+                        and hit.evalue <= max_evalue
                     )
                 ]
                 if not subject.hits:
                     scaffold.remove_subject(subject)
+                clusters = [scaffold.subjects]
             clusters = find_clusters(
                 scaffold.subjects,
+                queries=session.queries,
                 gap=gap,
                 min_hits=min_hits,
                 require=require,
                 unique=unique,
                 percentage=percentage,
-                queries=session.queries,
             )
             scaffold.clusters = []
             scaffold.add_clusters(clusters, query_sequence_order=session.queries)
