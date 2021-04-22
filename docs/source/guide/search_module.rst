@@ -19,6 +19,11 @@ The resulting IPG table contains source genomic coordinates for each hit protein
 In local mode, a special local database is created for this purpose (see :ref:`makedb_module` for more information).
 Finally, ``cblaster`` scans the scaffolds on each organism for clustered BLAST hits and generates sumamry output tables and visualisations.
 
+.. warning::
+        Before running a ``cblaster`` search, you must run the ``cblaster config``
+        module to provide either an e-mail address **or** an NCBI API key. See
+        :ref:`config_module` for how to do this.
+
 In order to run a ``cblaster`` search, you will need to point the module to a collection of sequences to be used as queries.
 These can be provided in two ways:
 
@@ -160,8 +165,9 @@ For example, we can filter the ``nr`` database for only fungal sequences by prov
 
         $ cblaster search -qf query.fasta --eq "txid4751[orgn]"
 
-Note: it is best to ensure your search term is enclosed in speech marks such that ``cblaster`` reads it in correctly.
-More help on building Entrez search queries can be found here_.
+.. note::
+        It is best to ensure your search term is enclosed in speech marks such that ``cblaster`` reads it in correctly.
+        More help on building Entrez search queries can be found here_.
 
 .. _here: <https://www.ncbi.nlm.nih.gov/books/NBK3837>`
 
@@ -315,7 +321,8 @@ You can combine multiple session files (e.g. from local and remote searches) by 
         [17:43:34] INFO - Loading session(s) [`s1.json', `s2.json', `s3.json']
         ...
 
-Note: this requires each session file to correspond to the same query sequences; an error will be thrown if ``cblaster`` detects a mismatch.
+.. note::
+        This requires each session file to correspond to the same query sequences; an error will be thrown if ``cblaster`` detects a mismatch.
 
 You can recompute an old session using new filter thresholds to create a new session file:
 
@@ -329,7 +336,8 @@ You can temporarily recompute (i.e. don't save) to generate a new visualisation:
 
         $ cblaster search -s session.json -rcp -g 40000 -mh 4 -p plot.html
 
-Note: filtering this way is not destructive (i.e. does not modify the original file); all data is loaded, filtered and recomputed within the program itself.
+.. note::
+        Filtering this way is not destructive (i.e. does not modify the original file); all data is loaded, filtered and recomputed within the program itself.
 
 
 Finding intermediate genes between hits
