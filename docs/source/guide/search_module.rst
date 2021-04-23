@@ -163,13 +163,11 @@ For example, we can filter the ``nr`` database for only fungal sequences by prov
 
 ::
 
-        $ cblaster search -qf query.fasta --eq "txid4751[orgn]"
+        $ cblaster search -qf query.fasta -eq "txid4751[orgn]"
 
 .. note::
         It is best to ensure your search term is enclosed in speech marks such that ``cblaster`` reads it in correctly.
-        More help on building Entrez search queries can be found here_.
-
-.. _here: <https://www.ncbi.nlm.nih.gov/books/NBK3837>`
+        More help on building Entrez search queries can be `found here <https://www.ncbi.nlm.nih.gov/books/NBK3837>`_.
 
 Specifying filters
 ------------------
