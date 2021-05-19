@@ -139,7 +139,7 @@ def parse_gff(path):
             regions[record.id][0] - 1 if record.id in regions else 0
         )
         if not cds:
-            raise ValueError(f"Found no CDS features in {record.id} [{path}]")
+            LOG.warning("Found no CDS features in %s", record.id, path)
         record.features = sorted(
             [*gene, *merge_cds_features(cds)],
             key=lambda f: f.location.start
@@ -164,7 +164,7 @@ def find_files(paths, recurse=True, level=0):
     return files
 
 
-def parse_file(path):
+def parse_file(path, to_tuples=False):
     """Dispatches a given file path to the correct parser given its extension.
 
     Args:
@@ -186,7 +186,10 @@ def parse_file(path):
     else:
         raise ValueError(f"File {path} has invalid extension ({suffix})")
     with open(path) as fp:
-        records = list(SeqIO.parse(fp, file_type))
+        records = [
+            seqrecord_to_tuples(record, path.stem) if to_tuples else record
+            for record in SeqIO.parse(fp, file_type)
+        ]
     return dict(name=name, records=records)
 
 
@@ -221,7 +224,7 @@ def seqrecord_to_tuples(record, source):
         base = gene[0] if gene else cds[0]
         start = int(base.location.start)
         end = int(base.location.end)
-        strand = int(base.location.strand)
+        strand = int(base.location.strand) if base.location.strand else 1
 
         # Get name and translation, prefer CDS instead of gene
         name = find_gene_name(cds[0].qualifiers if cds else gene[0].qualifiers)[0]
