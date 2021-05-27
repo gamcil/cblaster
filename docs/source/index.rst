@@ -16,7 +16,10 @@ If you find ``cblaster`` helpful, please cite:
 
 ::
 
-	Gilchrist, C. L. M.; Booth, T. J.; Chooi, Y.-H. Cblaster: A Remote Search Tool for Rapid Identification and Visualisation of Homologous Gene Clusters. bioRxiv 2020, 2020.11.08.370601. https://doi.org/10.1101/2020.11.08.370601
+        Cameron L.M. Gilchrist, Thomas J. Booth, Bram van Wersch, Liana van Grieken, Marnix H. Medema, Yit-Heng Chooi (2020).
+        cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters.
+        bioRxiv 2020.11.08.370601; doi: https://doi.org/10.1101/2020.11.08.370601
+
 
 To view an example of what cblaster can produce, click here_.
 
