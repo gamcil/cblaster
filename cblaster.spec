@@ -1,10 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+
 block_cipher = None
 
 
-a = Analysis(['D:\\Uni\\Thesis_MultiGeneBlast\\cblaster\\cblaster\\gui\\main.py'],
-             pathex=['D:\\Uni\\Thesis_MultiGeneBlast\\cblaster\\Executables\\Windows'],
+a = Analysis(['cblaster/gui/main.py'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -23,11 +23,11 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='Cblaster',
+          name='cblaster',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=True )
+          console=True)
