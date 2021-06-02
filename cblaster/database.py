@@ -5,6 +5,7 @@ This module handles creation of local JSON databases for non-NCBI lookups.
 import logging
 import subprocess
 import sqlite3
+import functools
 
 from pathlib import Path
 from multiprocessing import Pool
@@ -14,6 +15,17 @@ from cblaster import genome_parsers as gp
 
 
 LOG = logging.getLogger("cblaster")
+
+
+def parse_file(path):
+    LOG.info("  %s", path)
+    orgs = gp.parse_file(path)
+    tuples = []
+    for record in orgs["records"]:
+        new = gp.seqrecord_to_tuples(record, path.stem)
+        tuples.extend(new)
+        record = None
+    return tuples
 
 
 def init_sqlite_db(path, force=False):
@@ -192,17 +204,19 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         len(path_groups),
         batch,
     )
-
-    with Pool(cpus) as pool:
-        for index, group in enumerate(path_groups, 1):
-            LOG.info("Processing batch %i", index)
-            for path in group:
-                LOG.info("  %s", str(path.name))
-            organisms = pool.map(gp.parse_file, group)
-            tuples = gp.organisms_to_tuples(organisms)
-
-            LOG.info("Saving %i genes", len(tuples))
-            seqrecords_to_sqlite(tuples, sqlite_path)
+    try:
+        func = functools.partial(gp.parse_file, to_tuples=True)
+        with Pool(cpus) as pool:
+            for index, group in enumerate(path_groups, 1):
+                LOG.info("Processing batch %i", index)
+                tuples = []
+                for organism in pool.imap(func, group):
+                    for records in organism["records"]:
+                        tuples.extend(gp.seqrecord_to_tuples(records, organism["name"]))
+                LOG.info("Saving %i genes", len(tuples))
+                seqrecords_to_sqlite(tuples, sqlite_path)
+    except Exception:
+        LOG.error("File parsing failed, exiting...", exc_info=True)
 
     LOG.info("Writing FASTA to %s", fasta_path)
     sqlite_to_fasta(fasta_path, sqlite_path)
