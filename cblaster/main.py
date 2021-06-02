@@ -231,17 +231,25 @@ def cblaster(
         sqlite_db = None
         session.params["rid"] = rid
 
+        if "combi" in mode and not len(databases) == 2:
+            raise RuntimeError("Expected two databases for 'combi_' modes")
+
         if mode in ("hmm", "combi_local", "combi_remote"):
-            sqlite_db = Path(databases[0]).with_suffix(".sqlite3")
+            sqlite_db = helpers.find_sqlite_db(databases[0])
             results = hmm_search.perform_hmmer(
                 fasta=databases[0],
                 query_profiles=query_profiles,
                 pfam=database_pfam,
                 session=session
             )
+
+            # Delete first (FASTA) database when doing combined searches
+            # Expect .dmnd/NCBI database name for local/remote, respectively
+            if "combi" in mode:
+                del databases[0]
+
             LOG.info("Found %i hits meeting score thresholds for hmm search", len(results))
             LOG.info("Fetching genomic context of hits")
-            sqlite_db = helpers.find_sqlite_db(databases[0])
             organisms = context.search(
                 results,
                 sqlite_db=sqlite_db,
@@ -321,7 +329,6 @@ def cblaster(
             LOG.info("Fetching genomic context of hits")
             organisms = context.search(
                 results,
-                sqlite_db=sqlite_db,
                 unique=unique,
                 min_hits=min_hits,
                 gap=gap,
