@@ -139,7 +139,7 @@ def parse_gff(path):
             regions[record.id][0] - 1 if record.id in regions else 0
         )
         if not cds:
-            LOG.warning("Found no CDS features in %s", record.id, path)
+            LOG.warning("Found no CDS features in %s [%s]", record.id, path)
         record.features = sorted(
             [*gene, *merge_cds_features(cds)],
             key=lambda f: f.location.start
@@ -230,10 +230,8 @@ def seqrecord_to_tuples(record, source):
         name = find_gene_name(cds[0].qualifiers if cds else gene[0].qualifiers)[0]
         translation = (
             cds[0].qualifiers.pop("translation", None)
-            or cds[0].extract(record.seq).translate()
+            or str(cds[0].extract(record.seq).translate())
         ) if cds else None
-        if translation:
-            translation = translation[0]
 
         # Keep track of record ID and source
         record_id = str(record.id)
