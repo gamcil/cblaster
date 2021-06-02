@@ -11,41 +11,41 @@ jobs:
         include:
           - os: ubuntu-latest
             asset_name_suffix: ''
-            asset_content_type: application-octet-stream
+            asset_content_type: application/octet-stream
             pyinstall_cmd: pyinstaller -F --clean cblaster.spec
           - os: macOS-latest
             asset_name_suffix: '.app'
-            asset_content_type: application-octet-stream
+            asset_content_type: application/octet-stream
             pyinstall_cmd: pyinstaller -F --clean cblaster.spec
           - os: windows-latest
             asset_name_suffix: '.exe'
-            asset_content_type: application-octet-stream
+            asset_content_type: application/octet-stream
             pyinstall_cmd: python -m PyInstaller --onefile --clean cblaster.spec
-  steps:
-    - uses: actions/checkout@v2
-    - name: Set up python 3.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.7
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install wheel
-        pip install pyinstaller
-        pip install .
-    - name: Package binary
-      run: ${{ matrix.pyinstall_cmd }}
-    - name: Update release
-      id: update_release
-      uses: tubone24/update_release@v1.0
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-    - name: Upload binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      with:
-        upload_url: ${{ steps.update_release.outputs.upload_url }}
-        asset_path: dist/cblaster${{ matrix.asset_name_suffix }}
-        asset_name: cblaster_${{ runner.os }}${{ matrix.asset_name_suffix }}
-        asset_content_type: ${{ matrix.asset_content_type }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install pyinstaller
+          pip install .
+      - name: Package binary
+        run: ${{ matrix.pyinstall_cmd }}
+      - name: Update release
+        id: update_release
+        uses: tubone24/update_release@v1.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.update_release.outputs.upload_url }}
+          asset_path: dist/cblaster${{ matrix.asset_name_suffix }}
+          asset_name: cblaster_${{ runner.os }}${{ matrix.asset_name_suffix }}
+          asset_content_type: ${{ matrix.asset_content_type }}
