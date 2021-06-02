@@ -501,6 +501,11 @@ def main():
         )
 
     elif args.subcommand == "config":
+        if not args.email and not args.api_key:
+            LOG.info(
+                "No e-mail or API key specified; if this is your first time"
+                " running cblaster config, please make sure you provide one."
+            )
         config.write_config_file(
             email=args.email,
             api_key=args.api_key,
