@@ -12,15 +12,15 @@ jobs:
           - os: ubuntu-latest
             asset_name_suffix: ''
             asset_content_type: application/octet-stream
-            pyinstall_cmd: pyinstaller -F --clean cblaster.spec
+            pyinstall_cmd: pyinstaller -F -n cblaster cblaster/gui/main.py
           - os: macOS-latest
             asset_name_suffix: '.app'
             asset_content_type: application/octet-stream
-            pyinstall_cmd: pyinstaller -F --clean cblaster.spec
+            pyinstall_cmd: pyinstaller -F -n cblaster -w cblaster/gui/main.py
           - os: windows-latest
             asset_name_suffix: '.exe'
             asset_content_type: application/octet-stream
-            pyinstall_cmd: python -m PyInstaller --onefile --clean cblaster.spec
+            pyinstall_cmd: python -m PyInstaller -F -n cblaster cblaster/gui/main.py
     steps:
       - uses: actions/checkout@v2
       - name: Set up python 3.7
