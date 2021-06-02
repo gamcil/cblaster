@@ -14,9 +14,11 @@ jobs:
             asset_content_type: application/octet-stream
             pyinstall_cmd: pyinstaller -F -n cblaster cblaster/gui/main.py
           - os: macOS-latest
-            asset_name_suffix: '.app'
+            asset_name_suffix: '.dmg'
             asset_content_type: application/octet-stream
-            pyinstall_cmd: pyinstaller -F -n cblaster -w cblaster/gui/main.py
+            pyinstall_cmd: |
+              pyinstaller -F -n cblaster -w cblaster/gui/main.py
+              hdiutil create dist/cblaster.dmg -srcfolder dist/cblaster.app -ov
           - os: windows-latest
             asset_name_suffix: '.exe'
             asset_content_type: application/octet-stream
