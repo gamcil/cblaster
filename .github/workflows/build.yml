@@ -1,0 +1,70 @@
+name: Build and package
+on: release
+
+jobs:     
+  build-osx:
+    name: Build for macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install .
+      - name: Package binary
+        run: |
+          pyinstaller --onefile --windowed --clean cblaster.spec
+      - name: Add to release
+        uses: djn24/add-asset-to-release@v1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          path: 'dist/cblaster.app'
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install .
+      - name: package binary
+        run: |
+          python -m PyInstaller --onefile --windowed --clean cblaster.spec
+      - name: Add to release
+        uses: djn24/add-asset-to-release@v1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          path: 'dist/cblaster.exe'
+  build-ubuntu:
+    name: Build for Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install .
+      - name: Package binary
+        run: |
+          pyinstaller --onefile --windowed --clean cblaster.spec
+      - name: Add to release
+        uses: djn24/add-asset-to-release@v1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          path: 'dist/cblaster'
