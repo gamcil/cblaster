@@ -304,7 +304,7 @@ def cluster_to_record(
     """Convert a cblaster.Cluster object into a Bio.Seqrecord object
 
     Args:
-        cluster (cblaster.Cluster): cblasdter Cluster object
+        cluster (cblaster.Cluster): cblaster Cluster object
         cluster_prot_sequences (dict): dictionary of protein sequences keyed on protein ids
         cluster_nuc_sequence (str): cluster nucleotide sequence
         organism_name (str): name of the organism the cluster is originated from
@@ -382,7 +382,7 @@ def cluster_to_record(
         location = FeatureLocation(
             start=subject.start - cluster.intermediate_start,
             end=subject.end - cluster.intermediate_start,
-            strand=1 if subject.strand == "+" else -1,
+            strand=subject.strand,
         )
         cds_feature = SeqFeature(location, type="CDS", qualifiers=qualifiers)
         record.features.append(cds_feature)

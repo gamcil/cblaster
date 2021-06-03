@@ -34,7 +34,7 @@ def set_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
         search_stop = cluster.end + gene_distance
         cluster_ids = [subject.id for subject in cluster.subjects]
         cluster.intermediate_genes = [
-            Subject(id=id, name=name, start=start, end=end, strand="+" if strand == 1 else "-")
+            Subject(id=id, name=name, start=start, end=end, strand=strand)
             for start, end, id, name, strand in query_intermediate_genes(
                 cluster_ids,
                 search_start,
@@ -213,9 +213,9 @@ def get_start_end_strand(start, end):
     """
     start = int(start.replace("<", "").replace(">", ""))
     end = int(end.replace("<", "").replace(">", ""))
-    strand = "+"
+    strand = 1
     if start > end:
-        strand = "-"
+        strand = -1
         new_start = end
         end = start
         start = new_start
