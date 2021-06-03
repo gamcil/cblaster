@@ -37,6 +37,13 @@ logging.basicConfig(
 LOG = logging.getLogger()
 
 
+def set_entrez():
+    """Set the Entrez parameters from config"""
+    cfg = config.get_config_parser()
+    Entrez.email = cfg["cblaster"].get("email", None)
+    Entrez.api_key = cfg["cblaster"].get("api_key", None)
+
+
 def gne(
     session,
     output=None,
@@ -302,9 +309,7 @@ def cblaster(
             LOG.info("Starting cblaster in remote mode")
 
             # Set up mandatory Entrez params
-            cfg = config.get_config_parser()
-            Entrez.email = cfg["cblaster"].get("email", None)
-            Entrez.api_key = cfg["cblaster"].get("api_key", None)
+            set_entrez()
 
             if not Entrez.email and not Entrez.api_key:
                 raise IOError("No e-mail or NCBI API key found, please run cblaster config")
@@ -483,6 +488,7 @@ def main():
         )
 
     elif args.subcommand == "extract_clusters":
+        set_entrez()
         extract_clusters.extract_clusters(
             args.session,
             args.output,
@@ -496,6 +502,7 @@ def main():
         )
 
     elif args.subcommand == "plot_clusters":
+        set_entrez()
         plot_clusters.plot_clusters(
             session=args.session,
             cluster_numbers=args.clusters,
