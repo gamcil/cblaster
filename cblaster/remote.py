@@ -342,6 +342,7 @@ def search(
             query_file=query_file,
             query_ids=query_ids,
             hitlist_size=hitlist_size,
+            evalue=max_evalue,
             **kwargs
         )
 
