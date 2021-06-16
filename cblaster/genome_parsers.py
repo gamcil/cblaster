@@ -7,7 +7,7 @@ import gffutils
 from gffutils import biopython_integration
 
 from Bio import SeqIO, BiopythonParserWarning
-from Bio.SeqFeature import FeatureLocation, SeqFeature
+from Bio.SeqFeature import FeatureLocation
 
 
 # ignore malformed locus warnings
@@ -21,7 +21,7 @@ GFF_SUFFIXES = (".gtf", ".gff", ".gff3")
 EMBL_SUFFIXES = (".embl", ".emb")
 
 
-def find_overlapping_location(feature: SeqFeature, locations: list) -> int:
+def find_overlapping_location(feature, locations):
     """Finds the index of a gene location containing `feature`.
 
     Args:
@@ -34,7 +34,6 @@ def find_overlapping_location(feature: SeqFeature, locations: list) -> int:
     for index, (start, end) in enumerate(locations):
         if feature.location.start >= start and feature.location.end <= end:
             return index
-    return -1
 
 
 def find_gene_name(qualifiers):
