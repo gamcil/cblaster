@@ -1,4 +1,3 @@
-import io
 import warnings
 import logging
 
@@ -8,7 +7,7 @@ import gffutils
 from gffutils import biopython_integration
 
 from Bio import SeqIO, BiopythonParserWarning
-from Bio.SeqFeature import FeatureLocation
+from Bio.SeqFeature import FeatureLocation, SeqFeature
 
 
 # ignore malformed locus warnings
@@ -22,7 +21,7 @@ GFF_SUFFIXES = (".gtf", ".gff", ".gff3")
 EMBL_SUFFIXES = (".embl", ".emb")
 
 
-def find_overlapping_location(feature, locations):
+def find_overlapping_location(feature: SeqFeature, locations: list) -> int:
     """Finds the index of a gene location containing `feature`.
 
     Args:
@@ -35,6 +34,7 @@ def find_overlapping_location(feature, locations):
     for index, (start, end) in enumerate(locations):
         if feature.location.start >= start and feature.location.end <= end:
             return index
+    return -1
 
 
 def find_gene_name(qualifiers):
@@ -253,65 +253,6 @@ def seqrecord_to_tuples(record, source):
     )
 
     return [scaffold, *rows]
-
-
-def seqrecord_to_tuples2(record, source):
-    """Generates insertion tuples for genes in a SeqRecord object.
-
-    Args:
-        record (SeqRecord): SeqRecord object containing gene and CDS SeqFeatures
-        source (str): Name of source file, used as organism name
-    Returns:
-        list: Tuples used for insertion into SQLite3 database
-    """
-    features = [f for f in record.features if f.type == "CDS"]
-    locations = [(f.location.start, f.location.end) for f in record.features if f.type == "gene"]
-    genes = []
-    for feature in features:
-        qualifiers = {
-            k: v[0] if isinstance(v, list) else v
-            for k, v in feature.qualifiers.items()
-        }
-        name = find_gene_name(qualifiers)
-        if "pseudo" in qualifiers:
-            LOG.warning("%s is pseudogene, skipping", name)
-            continue
-        match = find_overlapping_location(feature, locations)
-        if match:
-            start, end = locations.pop(match)
-        else:
-            start, end = feature.location.start, feature.location.end
-        translation = (
-            qualifiers.pop("translation", None)
-            or feature.extract(record.seq).translate()
-        )
-        if not translation:
-            LOG.warning("Failed to find translation for %s, skipping", name)
-            continue
-        gene = (
-            "gene",
-            str(name),
-            int(start),
-            int(end),
-            int(feature.location.strand),
-            str(translation),
-            str(record.id),  # scaffold accession
-            str(source)  # organism name from source file name
-        )
-        genes.append(gene)
-
-    scaffold = (
-        "scaffold",
-        str(record.id),
-        0,
-        len(record.seq),
-        None,
-        str(record.seq),
-        str(record.id),
-        str(source),
-    )
-
-    return [scaffold, *genes]
 
 
 def organisms_to_tuples(organisms):
