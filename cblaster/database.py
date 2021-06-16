@@ -17,17 +17,6 @@ from cblaster import genome_parsers as gp
 LOG = logging.getLogger("cblaster")
 
 
-def parse_file(path):
-    LOG.info("  %s", path)
-    orgs = gp.parse_file(path)
-    tuples = []
-    for record in orgs["records"]:
-        new = gp.seqrecord_to_tuples(record, path.stem)
-        tuples.extend(new)
-        record = None
-    return tuples
-
-
 def init_sqlite_db(path, force=False):
     """Initialises a cblaster SQLite3 database file at a given path.
 
@@ -212,7 +201,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
                 tuples = []
                 for organism in pool.imap(func, group):
                     for records in organism["records"]:
-                        tuples.extend(gp.seqrecord_to_tuples(records, organism["name"]))
+                        tuples.extend(records)
                 LOG.info("Saving %i genes", len(tuples))
                 seqrecords_to_sqlite(tuples, sqlite_path)
     except Exception:
