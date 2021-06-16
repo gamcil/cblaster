@@ -228,9 +228,9 @@ def seqrecord_to_tuples(record, source):
         # Get name and translation, prefer CDS instead of gene
         name = find_gene_name(cds[0].qualifiers if cds else gene[0].qualifiers)[0]
         translation = (
-            cds[0].qualifiers.pop("translation", None)
+            cds[0].qualifiers.pop("translation", None)[0]
             or str(cds[0].extract(record.seq).translate())
-        ) if cds else None
+        ) if cds else ""
 
         # Keep track of record ID and source
         record_id = str(record.id)
@@ -245,7 +245,7 @@ def seqrecord_to_tuples(record, source):
         str(record.id),
         0,
         len(record.seq),
-        None,
+        0,
         str(record.seq),
         str(record.id),
         str(source),
