@@ -42,6 +42,8 @@ def set_entrez():
     cfg = config.get_config_parser()
     Entrez.email = cfg["cblaster"].get("email", None)
     Entrez.api_key = cfg["cblaster"].get("api_key", None)
+    if not Entrez.email and not Entrez.api_key:
+        raise RuntimeError("No e-mail or NCBI API key found, please run cblaster config")
 
 
 def gne(
@@ -308,12 +310,6 @@ def cblaster(
         elif mode == "remote":
             LOG.info("Starting cblaster in remote mode")
 
-            # Set up mandatory Entrez params
-            set_entrez()
-
-            if not Entrez.email and not Entrez.api_key:
-                raise IOError("No e-mail or NCBI API key found, please run cblaster config")
-
             if entrez_query:
                 session.params["entrez_query"] = entrez_query
             rid, results = remote.search(
@@ -403,6 +399,9 @@ def main():
     if args.debug:
         LOG.setLevel(logging.DEBUG)
 
+    # Set BioPython Entrez parameters
+    set_entrez()
+
     if args.subcommand == "makedb":
         database.makedb(
             args.paths,
@@ -488,7 +487,6 @@ def main():
         )
 
     elif args.subcommand == "extract_clusters":
-        set_entrez()
         extract_clusters.extract_clusters(
             args.session,
             args.output,
@@ -502,7 +500,6 @@ def main():
         )
 
     elif args.subcommand == "plot_clusters":
-        set_entrez()
         plot_clusters.plot_clusters(
             session=args.session,
             cluster_numbers=args.clusters,
