@@ -111,7 +111,7 @@ def run_hmmsearch(pfam, fasta, query):
     output = query.with_suffix(".txt")
     try:
         subprocess.run(
-            f"hmmsearch -o {output} {query} {fasta}",
+            f"hmmsearch --cut_tc -o {output} {query} {fasta}",
             stdout=subprocess.PIPE,
             shell=True,
             check=True,
