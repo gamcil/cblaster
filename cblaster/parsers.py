@@ -568,7 +568,7 @@ def add_extract_subparser(subparsers):
                "Extract names of sequences matching a specific query:\n"
                "  $ cblaster extract session.json -q \"Query1\"\n\n"
                "Extract, download from NCBI and write to file in FASTA format:\n"
-               "  $ cblaster extract session.json -q \"Query1\" -d -o output.fasta\n\n"
+               "  $ cblaster extract session.json -q \"Query1\" -es -o output.fasta\n\n"
                "Extract only from specific organisms (regular expressions):\n"
                "  $ cblaster extract session.json -or \"Aspergillus.*\" \"Penicillium.*\"\n\n"
                "Generate delimited table (CSV) of all hits in clusters:\n"
@@ -607,8 +607,7 @@ def add_extract_subparser(subparsers):
     out.add_argument(
         "-es",
         "--extract_sequences",
-        help="Extract protein sequences for all extracted proteins. The resulting summary will"
-             "have a fasta format.",
+        help="Extract sequences, in FASTA format, for each extracted record",
         action="store_true",
     )
     out.add_argument(
