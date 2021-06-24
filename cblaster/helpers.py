@@ -104,7 +104,7 @@ def dict_to_cluster(sequences, spacing=500):
     for name, sequence in sequences.items():
         length = len(sequence) * 3 if sequence else 1000
         end = start + length
-        subject = Subject(name=name, start=start, end=end, strand=1)
+        subject = Subject(name=name, start=start, end=end, strand=1, sequence=sequence)
         subjects.append(subject)
         start += length + spacing
     return Cluster(subjects=subjects)
