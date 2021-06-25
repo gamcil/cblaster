@@ -36,14 +36,32 @@ def find_overlapping_location(feature, locations):
             return index
 
 
+def find_feature(array, ftype):
+    for feature in array:
+        if feature.type == ftype:
+            return feature
+    return None
+
+
 def find_gene_name(qualifiers):
     """Finds a gene name in a dictionary of feature qualifiers."""
     if not isinstance(qualifiers, dict):
         raise TypeError("Expected qualifier dictionary")
     for tag in ["locus_tag", "protein_id", "id", "gene", "name", "label"]:
         if tag in qualifiers:
-            return qualifiers[tag]
+            return qualifiers[tag][0]
     return "N.A."
+
+
+def find_translation(record, feature):
+    if not feature:
+        return ""
+    if "translation" in feature.qualifiers:
+        translation = feature.qualifiers.pop("translation", "")
+        if isinstance(translation, list):
+            translation = translation[0]
+        return translation
+    return feature.extract(record.seq).translate()
 
 
 def find_fasta(gff_path):
@@ -216,21 +234,18 @@ def seqrecord_to_tuples(record, source):
     rows = []
     for group in iter_overlapping_features(features):
         # Pull out gene and CDS features
-        gene = [f for f in group if f.type == "gene"]
-        cds = [f for f in group if f.type == "CDS"]
+        gene = find_feature(group, "gene")
+        cds = find_feature(group, "CDS")
 
         # Get coordinates; prefer gene instead of CDS
-        base = gene[0] if gene else cds[0]
+        base = gene if gene else cds
         start = int(base.location.start)
         end = int(base.location.end)
         strand = int(base.location.strand) if base.location.strand else 1
 
         # Get name and translation, prefer CDS instead of gene
-        name = find_gene_name(cds[0].qualifiers if cds else gene[0].qualifiers)[0]
-        translation = (
-            cds[0].qualifiers.pop("translation", None)[0]
-            or str(cds[0].extract(record.seq).translate())
-        ) if cds else ""
+        name = find_gene_name(cds.qualifiers if cds else gene.qualifiers)
+        translation = find_translation(record, cds)
 
         # Keep track of record ID and source
         record_id = str(record.id)
