@@ -198,6 +198,8 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         with Pool(cpus) as pool:
             for index, group in enumerate(path_groups, 1):
                 LOG.info("Processing batch %i", index)
+                for file in group:
+                    LOG.info("  %s", file.name)
                 tuples = []
                 for organism in pool.imap(func, group):
                     for records in organism["records"]:
