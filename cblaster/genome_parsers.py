@@ -61,7 +61,7 @@ def find_translation(record, feature):
         if isinstance(translation, list):
             translation = translation[0]
         return translation
-    return feature.extract(record.seq).translate()
+    return str(feature.extract(record.seq).translate())
 
 
 def find_fasta(gff_path):
