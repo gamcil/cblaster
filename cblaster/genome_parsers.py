@@ -54,7 +54,7 @@ def find_gene_name(qualifiers):
 
 
 def find_translation(record, feature):
-    if not feature:
+    if not feature or "pseudo" in feature.qualifiers:
         return ""
     if "translation" in feature.qualifiers:
         translation = feature.qualifiers.pop("translation", "")
