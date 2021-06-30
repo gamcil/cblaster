@@ -399,6 +399,20 @@ def main():
     if args.debug:
         LOG.setLevel(logging.DEBUG)
 
+
+    if args.subcommand == "config":
+        if not args.email and not args.api_key:
+            LOG.info(
+                "No e-mail or API key specified; if this is your first time"
+                " running cblaster config, please make sure you provide one."
+            )
+        config.write_config_file(
+            email=args.email,
+            api_key=args.api_key,
+            max_tries=args.max_tries,
+        )
+        return
+
     # Set BioPython Entrez parameters
     set_entrez()
 
@@ -510,19 +524,6 @@ def main():
             max_clusters=args.maximum_clusters,
             testing=args.testing,
         )
-
-    elif args.subcommand == "config":
-        if not args.email and not args.api_key:
-            LOG.info(
-                "No e-mail or API key specified; if this is your first time"
-                " running cblaster config, please make sure you provide one."
-            )
-        config.write_config_file(
-            email=args.email,
-            api_key=args.api_key,
-            max_tries=args.max_tries,
-        )
-
 
 if __name__ == "__main__":
     main()
