@@ -19,7 +19,15 @@ This will read in each GenBank file, then generate the files:
 ``myDb.fasta``   All protein sequences parsed from genomes; used for HMMER searches
 ================ ==================================================================
 
-``cblaster`` can also build databases from GFF3 files; however, currently the FASTA sequence must be embedded within the GFF3 (i.e. under a ``##FASTA`` directive).
+``cblaster`` can also build databases from GFF3 files as above:
+
+::
+
+        $ cblaster makedb one.gff two.gff three.gff four.gff myDb
+
+In this case, ``cblaster`` will expect matching FASTA format files containing the nucleotide sequences for each sequence region in the corresponding GFF.
+For instance, in the above example, the working directory must also contain ``one.fasta``, ``two.fasta``, ``three.fasta``, ``four.fasta``.
+
 Typically it is easiest to have all your genome files within a folder and use a wildcard to avoid having to type every file name, like so:
 
 ::
