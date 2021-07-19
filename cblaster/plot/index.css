@@ -2,6 +2,7 @@ body {
 	margin: 0;
 	padding: 0;
 	overflow: hidden;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Oxygen, Cantarell, sans-serif;
 }
 
 .tooltip {
@@ -96,6 +97,7 @@ body {
 	max-height: 95vh;
 	border: 1px solid black;
 	background-color: white;
+	font-size: 0.9rem;
 }
 
 #div-summary {
@@ -108,8 +110,6 @@ body {
 #div-summary p {
 	margin: 0;
 	margin-bottom: 4px;
-	font-size: 10pt;
-	font-family: sans-serif;
 }
 
 #div-summary pre {
