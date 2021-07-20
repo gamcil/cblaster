@@ -4,7 +4,7 @@
 import PySimpleGUI as sg
 
 
-TEXT_WIDTH = 65
+TEXT_WIDTH = 70
 
 
 def SectionLabel(text):
