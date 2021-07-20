@@ -119,8 +119,10 @@ search_frame = Frame(
             "should refer to files generated using cblaster makedb. When using any "
             "of the HMM modes, a local copy of the Pfam database will be stored at "
             "the indicated location or extracted from there. The FASTA database "
-            "should refer to the FASTA file generated using cblaster makedb.",
-            size=(TEXT_WIDTH, 6))],
+            "should refer to the FASTA file generated using cblaster makedb.\n"
+            "NOTE: you must set an e-mail using cblaster config before doing "
+            "a search with cblaster.",
+            size=(TEXT_WIDTH, 8))],
         [search_tabgroup]
     ]
 )
@@ -309,7 +311,7 @@ figure_frame = Frame(
             " at which point the figure can be manipulated and saved as SVG."
             " If a file path is specified, a static HTML file will be generated at"
             " that path.",
-            size=(TEXT_WIDTH, 4)
+            size=(TEXT_WIDTH, 5)
         )],
         [TextLabel("Output file"),
          sg.InputText(key="figure_text", disabled=True, size=(34, 1)),
