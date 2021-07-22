@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from ftplib import FTP
 from pathlib import Path
-from typing import Union, Collection, Set, Tuple
+from typing import Union, List, Collection, Set, Tuple
 
 from Bio import SearchIO
 from cblaster.classes import Hit, Session
@@ -209,19 +209,19 @@ def group_profiles(profiles: Collection[str]) -> tuple:
 
 def perform_hmmer(
     fasta: str,
-    query_profiles: Collection[str],
+    query_profiles: List[str],
     pfam: str,
     session: Session,
 ) -> Union[Collection[Hit], None]:
     """Main of running a hmmer search
 
     Args:
-        database_pfam: String, Path to pfam db
-        database: String, Path to seqeunce db, in fasta or gbk format
-        query_profiles: List, Pfam profiles needed to be searched
+        fasta: Path to database FASTA file
+        query_profiles: Pfam names/accessions, or paths to profile HMM files
+        pfam: Path to folder containing Pfam database
+        session: cblaster search session
     Returns:
-        hit_res: List of class objects with the hits
-
+        List of class objects with the hits
     """
     LOG.info("Starting hmmer search")
 
