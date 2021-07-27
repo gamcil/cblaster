@@ -1,0 +1,71 @@
+Organism                                   Scaffold           Start    End      Score    QBE85641.1  QBE85642.1  QBE85643.1  QBE85644.1  QBE85645.1  QBE85646.1  QBE85647.1  QBE85648.1  QBE85649.1
+Aspergillus burnettii FRR 5400             MK425157.1         282      27878    18.4803  1           1           1           1           1           1           1           1           1         
+Aspergillus burnettii FRR 5400             SPNV01000377.1     7572     27567    10.1187  0           0           0           0           1           1           1           1           1         
+Aspergillus alliaceus CBS 536.65           NW_022474703.1     15435    43018    18.4701  1           1           1           1           1           1           1           1           1         
+Aspergillus alliaceus IBT 14317            ML735331.1         15828    43603    18.4629  1           1           1           1           1           1           1           1           1         
+Aspergillus mulundensis DSM 5745           NW_020797889.1     1717881  1745289  18.1357  1           1           1           1           1           1           1           1           1         
+Aspergillus puulaauensis MK2               NC_054858.1        1416968  1442739  15.1047  1           1           1           1           1           1           1           0           1         
+Aspergillus versicolor IMB17-055           MN395477.1         2742     27898    18.1043  1           1           1           1           1           1           1           1           1         
+Aspergillus versicolor CBS 583.65          NW_024467525.1     3162095  3187090  15.0774  1           1           1           0           1           1           1           1           1         
+Neopestalotiopsis clavispora IHI 201606    JAANBA010000073.1  76164    103759   10.4795  1           1           1           0           0           1           1           1           1         
+Pseudomassariella vexata CBS 129021        NW_024467959.1     1606356  1628483  12.5769  1           1           1           0           0           1           1           1           1         
+Hypoxylon sp. CO27-5                       KZ112517.1         92119    114951   9.4619   1           1           1           0           0           1           1           0           1         
+Hypoxylon sp. EC38                         KZ111255.1         512060   535366   9.4589   1           1           1           0           0           1           1           0           1         
+Neopestalotiopsis sp. 37M                  SWKT01000029.1     384230   411826   12.4869  1           1           1           0           0           1           1           1           1         
+Ophiobolus disseminans CBS 113818          MU006246.1         309625   338063   7.4970   1           1           0           0           0           1           1           0           1         
+Ophiobolus disseminans CBS 113818          MU006243.1         128747   153490   7.6831   0           1           1           0           0           1           0           1           1         
+Epicoccum nigrum ICMP 19927                KZ107839.1         2116719  2142558  7.5142   1           1           0           0           0           1           1           0           1         
+Aureobasidium subglaciale EXF-2481         NW_013566983.1     700476   727505   6.3798   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-6514           QZBF01000009.1     18721    42741    6.3777   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-6298           QZBG01000053.1     36251    60327    6.3793   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-4256           QZBJ01000032.1     55772    79844    6.3731   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-3670           QZBQ01000035.1     55721    79793    6.3731   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-3645           QZBR01000026.1     55612    79684    6.3761   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-1668           QZBY01000072.1     12441    36555    6.3768   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans CBS 100524         JADGIM010000005.1  110587   134659   6.3771   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-9399           QZAX01000118.1     5552     29625    6.3785   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-9785           QZAV01000005.1     174190   198250   6.3761   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-676            QZCA01000017.1     64531    88585    6.3784   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-3519           QZBS01000006.1     86971    111045   6.3777   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-2618           QZBX01000085.1     19387    45261    6.3799   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-11318          QZAJ01000121.1     17270    41349    6.3785   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-8841           QZAY01000053.1     48313    72409    6.3782   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-8828           QZAZ01000340.1     2891     26994    6.3784   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-3780           QZBO01000058.1     57575    81787    6.3773   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-1645           QZBZ01000057.1     41722    65788    6.3784   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-6519           QZBE01000027.1     205597   229588   6.3692   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-11013          QZAL01000087.1     64818    88760    6.3759   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-10796          QZAM01000024.1     64161    88213    6.3752   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-8128           QZBA01000054.1     24625    48529    6.3720   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-8127           QZBB01000075.1     61812    85838    6.3766   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-150            NW_021941025.1     128457   152912   6.3778   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-10085          QZAS01000006.1     63063    87155    6.3762   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-10751          QZAN01000033.1     91942    116021   6.3795   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-3374           QZBV01000143.1     13191    37270    6.3773   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-11991          QZAE01000217.1     8175     31302    6.3663   1           1           0           0           0           1           1           0           1         
+Aureobasidium pullulans EXF-10081          QZAT01000020.1     124769   148673   6.3687   1           1           0           0           0           1           1           0           1         
+Venustampulla echinocandica BP 5553        NW_022474207.1     2368452  2410201  7.5158   1           1           0           0           0           1           1           0           1         
+Hyphodiscus hymeniophilus ATCC 34498       VNKQ01000009.1     1505557  1542957  5.4963   1           1           0           1           0           0           1           0           1         
+Aureobasidium namibiae CBS 147.97          NW_013581207.1     513366   536392   6.3772   1           1           0           0           0           1           1           0           1         
+Aspergillus tanneri NIH1004                NW_022984629.1     4000711  4035536  5.4243   0           1           1           0           0           1           1           0           1         
+Aspergillus tanneri NIH1004                SOSA01000228.1     8720     43544    7.4549   0           1           1           0           0           1           1           0           1         
+Pseudogymnoascus sp. VKM F-4518 (FW-2643)  JPKC01002568.1     3322     26505    7.5731   0           1           1           0           0           0           1           1           1         
+Pseudogymnoascus sp. VKM F-4520 (FW-2644)  JPKE01004268.1     325      23507    7.5734   0           1           1           0           0           0           1           1           1         
+Pseudogymnoascus sp. 05NY08                KV458786.1         420517   443482   7.5593   0           1           1           0           0           0           1           1           1         
+Pseudogymnoascus sp. VKM F-4519 (FW-2642)  JPKD01001966.1     20395    45361    7.5634   0           1           1           0           0           0           1           1           1         
+Pseudogymnoascus sp. 24MN13                KV456093.1         605      23725    7.5421   0           1           1           0           0           0           1           1           1         
+Coleophoma crateriformis BP5796            PDLN01000020.1     769706   802274   11.4093  0           1           1           0           0           0           2           2           1         
+Talaromyces verruculosus TS63-9            LHCL01000045.1     151669   171030   9.4263   0           1           1           0           0           0           1           2           1         
+Aspergillus bertholletiae IBT 29228        ML736214.1         37836    69009    7.4594   0           1           1           0           0           1           1           0           1         
+Cordyceps militaris CM01                   NW_006271971.1     3526865  3549973  7.3794   0           1           0           0           0           1           1           1           1         
+Cordyceps militaris ATCC 34164             CP023325.1         1212680  1235839  7.3732   0           1           0           0           0           1           1           1           1         
+Aspergillus phoenicis ATCC 13157           KZ851858.1         310358   331958   7.3856   0           1           0           0           0           1           1           1           1         
+Talaromyces marneffei ATCC 18224           NW_002196665.1     29530    48708    9.4357   0           1           1           0           0           0           1           2           1         
+Talaromyces marneffei 11CN-03-130          CM018877.1         3170287  3189465  9.4369   0           1           1           0           0           0           1           2           1         
+Talaromyces marneffei PM1                  JPOX01000065.1     15035    34253    10.6531  0           1           1           0           0           0           1           2           2         
+Talaromyces cellulolyticus Y-94            DF933807.1         140588   159909   9.4387   0           1           1           0           0           0           1           2           1         
+Penicillium sp. 'occitanis' CL100          NPFK01000250.1     20275    39609    9.4356   0           1           1           0           0           0           1           2           1         
+Penicillium sp. 'occitanis' CT1            NPFJ01000126.1     54447    73781    9.4356   0           1           1           0           0           0           1           2           1         
+Talaromyces pinophilus AR155               QMIJ01000003.1     551160   570497   9.4386   0           1           1           0           0           0           1           2           1         
+Pseudogymnoascus verrucosus UAMH 10579     NW_017263654.1     832026   854974   7.5687   0           1           1           0           0           0           1           1           1         
+Torrubiella hemipterigena                  CDHN01000006.1     998928   1024764  7.3881   0           1           0           0           0           1           1           1           1         
