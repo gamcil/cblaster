@@ -49,7 +49,7 @@ def run_cblaster(values, textbox):
         args = dict(
             query_file=values["query_file"],
             query_ids=values["query_ids"],
-            query_profiles=values["query_profiles"],
+            query_profiles=values["query_profiles"].split(";") + values["query_pfams"].split(" "),
             session_file=values["session_file"],
             mode=values["search_mode"],
             gap=values["gap"],
