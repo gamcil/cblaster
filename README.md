@@ -46,6 +46,9 @@ Once installed, make sure you configure cblaster with your email address:
 $ cblaster config --email name@domain.com
 ```
 
+You can find example search files, along with generated output, in the [examples folder
+of the repository](https://github.com/gamcil/cblaster/tree/master/example).
+
 ## Dependencies
 `cblaster` is tested on Python 3.6, and its only external Python dependency is
 the `requests` module (used for interaction with NCBI APIs).
