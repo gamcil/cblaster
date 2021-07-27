@@ -6,12 +6,12 @@ remotely against the NCBI's NR database.
 
 | File | Description |
 | ---- | ----------- |
-| ``example/bua.gbk`` | *bua* cluster GenBank file |
-| ``example/bua.fasta`` | FASTA file containing proteins in *bua* |
-| ``example/bua_session.json`` | cblaster session file |
-| ``example/bua_binary.txt`` | Binary absence/presence table output |
-| ``example/bua_summary.txt`` | Default results summary |
-| ``example/bua_results.html`` | Interactive output visualisation |
+| ``bua.gbk`` | *bua* cluster GenBank file |
+| ``bua.fasta`` | FASTA file containing proteins in *bua* |
+| ``bua_session.json`` | cblaster session file |
+| ``bua_binary.txt`` | Binary absence/presence table output |
+| ``bua_summary.txt`` | Default results summary |
+| ``bua_results.html`` | Interactive output visualisation |
 
 These files were generated with the following command:
 
