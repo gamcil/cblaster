@@ -1,0 +1,23 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Gilchrist
+    given-names: Cameron
+    orcid: https://orcid.org/0000-0001-7798-427X
+  - family-names: Booth
+    given-names: Thomas J
+    orcid: https://orcid.org/0000-0002-6134-1488
+  - family-names: van Wersch
+    given-names: Bram
+  - family-names: van Grieken
+    given-names: Liana
+  - family-names: Medema
+    given-names: Marnix H
+    orcid: https://orcid.org/0000-0002-2191-2821
+  - family-names: Chooi
+    given-names: Yit-Heng
+    orcid: https://orcid.org/0000-0001-7719-7524
+title: "cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters"
+version: 1.3.9
+doi: 10.1101/2020.11.08.370601
+date-released: 2021-04-15
