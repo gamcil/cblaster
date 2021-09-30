@@ -378,8 +378,8 @@ def add_clustering_group(search):
         "-per",
         "--percentage",
         type=int,
-        default=50,
-        help="Filter on %% of query genes needed to be present in cluster",
+        default=0,
+        help="Percentage of query genes required to be present in cluster",
     )
 
 

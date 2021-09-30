@@ -1,3 +1,4 @@
+import functools
 import warnings
 import logging
 
@@ -186,6 +187,7 @@ def parse_file(path, to_tuples=False):
 
     Args:
         path (str): Path to genome file
+        to_tuples (bool): Generate insertion tuples from parsed SeqRecords
     Returns:
         dict: File name and list of SeqRecord objects corresponding to scaffolds in file
     """
@@ -193,20 +195,19 @@ def parse_file(path, to_tuples=False):
     name = path.with_suffix("").name
     suffix = path.suffix.lower()
     if suffix in GBK_SUFFIXES:
-        file_type = "genbank"
+        function = functools.partial(SeqIO.parse, handle=path, format="genbank")
     elif suffix in EMBL_SUFFIXES:
-        file_type = "embl"
+        function = functools.partial(SeqIO.parse, handle=path, format="embl")
     elif suffix in GFF_SUFFIXES:
-        return dict(name=name, records=parse_gff(path))
+        function = functools.partial(parse_gff, path=path)
     elif suffix in FASTA_SUFFIXES:
-        return dict(name=name, records=parse_fasta(path))
+        function = functools.partial(parse_fasta, path=path)
     else:
         raise ValueError(f"File {path} has invalid extension ({suffix})")
-    with open(path) as fp:
-        records = [
-            seqrecord_to_tuples(record, path.stem) if to_tuples else record
-            for record in SeqIO.parse(fp, file_type)
-        ]
+    records = [
+        seqrecord_to_tuples(record, path.stem) if to_tuples else record
+        for record in function()
+    ]
     return dict(name=name, records=records)
 
 
