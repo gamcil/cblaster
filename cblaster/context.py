@@ -28,10 +28,13 @@ objects linking them to the query sequences.
 
 
 import logging
+import http.client
+
 from collections import defaultdict, namedtuple
 from itertools import combinations, product
 from operator import attrgetter
 from functools import partial
+from typing import List
 
 import requests
 import numpy as np
@@ -43,6 +46,27 @@ from cblaster.classes import Organism, Scaffold, Subject
 
 
 LOG = logging.getLogger(__name__)
+
+
+def efetch_request(ids: List[str]) -> http.client.HTTPResponse:
+    """Launches Entrez EFetch request on a collection of identifiers.
+
+    Args:
+        ids: NCBI identifiers for query proteins
+    Returns:
+        HTTP response from NCBI Entrez
+    """
+    try:
+        return Entrez.efetch(
+            "protein",
+            rettype="ipg",
+            retmode="text",
+            id=ids,
+            retmax=10000,
+        )
+    except IOError:
+        LOG.exception("Network error while retrieving genomic context")
+        raise
 
 
 def efetch_IPGs(ids, output_file=None):
@@ -63,19 +87,14 @@ def efetch_IPGs(ids, output_file=None):
     table = []
     for start in range(0, len(ids), 10000):
         chunk = ids[start: start + 10000]
-        try:
-            fetch = Entrez.efetch(
-                "protein",
-                rettype="ipg",
-                retmode="text",
-                id=chunk,
-                retmax=10000,
-            )
-        except IOError:
-            LOG.exception("Network error while retrieving genomic context")
-            raise
-        lines = [line.decode() for line in fetch.readlines()]
-        table.extend(lines)
+        handle = efetch_request(chunk)
+        if handle.code != 200:
+            raise RuntimeError(f"Bad response from NCBI [code {handle.code}]")
+        for line in handle:
+            if isinstance(line, bytes):
+                line = line.decode()
+            line = line.strip('\n')
+            table.append(line)
 
     if output_file:
         LOG.info("Writing IPG table to %s", output_file)
@@ -113,8 +132,10 @@ def parse_IP_groups(results):
     Entry = namedtuple("Entry", fields)
     groups = defaultdict(list)
     for line in results:
-        if not line or line.startswith("Id\tSource") or line.isspace() \
-                or "skipping" in line:
+        if not line \
+            or line.startswith("Id\tSource") \
+            or line.isspace() \
+            or "skipping" in line:
             continue
         ipg, *fields = line.strip("\n").split("\t")
         try:
