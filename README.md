@@ -1,6 +1,5 @@
 # cblaster
 [![Python package](https://github.com/gamcil/cblaster/actions/workflows/pythonapp.yml/badge.svg)](https://github.com/gamcil/cblaster/actions/workflows/pythonapp.yml)
-[![codecov](https://codecov.io/gh/gamcil/cblaster/branch/master/graph/badge.svg?token=O61R3ORNDT)](https://codecov.io/gh/gamcil/cblaster)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/cblaster.svg)](https://badge.fury.io/py/cblaster)
 [![Documentation Status](https://readthedocs.org/projects/cblaster/badge/?version=latest)](https://cblaster.readthedocs.io/en/latest/?badge=latest)
@@ -132,7 +131,7 @@ For further usage examples and API documentation, please refer to the
 If you found this tool useful, please cite:
 
 ```
-Gilchrist, C.L.M., Booth, T.J., Chooi, Y.-H., 2020. cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters. bioRxiv 2020.11.08.370601. https://doi.org/10.1101/2020.11.08.370601
+Cameron L M Gilchrist, Thomas J Booth, Bram van Wersch, Liana van Grieken, Marnix H Medema, Yit-Heng Chooi, cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters, Bioinformatics Advances, 2021;, vbab016, https://doi.org/10.1093/bioadv/vbab016
 ```
 
 `cblaster` makes use of the following tools:
