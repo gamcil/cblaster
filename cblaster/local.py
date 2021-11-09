@@ -119,6 +119,9 @@ def search(
     query_ids=None,
     blast_file=None,
     dmnd_sensitivity='fast',
+    min_identity=30,
+    min_coverage=50,
+    max_evalue=0.01,
     **kwargs,
 ):
     """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote).
@@ -135,7 +138,14 @@ def search(
         list: Parsed rows with hits from DIAMOND results table
     """
     if query_file:
-        table = diamond(query_file, database, **kwargs)
+        table = diamond(
+            query_file,
+            database,
+            min_identity=min_identity,
+            min_coverage=min_coverage,
+            max_evalue=max_evalue,
+            **kwargs
+        )
     else:
         if not sequences:
             sequences = helpers.get_sequences(query_ids=query_ids)
@@ -147,11 +157,24 @@ def search(
         try:
             with fasta:
                 fasta.write(text)
-            table = diamond(fasta.name, database, sensitivity=dmnd_sensitivity, **kwargs)
+            table = diamond(
+                fasta.name,
+                database,
+                sensitivity=dmnd_sensitivity,
+                min_identity=min_identity,
+                min_coverage=min_coverage,
+                max_evalue=max_evalue,
+                **kwargs
+            )
         finally:
             os.unlink(fasta.name)
 
-    results = parse(table)
+    results = parse(
+        table,
+        min_identity=min_identity,
+        min_coverage=min_coverage,
+        max_evalue=max_evalue,
+    )
 
     if blast_file:
         LOG.info("Writing DIAMOND hit table to %s", blast_file)
