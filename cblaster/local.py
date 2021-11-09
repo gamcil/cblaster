@@ -46,6 +46,7 @@ def diamond(
     min_identity=30,
     min_coverage=50,
     cpus=None,
+    sensitivity='fast',
 ):
     """Launch a local DIAMOND search against a database.
 
@@ -87,6 +88,15 @@ def diamond(
         "--max-hsps": "1",
     }
 
+    if sensitivity != "fast":
+        LOG.info("Using '%s' DIAMOND sensitivity level", sensitivity)
+        value = (
+            "--sensitive"
+            if sensitivity == "sensitive"
+            else f"--{sensitivity}-sensitive"
+        )
+        parameters["args"].append(value)
+
     command = helpers.form_command(parameters)
     LOG.debug("Parameters: %s", command)
 
@@ -108,6 +118,7 @@ def search(
     query_file=None,
     query_ids=None,
     blast_file=None,
+    dmnd_sensitivity='fast',
     **kwargs,
 ):
     """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote).
@@ -136,7 +147,7 @@ def search(
         try:
             with fasta:
                 fasta.write(text)
-            table = diamond(fasta.name, database, **kwargs)
+            table = diamond(fasta.name, database, sensitivity=dmnd_sensitivity, **kwargs)
         finally:
             os.unlink(fasta.name)
 

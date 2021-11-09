@@ -341,6 +341,14 @@ def add_searching_group(search):
         help="Maximum total hits to save from a remote BLAST search (def. 5000). Setting"
              " this value too low may result in missed hits/clusters."
     )
+    group.add_argument(
+        "-ds",
+        "--dmnd_sensitivity",
+        type=str,
+        choices=["fast", "mid", "sensitive", "more", "very", "ultra"],
+        default="fast",
+        help="Level of sensitivity to use in local DIAMOND searches (def. 'fast')"
+    )
 
 
 def add_clustering_group(search):

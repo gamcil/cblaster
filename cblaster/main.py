@@ -127,6 +127,7 @@ def cblaster(
     intermediate_gene_distance=5000,
     intermediate_max_clusters=100,
     testing=False,
+    dmnd_sensitivity='fast',
 ):
     """Run cblaster.
 
@@ -289,6 +290,7 @@ def cblaster(
                 max_evalue=max_evalue,
                 blast_file=blast_file,
                 cpus=cpus,
+                dmnd_sensitivity=dmnd_sensitivity,
             )
             LOG.info(
                 "Found %i hits meeting score thresholds for local search", len(results)
@@ -467,6 +469,7 @@ def main():
             intermediate_gene_distance=args.max_distance,
             intermediate_max_clusters=args.maximum_clusters,
             testing=args.testing,
+            dmnd_sensitivity=args.dmnd_sensitivity,
         )
 
     elif args.subcommand == "gui":
