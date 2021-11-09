@@ -155,7 +155,7 @@ def search(
 
     if blast_file:
         LOG.info("Writing DIAMOND hit table to %s", blast_file)
-        blast_table = "".join(table)
+        blast_table = "\n".join(table)
         with open(blast_file, "w") as f:
             f.write(blast_table)
 
