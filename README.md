@@ -130,7 +130,7 @@ For further usage examples and API documentation, please refer to the
 ## Citation
 If you found this tool useful, please cite:
 
-```
+```text
 Cameron L M Gilchrist, Thomas J Booth, Bram van Wersch, Liana van Grieken, Marnix H Medema, Yit-Heng Chooi, cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters, Bioinformatics Advances, 2021;, vbab016, https://doi.org/10.1093/bioadv/vbab016
 ```
 
