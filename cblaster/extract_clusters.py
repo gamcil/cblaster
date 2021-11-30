@@ -148,7 +148,7 @@ def create_genbanks_from_clusters(
         proteins = efetch_protein_sequences(cluster_hierarchy)
         nucleotides = efetch_nucleotide_sequence(cluster_hierarchy)
         name_attr = "name"
-    elif session.params["mode"] == "local":
+    elif session.params["mode"] in ("hmm", "local"):
         sqlite_db = session.params["sqlite_db"]
         proteins = local_fetch_sequences(sqlite_db, cluster_hierarchy)
         nucleotides = local_fetch_nucleotide(sqlite_db, cluster_hierarchy)
