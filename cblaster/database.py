@@ -2,6 +2,7 @@
 This module handles creation of local JSON databases for non-NCBI lookups.
 """
 
+import os
 import logging
 import subprocess
 import sqlite3
@@ -182,7 +183,14 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
 
     paths = gp.find_files(paths)
     if len(paths) == 0:
-        raise RuntimeError("No valid files provided expected genbank, embl or gff with accompanying fasta file.")
+        raise RuntimeError("No valid files provided expected genbank, embl or gff with accompanying fasta file. Alternatively, provide one .txt file with one file per line.")
+
+    # If a text file was provided, read and parse
+    if len(paths)==1 and os.path.splitext(paths[0])[1] == ".txt":
+        with open(paths[0]) as f:
+            lines = f.read().splitlines()
+        paths = gp.find_files(lines)
+
     total_paths = len(paths)
     if batch is None:
         batch = total_paths

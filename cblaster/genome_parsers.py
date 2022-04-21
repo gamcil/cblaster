@@ -1,3 +1,4 @@
+import os
 import functools
 import warnings
 import logging
@@ -20,6 +21,7 @@ FASTA_SUFFIXES = (".fa", ".fsa", ".fna", ".fasta", ".faa")
 GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff")
 GFF_SUFFIXES = (".gtf", ".gff", ".gff3")
 EMBL_SUFFIXES = (".embl", ".emb")
+LIST_SUFFIXES = (".txt")
 
 
 def find_overlapping_location(feature, locations):
@@ -168,17 +170,20 @@ def parse_gff(path):
 
 def find_files(paths, recurse=True, level=0):
     files = []
-    for path in paths:
-        _path = Path(path)
-        if _path.is_dir():
-            if level == 0 or recurse:
-                _files = find_files(_path.iterdir(), recurse=recurse, level=level + 1)
-                files.extend(_files)
-        else:
-            ext = _path.suffix.lower()
-            valid = ext in GBK_SUFFIXES + GFF_SUFFIXES + EMBL_SUFFIXES
-            if _path.exists() and valid:
-                files.append(_path)
+    if len(paths)==1 and os.path.splitext(paths[0])[1] in LIST_SUFFIXES:
+        files.append(paths[0])
+    else:
+        for path in paths:
+            _path = Path(path)
+            if _path.is_dir():
+                if level == 0 or recurse:
+                    _files = find_files(_path.iterdir(), recurse=recurse, level=level + 1)
+                    files.extend(_files)
+            else:
+                ext = _path.suffix.lower()
+                valid = ext in GBK_SUFFIXES + GFF_SUFFIXES + EMBL_SUFFIXES
+                if _path.exists() and valid:
+                    files.append(_path)
     return files
 
 
