@@ -122,7 +122,7 @@ def query_nucleotides(scaffold, organism, start, end, database):
     return _query(query, database, values=[scaffold, organism], fetch="one")
 
 
-def diamond_makedb(fasta, name):
+def diamond_makedb(fasta, name, cpus):
     """Builds a DIAMOND database
 
     Args:
@@ -131,7 +131,7 @@ def diamond_makedb(fasta, name):
     """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
     subprocess.run(
-        [diamond, "makedb", "--in", str(fasta), "--db", name],
+        [diamond, "makedb", "--in", str(fasta), "--db", name, "--threads", str(cpus)],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -222,6 +222,6 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     sqlite_to_fasta(fasta_path, sqlite_path)
 
     LOG.info("Building DIAMOND database at %s", dmnd_path)
-    diamond_makedb(fasta_path, dmnd_path)
+    diamond_makedb(fasta_path, dmnd_path, cpus)
 
     LOG.info("Done!")
