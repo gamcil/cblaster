@@ -1,4 +1,4 @@
-import os
+import gzip
 import functools
 import warnings
 import logging
@@ -17,12 +17,23 @@ warnings.simplefilter('ignore', BiopythonParserWarning)
 
 LOG = logging.getLogger("cblaster")
 
-FASTA_SUFFIXES = (".fa", ".fsa", ".fna", ".fasta", ".faa")
+FASTA_SUFFIXES = (".fa", ".fsa", ".fna", ".fasta", ".faa", 
+    ".fa.gz", ".fsa.gz", ".fna.gz", ".fasta.gz", ".faa.gz")
 GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff")
 GFF_SUFFIXES = (".gtf", ".gff", ".gff3")
 EMBL_SUFFIXES = (".embl", ".emb")
 LIST_SUFFIXES = (".txt")
 
+def return_file_handle(input_file):
+    """
+    Handles compressed and uncompressed files.
+    """
+    if str(input_file).endswith(".gz"):
+        gzipped_file_handle = gzip.open(input_file, "rt")
+        return gzipped_file_handle
+    else:
+        normal_fh = open(input_file, "r")
+        return normal_fh
 
 def find_overlapping_location(feature, locations):
     """Finds the index of a gene location containing `feature`.
@@ -69,15 +80,19 @@ def find_translation(record, feature):
 
 def find_fasta(gff_path):
     """Finds a FASTA file corresponding to the given GFF path."""
+    if gff_path.suffix == ".gz":
+        gff_path = gff_path.with_suffix("")
     for suffix in FASTA_SUFFIXES:
         path = Path(gff_path).with_suffix(suffix)
         if path.exists():
             return path
 
 
-def parse_fasta(path):
-    with open(path) as fp:
-        return list(SeqIO.parse(fp, "fasta"))
+def parse_infile(path, format):
+    fp = return_file_handle(path)
+    fh = list(SeqIO.parse(fp, format))
+    fp.close()
+    return fh
 
 
 def find_regions(directives):
@@ -139,7 +154,7 @@ def parse_gff(path):
         raise FileNotFoundError(f"Could not find partner FASTA file for {path}")
 
     # Parse FASTA and create GFFUtils database
-    fasta = parse_fasta(fasta)
+    fasta = parse_infile(fasta, "fasta")
     gff = gffutils.create_db(
         str(path),
         ":memory:",
@@ -170,7 +185,7 @@ def parse_gff(path):
 
 def find_files(paths, recurse=True, level=0):
     files = []
-    if len(paths)==1 and os.path.splitext(paths[0])[1] in LIST_SUFFIXES:
+    if len(paths)==1 and Path(paths[0]).suffix in LIST_SUFFIXES:
         files.append(paths[0])
     else:
         for path in paths:
@@ -181,6 +196,8 @@ def find_files(paths, recurse=True, level=0):
                     files.extend(_files)
             else:
                 ext = _path.suffix.lower()
+                if ext == ".gz":
+                    ext = _path.with_suffix("").suffix
                 valid = ext in GBK_SUFFIXES + GFF_SUFFIXES + EMBL_SUFFIXES
                 if _path.exists() and valid:
                     files.append(_path)
@@ -199,14 +216,17 @@ def parse_file(path, to_tuples=False):
     path = Path(path)
     name = path.with_suffix("").name
     suffix = path.suffix.lower()
+    if suffix == ".gz":
+        name = path.with_suffix("").with_suffix("").name
+        suffix = path.with_suffix("").suffix
     if suffix in GBK_SUFFIXES:
-        function = functools.partial(SeqIO.parse, handle=path, format="genbank")
+        function = functools.partial(parse_infile, path=path, format="genbank")
     elif suffix in EMBL_SUFFIXES:
-        function = functools.partial(SeqIO.parse, handle=path, format="embl")
+        function = functools.partial(parse_infile, path=path, format="embl")
     elif suffix in GFF_SUFFIXES:
         function = functools.partial(parse_gff, path=path)
     elif suffix in FASTA_SUFFIXES:
-        function = functools.partial(parse_fasta, path=path)
+        function = functools.partial(parse_infile, path=path, format="fasta")
     else:
         raise ValueError(f"File {path} has invalid extension ({suffix})")
     records = [

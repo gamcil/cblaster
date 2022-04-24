@@ -91,7 +91,8 @@ def add_makedb_subparser(subparsers):
     makedb.add_argument(
         "paths",
         type=lambda x: full_path(x, os.R_OK),
-        help="Path/s to genome files to use when building local databases. Alternatively, path to one .txt file with one genome file per line.",
+        help="Path/s to genome files to use when building local databases (can be gzipped). "
+             "Alternatively, path to one .txt file with one genome file per line.",
         nargs="+",
     )
     makedb.add_argument(

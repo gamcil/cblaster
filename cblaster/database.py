@@ -2,7 +2,7 @@
 This module handles creation of local JSON databases for non-NCBI lookups.
 """
 
-import os
+import gzip
 import logging
 import subprocess
 import sqlite3
@@ -63,7 +63,7 @@ def sqlite_to_fasta(path, database):
         path (str): Path to output FASTA file
         database (str): Path to SQLite3 database
     """
-    with genomicsqlite.connect(str(database)) as con, open(path, "w") as fasta:
+    with genomicsqlite.connect(str(database)) as con, gzip.open(path, "wt") as fasta:
         cur = con.cursor()
         for (record,) in cur.execute(sql.FASTA):
             fasta.write(record)
@@ -170,7 +170,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         raise TypeError("cpus should be None or int")
 
     sqlite_path = Path(f"{database}.sqlite3")
-    fasta_path = Path(f"{database}.fasta")
+    fasta_path = Path(f"{database}.fasta.gz")
     dmnd_path = Path(f"{database}.dmnd")
 
     if sqlite_path.exists() or dmnd_path.exists():
@@ -183,10 +183,10 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
 
     paths = gp.find_files(paths)
     if len(paths) == 0:
-        raise RuntimeError("No valid files provided expected genbank, embl or gff with accompanying fasta file. Alternatively, provide one .txt file with one file per line.")
+        raise RuntimeError("No valid files provided; expected genbank, embl or gff with accompanying fasta file (can be gzipped). Alternatively, provide one .txt file with one file per line.")
 
     # If a text file was provided, read and parse
-    if len(paths)==1 and os.path.splitext(paths[0])[1] == ".txt":
+    if len(paths)==1 and Path(paths[0]).suffix == ".txt":
         with open(paths[0]) as f:
             lines = f.read().splitlines()
         paths = gp.find_files(lines)
