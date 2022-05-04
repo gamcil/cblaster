@@ -158,7 +158,10 @@ def run_hmmsearch(fasta, query):
             check=True,
         )
     except subprocess.CalledProcessError:
-        LOG.exception("hmmsearch failed!")
+        add_msg=""
+        if fasta.endswith("gz"):
+            add_msg = " Try running:  \n  gunzip {0} \nand then resubmit your cblaster command command, specifying:\n  -db {1}.\n\n".format(fasta, fasta.replace(".gz",""))
+        LOG.exception("hmmsearch failed!"+add_msg)
     return output
 
 
