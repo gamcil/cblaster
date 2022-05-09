@@ -91,7 +91,8 @@ def add_makedb_subparser(subparsers):
     makedb.add_argument(
         "paths",
         type=lambda x: full_path(x, os.R_OK),
-        help="Path/s to genome files to use when building local databases",
+        help="Path/s to genome files to use when building local databases (can be gzipped). "
+             "Alternatively, path to one .txt file with one genome file per line.",
         nargs="+",
     )
     makedb.add_argument(
@@ -338,7 +339,7 @@ def add_searching_group(search):
         "--hitlist_size",
         type=int,
         default=5000,
-        help="Maximum total hits to save from a remote BLAST search (def. 5000). Setting"
+        help="Maximum total hits to save from a local or remote BLAST search (def. 5000). Setting"
              " this value too low may result in missed hits/clusters."
     )
     group.add_argument(

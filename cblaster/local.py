@@ -45,6 +45,7 @@ def diamond(
     max_evalue=0.01,
     min_identity=30,
     min_coverage=50,
+    hitlist_size=5000,
     cpus=None,
     sensitivity='fast',
 ):
@@ -56,6 +57,7 @@ def diamond(
         max_evalue (float): Maximum e-value threshold
         min_identity (float): Minimum identity (%) cutoff
         min_coverage (float): Minimum coverage (%) cutoff
+        hitlist_size (int): Maximum number of hits to save
         cpus (int): Number of CPU threads for DIAMOND to use
     Returns:
         list: Rows from DIAMOND search result table (split by newline)
@@ -86,6 +88,7 @@ def diamond(
         "--threads": str(cpus),
         "--query-cover": str(min_coverage),
         "--max-hsps": "1",
+        "--max-target-seqs": str(hitlist_size),
     }
 
     if sensitivity != "fast":
@@ -122,6 +125,7 @@ def search(
     min_identity=30,
     min_coverage=50,
     max_evalue=0.01,
+    hitlist_size=5000,
     **kwargs,
 ):
     """Launch a new BLAST search using either DIAMOND or command-line BLASTp (remote).
@@ -141,9 +145,11 @@ def search(
         table = diamond(
             query_file,
             database,
+            sensitivity=dmnd_sensitivity,
             min_identity=min_identity,
             min_coverage=min_coverage,
             max_evalue=max_evalue,
+            hitlist_size=hitlist_size,
             **kwargs
         )
     else:
@@ -164,6 +170,7 @@ def search(
                 min_identity=min_identity,
                 min_coverage=min_coverage,
                 max_evalue=max_evalue,
+                hitlist_size=hitlist_size,
                 **kwargs
             )
         finally:

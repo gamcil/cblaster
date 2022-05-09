@@ -61,7 +61,10 @@ def get_cell_values(queries, subjects, key=len, attr=None):
             for hit in subject.hits
             if hit.query == query
         ]
-        result[index] = key(values)
+        if len(values) > 0:
+            result[index] = key(values)
+        else:
+          result[index] = 0  
     return result
 
 

@@ -291,6 +291,7 @@ def cblaster(
                 blast_file=blast_file,
                 cpus=cpus,
                 dmnd_sensitivity=dmnd_sensitivity,
+                hitlist_size=hitlist_size,
             )
             LOG.info(
                 "Found %i hits meeting score thresholds for local search", len(results)

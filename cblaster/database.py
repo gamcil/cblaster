@@ -2,9 +2,11 @@
 This module handles creation of local JSON databases for non-NCBI lookups.
 """
 
+import gzip
 import logging
 import subprocess
 import sqlite3
+import genomicsqlite
 import functools
 
 from pathlib import Path
@@ -35,7 +37,7 @@ def init_sqlite_db(path, force=False):
             raise FileExistsError(f"File {path} already exists but force=False")
     else:
         LOG.info("Initialising cblaster SQLite3 database to %s", path)
-    with sqlite3.connect(str(path)) as con:
+    with genomicsqlite.connect(str(path)) as con:
         con.executescript(sql.SCHEMA)
 
 
@@ -47,10 +49,10 @@ def seqrecords_to_sqlite(tuples, database):
         database (str): Path to SQLite3 database
     """
     try:
-        with sqlite3.connect(str(database)) as con:
+        with genomicsqlite.connect(str(database)) as con:
             cur = con.cursor()
             cur.executemany(sql.INSERT, tuples)
-    except sqlite3.IntegrityError:
+    except genomicsqlite.IntegrityError:
         LOG.exception("Failed to insert %i records", len(tuples))
 
 
@@ -61,14 +63,14 @@ def sqlite_to_fasta(path, database):
         path (str): Path to output FASTA file
         database (str): Path to SQLite3 database
     """
-    with sqlite3.connect(str(database)) as con, open(path, "w") as fasta:
+    with genomicsqlite.connect(str(database)) as con, gzip.open(path, "wt") as fasta:
         cur = con.cursor()
         for (record,) in cur.execute(sql.FASTA):
             fasta.write(record)
 
 
 def _query(query, database, values=None, fetch="all"):
-    with sqlite3.connect(str(database)) as con:
+    with genomicsqlite.connect(str(database)) as con:
         cur = con.cursor()
         query = cur.execute(query, values) if values else cur.execute(query)
         return query.fetchall() if fetch == "all" else query.fetchone()
@@ -120,7 +122,7 @@ def query_nucleotides(scaffold, organism, start, end, database):
     return _query(query, database, values=[scaffold, organism], fetch="one")
 
 
-def diamond_makedb(fasta, name):
+def diamond_makedb(fasta, name, cpus):
     """Builds a DIAMOND database
 
     Args:
@@ -129,7 +131,7 @@ def diamond_makedb(fasta, name):
     """
     diamond = helpers.get_program_path(["diamond", "diamond-aligner"])
     subprocess.run(
-        [diamond, "makedb", "--in", str(fasta), "--db", name],
+        [diamond, "makedb", "--in", str(fasta), "--db", name, "--threads", str(cpus)],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -168,7 +170,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         raise TypeError("cpus should be None or int")
 
     sqlite_path = Path(f"{database}.sqlite3")
-    fasta_path = Path(f"{database}.fasta")
+    fasta_path = Path(f"{database}.fasta.gz")
     dmnd_path = Path(f"{database}.dmnd")
 
     if sqlite_path.exists() or dmnd_path.exists():
@@ -181,7 +183,14 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
 
     paths = gp.find_files(paths)
     if len(paths) == 0:
-        raise RuntimeError("No valid files provided expected genbank, embl or gff with accompanying fasta file.")
+        raise RuntimeError("No valid files provided; expected genbank, embl or gff with accompanying fasta file (can be gzipped). Alternatively, provide one .txt file with one file per line.")
+
+    # If a text file was provided, read and parse
+    if len(paths)==1 and Path(paths[0]).suffix == ".txt":
+        with open(paths[0]) as f:
+            lines = f.read().splitlines()
+        paths = gp.find_files(lines)
+
     total_paths = len(paths)
     if batch is None:
         batch = total_paths
@@ -213,6 +222,6 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
     sqlite_to_fasta(fasta_path, sqlite_path)
 
     LOG.info("Building DIAMOND database at %s", dmnd_path)
-    diamond_makedb(fasta_path, dmnd_path)
+    diamond_makedb(fasta_path, dmnd_path, cpus)
 
     LOG.info("Done!")

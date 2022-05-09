@@ -18,7 +18,10 @@ LOG = logging.getLogger(__name__)
 
 
 def find_sqlite_db(path):
-    sqlite_db = Path(path).with_suffix(".sqlite3")
+    sqlite_db = Path(path)
+    if sqlite_db.suffix == ".gz":
+        sqlite_db = sqlite_db.with_suffix("")
+    sqlite_db = sqlite_db.with_suffix(".sqlite3")
     if not sqlite_db.exists():
         LOG.error("Could not find matching SQlite3 database, exiting")
         raise SystemExit
