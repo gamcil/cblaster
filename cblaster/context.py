@@ -496,8 +496,11 @@ def filter_session(
                 unique=unique,
                 percentage=percentage,
             )
-            scaffold.clusters = []
-            scaffold.add_clusters(clusters, query_sequence_order=session.queries)
+            if len(scaffold.subjects) == 0:  # indicates no hits in clusters and we should not attempt to call scaffold.add_clusters as this would fail
+                LOG.info('No hits found in scaffold {}'.format(scaffold.accession))
+            else:
+                scaffold.clusters = []
+                scaffold.add_clusters(clusters, query_sequence_order=session.queries)
         deduplicate(organism)
 
 
