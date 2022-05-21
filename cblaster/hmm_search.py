@@ -37,6 +37,7 @@ def check_pfam_db(path):
 
     hmm = path / "Pfam-A.hmm.gz"
     dat = path / "Pfam-A.hmm.dat.gz"
+    version = path / "Pfam.version.gz"
 
     if hmm.exists() and dat.exists():
         LOG.info("Pfam database found")
@@ -47,6 +48,7 @@ def check_pfam_db(path):
             ftp.cwd("pub/databases/Pfam/current_release")
             ftp.retrbinary(f"RETR {hmm.name}", hmm.open("wb").write)
             ftp.retrbinary(f"RETR {dat.name}", dat.open("wb").write)
+            ftp.retrbinary(f"RETR {version.name}", version.open("wb").write)
 
     return hmm, dat
 
