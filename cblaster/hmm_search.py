@@ -184,8 +184,8 @@ def parse_hmmer_output(results):
             hit_class = Hit(
                 query=record.id,  # Pfam id
                 subject=hit.id,  # Hit id
-                identity=None,  # Not present
-                coverage=None,  # Not present
+                identity=0,  # Not present
+                coverage=0,  # Not present
                 evalue=hit.evalue,  # E-value of hit
                 bitscore=hit.bitscore,  # Bit score of hit
             )
