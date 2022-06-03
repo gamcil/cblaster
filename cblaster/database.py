@@ -6,8 +6,12 @@ import gzip
 import logging
 import subprocess
 import sqlite3
-import genomicsqlite
 import functools
+
+try:
+    import genomicsqlite
+except (ImportError, ModuleNotFoundError, sqlite3.OperationalError):
+    genomicsqlite = None
 
 from pathlib import Path
 from multiprocessing import Pool
@@ -15,6 +19,7 @@ from multiprocessing import Pool
 from cblaster import helpers, sql
 from cblaster import genome_parsers as gp
 
+SQLITE = genomicsqlite if genomicsqlite else sqlite3
 
 LOG = logging.getLogger("cblaster")
 
@@ -37,7 +42,7 @@ def init_sqlite_db(path, force=False):
             raise FileExistsError(f"File {path} already exists but force=False")
     else:
         LOG.info("Initialising cblaster SQLite3 database to %s", path)
-    with genomicsqlite.connect(str(path)) as con:
+    with SQLITE.connect(str(path)) as con:
         con.executescript(sql.SCHEMA)
 
 
@@ -49,10 +54,10 @@ def seqrecords_to_sqlite(tuples, database):
         database (str): Path to SQLite3 database
     """
     try:
-        with genomicsqlite.connect(str(database)) as con:
+        with SQLITE.connect(str(database)) as con:
             cur = con.cursor()
             cur.executemany(sql.INSERT, tuples)
-    except genomicsqlite.IntegrityError:
+    except SQLITE.IntegrityError:
         LOG.exception("Failed to insert %i records", len(tuples))
 
 
@@ -63,14 +68,14 @@ def sqlite_to_fasta(path, database):
         path (str): Path to output FASTA file
         database (str): Path to SQLite3 database
     """
-    with genomicsqlite.connect(str(database)) as con, gzip.open(path, "wt") as fasta:
+    with SQLITE.connect(str(database)) as con, gzip.open(path, "wt") as fasta:
         cur = con.cursor()
         for (record,) in cur.execute(sql.FASTA):
             fasta.write(record)
 
 
 def _query(query, database, values=None, fetch="all"):
-    with genomicsqlite.connect(str(database)) as con:
+    with SQLITE.connect(str(database)) as con:
         cur = con.cursor()
         query = cur.execute(query, values) if values else cur.execute(query)
         return query.fetchall() if fetch == "all" else query.fetchone()
