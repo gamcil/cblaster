@@ -5,13 +5,8 @@ This module handles creation of local JSON databases for non-NCBI lookups.
 import gzip
 import logging
 import subprocess
-import sqlite3
+import sqlite3 as SQLITE
 import functools
-
-try:
-    import genomicsqlite
-except (ImportError, ModuleNotFoundError, sqlite3.OperationalError):
-    genomicsqlite = None
 
 from pathlib import Path
 from multiprocessing import Pool
@@ -19,9 +14,12 @@ from multiprocessing import Pool
 from cblaster import helpers, sql
 from cblaster import genome_parsers as gp
 
-SQLITE = genomicsqlite if genomicsqlite else sqlite3
+LOG = logging.getLogger(__name__)
 
-LOG = logging.getLogger("cblaster")
+try:
+    import genomicsqlite as SQLITE
+except (ImportError, ModuleNotFoundError, SQLITE.OperationalError) as exc:
+    LOG.warning("Importing genomicsqlite failed, falling back to SQLite3")
 
 
 def init_sqlite_db(path, force=False):
