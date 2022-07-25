@@ -46,7 +46,7 @@ setup(
         "clinker>=0.0.15",
         "gffutils",
         "appdirs",
-        "genomicsqlite"
+        "genomicsqlite;platform_machine != 'arm64'"
     ],
     tests_require=["pytest", "pytest-cov", "pytest-mock", "requests-mock"],
     python_requires=">=3.6",
