@@ -100,8 +100,12 @@ def find_regions(directives):
     regions = {}
     for directive in directives:
         if directive.startswith("sequence-region"):
-            _, accession, start, end = directive.split(" ")
-            regions[accession] = (int(start), int(end))
+            try:
+                _, accession, start, end = directive.split(" ")
+                regions[accession] = (int(start), int(end))
+            except ValueError:
+                # likely sequence-region without coordinates
+                pass
     return regions
 
 
