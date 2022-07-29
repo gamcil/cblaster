@@ -152,12 +152,12 @@ def run_hmmsearch(fasta, query):
     """
     LOG.info("Performing hmmsearch")
     output = Path(query).with_suffix(".txt")
-    informat = "--informat fasta " if fasta.endswith("gz") else ""
+    # informat = "--informat fasta " if fasta.endswith("gz") else ""
     # for unzipping the fasta file to be used as input for hmmsearch
 
     try:
         subprocess.run(
-            f"hmmsearch {informat}-o {output} {query} {fasta}",
+            f"hmmsearch -o {output} {query} {fasta}",
             stdout=subprocess.PIPE,
             shell=True,
             check=True,
