@@ -137,7 +137,7 @@ def write_profiles(profiles: Collection[str], output: str=None) -> str:
         counter = 0
         output = Path(cagecat_prefix, datetime.now().strftime(f"cblaster_%Y%m%d%H%M%S-{counter}.hmm"))
 
-        while p.exists(): # in the rare case two hmmsearches are performed at exactly the same second
+        while output.exists(): # in the rare case two hmmsearches are performed at exactly the same second
             counter += 1
             output = Path(cagecat_prefix, datetime.now().strftime(f"cblaster_%Y%m%d%H%M%S-{counter}.hmm"))
 
