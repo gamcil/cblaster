@@ -20,6 +20,7 @@ from cblaster import helpers
 
 LOG = logging.getLogger(__name__)
 
+cagecat_prefix = '/hmm_profiles'
 
 def check_pfam_db(path):
     """Check if Pfam-A db exists else download
@@ -133,7 +134,13 @@ def write_profiles(profiles: Collection[str], output: str=None) -> str:
         output: name of output file
     """
     if not output:
-        output = datetime.now().strftime("cblaster_%Y%m%d%H%M%S.hmm")
+        counter = 0
+        p = Path(cagecat_prefix, datetime.now().strftime(f"cblaster_%Y%m%d%H%M%S-{counter}.hmm"))
+
+        while p.exists(): # in the rare case two hmmsearches are performed at exactly the same second
+            counter += 1
+            p = Path(cagecat_prefix, datetime.now().strftime(f"cblaster_%Y%m%d%H%M%S-{counter}.hmm"))
+
     with open(output, "w") as fp:
         for profile in profiles:
             fp.write(profile)
@@ -151,7 +158,7 @@ def run_hmmsearch(fasta, query):
         temp_res: List, String of result file names
     """
     LOG.info("Performing hmmsearch")
-    output = Path(query).with_suffix(".txt")
+    output = Path(cagecat_prefix, query).with_suffix(".txt")
     # informat = "--informat fasta " if fasta.endswith("gz") else ""
     # for unzipping the fasta file to be used as input for hmmsearch
 
