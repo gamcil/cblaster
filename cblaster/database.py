@@ -59,14 +59,19 @@ def seqrecords_to_sqlite(tuples, database):
         LOG.exception("Failed to insert %i records", len(tuples))
 
 
-def sqlite_to_fasta(path, database):
+def sqlite_to_fasta(path, database, compress):
     """Writes all proteins in `database` to `path` in FASTA format.
 
     Args:
         path (str): Path to output FASTA file
         database (str): Path to SQLite3 database
     """
-    with SQLITE.connect(str(database)) as con, gzip.open(path, "wt") as fasta:
+    if compress:
+        handler = gzip.open(path, "wt")
+    else:
+        handler = open(path, 'w')
+
+    with SQLITE.connect(str(database)) as con, handler  as fasta:
         cur = con.cursor()
         for (record,) in cur.execute(sql.FASTA):
             fasta.write(record)
@@ -140,7 +145,7 @@ def diamond_makedb(fasta, name, cpus):
     )
 
 
-def makedb(paths, database, force=False, cpus=None, batch=None):
+def makedb(paths, database, force=False, cpus=None, batch=None, compress=False):
     """makedb module entry point.
 
     Will parse genome files in `paths` and create:
@@ -173,8 +178,14 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         raise TypeError("cpus should be None or int")
 
     sqlite_path = Path(f"{database}.sqlite3")
-    fasta_path = Path(f"{database}.fasta.gz")
     dmnd_path = Path(f"{database}.dmnd")
+
+    if compress:
+        fasta_ext = '.fasta.gz'
+    else:
+        fasta_ext = '.fasta'
+
+    fasta_path = Path(f"{database}{fasta_ext}")
 
     if sqlite_path.exists() or dmnd_path.exists():
         if force:
@@ -222,7 +233,7 @@ def makedb(paths, database, force=False, cpus=None, batch=None):
         LOG.error("File parsing failed, exiting...", exc_info=True)
 
     LOG.info("Writing FASTA to %s", fasta_path)
-    sqlite_to_fasta(fasta_path, sqlite_path)
+    sqlite_to_fasta(fasta_path, sqlite_path, compress)
 
     LOG.info("Building DIAMOND database at %s", dmnd_path)
     diamond_makedb(fasta_path, dmnd_path, cpus)
