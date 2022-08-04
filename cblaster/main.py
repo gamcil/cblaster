@@ -263,8 +263,8 @@ def cblaster(
             organisms = context.search(
                 results,
                 sqlite_db=sqlite_db,
-                unique=unique,
-                min_hits=min_hits,
+                unique=len(session.queries) if len(session.queries) < unique else unique,
+                min_hits=len(session.queries) if len(session.queries) < min_hits else min_hits,
                 gap=gap,
                 require=require,
                 ipg_file=ipg_file,
@@ -300,8 +300,8 @@ def cblaster(
             organisms = context.search(
                 results,
                 sqlite_db=sqlite_db,
-                unique=unique,
-                min_hits=min_hits,
+                unique=len(session.queries) if len(session.queries) < unique else unique,
+                min_hits=len(session.queries) if len(session.queries) < min_hits else min_hits,
                 gap=gap,
                 require=require,
                 ipg_file=ipg_file,
@@ -333,8 +333,8 @@ def cblaster(
             LOG.info("Fetching genomic context of hits")
             organisms = context.search(
                 results,
-                unique=unique,
-                min_hits=min_hits,
+                unique=len(session.queries) if len(session.queries) < unique else unique,
+                min_hits=len(session.queries) if len(session.queries) < min_hits else min_hits,
                 gap=gap,
                 require=require,
                 ipg_file=ipg_file,

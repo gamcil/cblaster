@@ -491,9 +491,9 @@ def filter_session(
                 scaffold.subjects,
                 queries=session.queries,
                 gap=gap,
-                min_hits=min_hits,
+                min_hits=len(session.queries) if len(session.queries) < min_hits else min_hits,
                 require=require,
-                unique=unique,
+                unique=len(session.queries) if len(session.queries) < unique else unique,
                 percentage=percentage,
             )
             if len(scaffold.subjects) == 0:  # indicates no hits in clusters and we should not attempt to call scaffold.add_clusters as this would fail
