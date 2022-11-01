@@ -58,7 +58,7 @@ def efetch_request(ids: List[str]) -> http.client.HTTPResponse:
     """
     try:
         return Entrez.efetch(
-            "protein",
+            "ipg",
             rettype="ipg",
             retmode="text",
             id=ids,
@@ -249,7 +249,7 @@ def parse_IPG_table(results, hits):
                 name=entry.protein_id,
                 ipg=ipg,
                 end=int(entry.end),
-                start=int(entry.start),
+                start=int(entry.start) - 1,
                 strand=1 if entry.strand == "+" else -1,
             )
 
@@ -300,7 +300,7 @@ def query_local_DB(hits, db):
     ) in database.query_genes(list(hit_dict), db):
         if organism not in organisms:
             organisms[organism] = Organism(organism, "")
-        if scaffold not in organisms[organism].scaffolds:
+        if scaffold not in organisms[organism].scaffolds: 
             organisms[organism].scaffolds[scaffold] = Scaffold(scaffold)
         hits = hit_dict[str(rowid)]
         for hit in hits:
@@ -588,10 +588,7 @@ def search(
         LOG.info("Querying local SQLite3 database: %s", sqlite_db)
         organisms = query_local_DB(hits, sqlite_db)
     else:
-        rows = efetch_IPGs(
-            [hit.subject for hit in hits],
-            output_file=ipg_file
-        )
+        rows = efetch_IPGs([hit.subject for hit in hits], output_file=ipg_file)
         organisms = parse_IPG_table(rows, hits)
 
     LOG.info("Searching for clustered hits across %i organisms", len(organisms))
