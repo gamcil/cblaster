@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/cblaster/badge/?version=latest)](https://cblaster.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3660769.svg)](https://doi.org/10.5281/zenodo.3660769)
 
->**New!**
+>**(Temporarily down)**
 Both cblaster and clinker can now be used without installation on the [CAGECAT webserver](http://cagecat.bioinformatics.nl/).
 
 ## Outline
