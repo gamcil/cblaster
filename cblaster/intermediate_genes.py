@@ -24,6 +24,21 @@ MIN_TIME_BETWEEN_REQUEST = 0.34  # seconds
 PROTEIN_NAME_IDENTIFIERS = ("protein_id", "locus_tag", "gene", "ID", "Name", "label")
 
 
+def parse_gene_distance(gene_distance):
+    """Parse left/right (up/downstream of cluster) gene distance.
+    Expects int or (int, int), e.g.:
+        5000          --> left=5000, right=5000
+        (5000, 10000) --> left=5000, right=10000
+    """
+    if isinstance(gene_distance, int):
+        return gene_distance, gene_distance
+    if isinstance(gene_distance, tuple):
+        if len(gene_distance) > 2:
+            raise ValueError("gene_distance must be int or (int, int)")
+        return gene_distance
+    raise ValueError("Failed to parse intermediate gene distance value") 
+
+
 def set_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
     """Adds intermediate genes to clusters in the cluster_hierarchy using a SQLite database
 
@@ -32,10 +47,11 @@ def set_local_intermediate_genes(sqlite_db, cluster_hierarchy, gene_distance):
         cluster_hierarchy (List): Tuples with cblaster cluster scaffold accession and organism name
         gene_distance (int): the extra distance around a cluster to collect genes from
     """
+    left, right = parse_gene_distance(gene_distance)
     for cluster, scaffold, organism in cluster_hierarchy:
         scaffold_accession = scaffold.accession
-        search_start = cluster.start - gene_distance
-        search_stop = cluster.end + gene_distance
+        search_start = cluster.start - left
+        search_stop = cluster.end + right
         cluster_ids = [subject.id for subject in cluster.subjects]
         cluster.intermediate_genes = [
             Subject(id=id, name=name, start=start, end=end, strand=strand)
@@ -56,7 +72,7 @@ def intermediate_genes_request(accession, start, stop):
         params={
             "db": "nuccore",
             "rettype": "gb",
-            "from": str(start),
+            "from": str(start + 1),  # 1-based for efetch
             "to": str(stop),
         },
         files={"id": accession},
@@ -70,7 +86,7 @@ def intermediate_genes_request(accession, start, stop):
     return response
 
 
-def intermediate_genes_genbank(response):
+def intermediate_genes_genbank(response, search_start):
     features = []
     for record in SeqIO.parse(io.StringIO(response.text), "genbank"):
         subjects = []
@@ -79,6 +95,11 @@ def intermediate_genes_genbank(response):
                 subject = tuple_to_subject(feature)
             except TypeError:
                 continue
+            # Must add search start to each subject start/end, since sequence
+            # features in GenBank returned by intermediate_genes_request are
+            # relative (e.g. cluster 4000-10000, but genes start at 0)
+            subject.start += search_start
+            subject.end += search_start
             subjects.append(subject)
         features.extend(subjects)
     return features
@@ -105,16 +126,17 @@ def set_remote_intermediate_genes(cluster_hierarchy, gene_distance):
         cluster_hierarchy (List): Tuples with Cblaster cluster scaffold accession and organism name
         gene_distance (int): the extra distance around a cluster to collect genes from
     """
+    left, right = parse_gene_distance(gene_distance)
     passed_time = 0
     for cluster, scaffold, _ in cluster_hierarchy:
         scaffold_accession = scaffold.accession
         if passed_time < MIN_TIME_BETWEEN_REQUEST:
             time.sleep(MIN_TIME_BETWEEN_REQUEST - passed_time)
-        search_start = max(0, cluster.start - gene_distance)
-        search_stop = cluster.end + gene_distance
+        search_start = max(0, cluster.start - left)
+        search_stop = cluster.end + right
         start_time = time.time()
         response = intermediate_genes_request(scaffold_accession, search_start, search_stop)
-        subjects = intermediate_genes_genbank(response)
+        subjects = intermediate_genes_genbank(response, search_start)
         cluster.intermediate_genes = get_remote_intermediate_genes(subjects, cluster)
         passed_time = time.time() - start_time
 
