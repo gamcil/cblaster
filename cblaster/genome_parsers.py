@@ -61,7 +61,7 @@ def find_gene_name(qualifiers):
     """Finds a gene name in a dictionary of feature qualifiers."""
     if not isinstance(qualifiers, dict):
         raise TypeError("Expected qualifier dictionary")
-    for tag in ["locus_tag", "protein_id", "id", "gene", "name", "label"]:
+    for tag in ["protein_id", "locus_tag", "id", "gene", "name", "label"]:
         if tag in qualifiers:
             return qualifiers[tag][0]
     return "N.A."
