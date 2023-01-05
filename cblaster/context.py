@@ -138,6 +138,8 @@ def parse_IP_groups(results):
             or "skipping" in line:
             continue
         ipg, *fields = line.strip("\n").split("\t")
+        if fields == [] or not line.strip():
+            continue
         try:
             entry = Entry(*fields)
         except ValueError:
