@@ -257,7 +257,7 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
 
         LOG.info(
             f"Querying NCBI for sequence of {scaffold.accession}"
-            f" from {cluster.intermediate_start}"
+            f" from {cluster.intermediate_start + 1}"
             f" to {cluster.intermediate_end}"
         )
         response = requests.post(
@@ -265,7 +265,7 @@ def efetch_nucleotide_sequence(cluster_hierarchy):
             params={
                 "db": "sequences",
                 "rettype": "fasta",
-                "seq_start": str(cluster.intermediate_start),
+                "seq_start": str(cluster.intermediate_start + 1),  # Convert to 1-based
                 "seq_stop": str(cluster.intermediate_end),
                 "strand": "1",
             },
