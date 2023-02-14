@@ -14,7 +14,7 @@ def add_field_whitespace(rows, lengths):
     """Fills table fields with whitespace to specified lengths."""
     result = []
     for row in rows:
-        fmt = [f"{row[index]:{length}}" for index, length in enumerate(lengths)]
+        fmt = [f"{str(row[index]):{length}}" for index, length in enumerate(lengths)]
         result.append(fmt)
     return result
 
