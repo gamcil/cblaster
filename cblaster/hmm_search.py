@@ -8,11 +8,12 @@ import gzip
 import subprocess
 import logging
 import re
+import tempfile
 
 from datetime import datetime
 from ftplib import FTP
 from pathlib import Path
-from typing import Union, List, Collection, Set, Tuple
+from typing import Union, List, Collection, Set, Tuple, IO
 
 from Bio import SearchIO
 from cblaster.classes import Hit, Session
@@ -20,7 +21,6 @@ from cblaster import helpers
 
 LOG = logging.getLogger(__name__)
 
-cagecat_prefix = '/hmm_profiles'
 
 def check_pfam_db(path):
     """Check if Pfam-A db exists else download
@@ -28,7 +28,11 @@ def check_pfam_db(path):
     Args:
         path: String, path where to check
     """
-    path = Path(path)
+
+    if not path:
+        path = Path.cwd()
+    else:
+        path = Path(path)
 
     if path.exists() and not path.is_dir():
         raise FileExistsError("Expected directory")
@@ -69,16 +73,18 @@ def get_pfam_accession(
     Return:
         key_lines: List, string of full acc-number
     """
-    keys = set(keys)
-    valid_keys = set()
+    valid = set()
+    invalid = set(keys)
     name_attrs = ("#=GF ID", "#=GF AC")
     for line in gzip.open(dat_path, "rt"):
         if not line.startswith(name_attrs):
             continue
         *_, accession = line.strip().split(" ")
-        if any(key in accession for key in keys if key not in valid_keys):
-            valid_keys.add(accession)
-    return valid_keys, keys.difference(valid_keys)
+        for key in keys:
+            if key in accession:
+                valid.add(accession)
+                invalid.remove(key)
+    return valid, invalid
 
 
 def read_profiles(files: Collection[str]) -> Collection[str]:
@@ -123,30 +129,6 @@ def fetch_pfam_profiles(hmm, keys):
     return profiles
 
 
-def write_profiles(profiles: Collection[str], output: str=None) -> str:
-    """Writes a collection of profile HMMs to disk.
-
-    If no output file is specified, will randomly generate a file name and save
-    in the current working directory.
-
-    Args:
-        profiles: profile HMMs to write
-        output: name of output file
-    """
-    if not output:
-        counter = 0
-        output = Path(cagecat_prefix, datetime.now().strftime(f"cblaster_%Y%m%d%H%M%S-{counter}.hmm"))
-
-        while output.exists(): # in the rare case two hmmsearches are performed at exactly the same second
-            counter += 1
-            output = Path(cagecat_prefix, datetime.now().strftime(f"cblaster_%Y%m%d%H%M%S-{counter}.hmm"))
-
-    with open(output, "w") as fp:
-        for profile in profiles:
-            fp.write(profile)
-    return output
-
-
 def run_hmmsearch(fasta, query):
     """Run the hmmsearch command
 
@@ -158,7 +140,7 @@ def run_hmmsearch(fasta, query):
         temp_res: List, String of result file names
     """
     LOG.info("Performing hmmsearch")
-    output = Path(cagecat_prefix, query).with_suffix(".txt")
+    output = Path(query).with_suffix(".txt")
     # informat = "--informat fasta " if fasta.endswith("gz") else ""
     # for unzipping the fasta file to be used as input for hmmsearch
 
@@ -227,6 +209,7 @@ def perform_hmmer(
     query_profiles: List[str],
     pfam: str,
     session: Session,
+    hmm_out: str=None
 ) -> Union[Collection[Hit], None]:
     """Main of running a hmmer search
 
@@ -264,14 +247,18 @@ def perform_hmmer(
     if not profiles:
         LOG.error("No valid profiles could be selected")
         return
-    query = write_profiles(profiles)
-    LOG.info("Profiles written to: %s", query)
 
     # Save query profile HMM names
     session.queries = get_profile_names(profiles)
 
-    # Run search
-    results = run_hmmsearch(fasta, query)
+    # Write profiles to file
+    with open(hmm_out, 'w+b') if hmm_out else tempfile.NamedTemporaryFile() as fp:
+        for profile in profiles:
+            fp.write(profile.encode())
+        LOG.info("Profiles written to: %s", fp.name)
+
+        # Run search
+        results = run_hmmsearch(fasta, fp.name)
 
     # Parse results and return
     return parse_hmmer_output(results)
