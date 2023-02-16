@@ -122,7 +122,19 @@ def start(
     LOG.debug("Search parameters: %s", parameters)
     LOG.debug("Search URL: %s", response.url)
 
-    rid, rtoe = re.findall(r"(?:RID|RTOE) = (.+?)[\n\s]", response.text)
+    matches = re.findall(r"(?:RID|RTOE) = (.+?)[\n\s]", response.text)
+
+    if len(matches) == 2:
+        rid, rtoe = matches
+    else:
+        LOG.exception('Unable to parse NCBI response')
+        LOG.info('NCBI response:')
+        LOG.info('---------')
+        LOG.info(response.text)
+        LOG.info('---------')
+
+        raise IOError('Unable to parse NCBI response')
+
     return rid, int(rtoe)
 
 
