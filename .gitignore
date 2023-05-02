@@ -136,3 +136,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# OSX and pycharm files 
+**/.DS_Store
+**/.idea
