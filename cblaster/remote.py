@@ -187,13 +187,14 @@ def retrieve(rid, hitlist_size=5000):
     parameters = {
         "CMD": "Get",
         "RID": rid,
-        "FORMAT_TYPE": "Tabular",
+        "ALIGNMENT_VIEW": "Tabular",
         "FORMAT_OBJECT": "Alignment",
         "HITLIST_SIZE": hitlist_size,
         "ALIGNMENTS": hitlist_size,
         "DESCRIPTIONS": hitlist_size,
-        "NCBI_GI": "F",
+        "FORMAT_TYPE": "Text",
     }
+
 
     LOG.debug(parameters)
 
