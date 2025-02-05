@@ -59,7 +59,7 @@ def run_cblaster(values, textbox):
             min_identity=values["min_identity"],
             min_coverage=values["min_coverage"],
             max_evalue=values["max_evalue"],
-            recompute=values["recompute_text"] if values["recompute_text"] != "" else values["recompute_gen"]
+            recompute=values["recompute_text"] if values["recompute_text"] != "" else values["recompute_gen"],
         )
 
         if values["search_mode"] == "remote":
@@ -91,6 +91,20 @@ def run_cblaster(values, textbox):
                 database_pfam=values["pfam database cr"],
                 entrez_query=values["entrez_query cr"],
                 rid=values["rid cr"]
+            )
+        
+        if values["dereplication_check"]:
+            args.update(
+                dereplicate = values['dereplication_check'],
+                dereplication_folder = values['dereplication_workfolder'],
+                cores = values['dereplication_no_cores'],
+                ani = values['dereplication_ani'],
+                min_z_score = values['dereplication_min_z_score'],
+                min_score_diff = values['dereplication_min_score_diff'],
+                keep_dereplication_files = values['dereplication_keep_all'],
+                keep_dereplication_reports = values['dereplication_keep_reports'],
+                no_recovery_content = not values['dereplication_content_recovery'],
+                no_recovery_score = not values['dereplication_score_recovery'],
             )
 
         if values["summary_gen"]:
@@ -208,6 +222,7 @@ main_gui_layout = [
     [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
     [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
     [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+    [sg.Text("Lucas De Vrieze, 2025", font="Arial 10", pad=(0, 0))],
     [sg.TabGroup([
         [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
         [sg.Tab("Neighbourhood", [[Column(gne.layout, scrollable=True)]])],
@@ -241,7 +256,10 @@ def cblaster_gui():
         if event in (None, "exit_button"):
             break
 
-        # Disable binary & summary table, figure options if not enabled
+        # Disable dereplication, binary & summary table, figure options if not enabled
+        for key in ("workfolder", "no_cores", "keep_all", "keep_reports", "ani", "content_recovery", "score_recovery", "min_z_score", "min_score_diff"):
+            main_window[f"dereplication_{key}"].update(disabled=not values["dereplication_check"])
+        
         for key in ("browse", "text", "delimiter", "decimals", "hide_headers", "key", "attr"):
             main_window[f"binary_{key}"].update(disabled=not values["binary_gen"])
 
@@ -291,6 +309,7 @@ def create_command_window():
         [sg.Text("cblaster command run", font="Arial 18 bold", pad=(0, 0))],
         [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
         [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+        [sg.Text("Lucas De Vrieze, 2025", font="Arial 10", pad=(0, 0))],
         [sg.Multiline(default_text="Welcome to cblaster", key="textbox", size=(500, 45),
                       disabled=True, autoscroll=True)],
 
@@ -337,7 +356,7 @@ class CommandThread(Thread):
             else:  # got line
                 # prevent double newlines
                 str_line = line.decode("utf-8").replace(os.linesep, "")
-                self.textbox.update(self.textbox.get() + str_line)
+                self.textbox.update(self.textbox.get() + "\n" + str_line)
             if self.__finished.is_set():
                 popen.kill()
                 popen.wait()
@@ -350,7 +369,7 @@ class CommandThread(Thread):
         else:  # got line
             # prevent double newlines
             str_line = line.decode("utf-8").replace(os.linesep, "")
-            self.textbox.update(self.textbox.get() + str_line)
+            self.textbox.update(self.textbox.get() + "\n" + str_line)
         # make sure to call communicate to properly finish process
         output, error = popen.communicate()
         self.__finished.set()

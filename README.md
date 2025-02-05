@@ -5,7 +5,9 @@
 [![Documentation Status](https://readthedocs.org/projects/cblaster/badge/?version=latest)](https://cblaster.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3660769.svg)](https://doi.org/10.5281/zenodo.3660769)
 
->Both cblaster and clinker can now be used without installation on the [CAGECAT webserver](http://cagecat.bioinformatics.nl/).
+** >>> Both cblaster and clinker can now be used without installation on the [CAGECAT webserver](http://cagecat.bioinformatics.nl/). <<<**
+
+** >>> The locally installable version of cblaster now also incorporates [`cagecleaner`](https://github.com/LucoDevro/cagecleaner), a tool to reduce genomic redundancy among cblaster hits. <<<**
 
 ## Outline
 
@@ -24,22 +26,13 @@ Group (IPG) database (or a local database in local searches). Finally,
 <img src="docs/source/_static/results.png" alt="cblaster search results" width=700>
 
 ## Installation
-`cblaster` can be installed via pip:
+It is highly recommended to install `cblaster` in a fresh conda environment using the yaml file in this repo:
 
 ```bash
-$ pip3 install cblaster --user
+$ conda env create -f env.yml
 ```
 
-or by cloning the repository and installing:
-
-```bash
-$ git clone https://github.com/gamcil/cblaster.git
-...
-$ cd cblaster/
-$ pip3 install .
-```
-
-Additionally, we provide executables for Windows and Mac which can be downloaded [from here](https://github.com/gamcil/cblaster/releases/latest).
+Make sure you have installed the NCBI Entrez-Direct Utilities as well. This can be done as described [here](https://www.ncbi.nlm.nih.gov/books/NBK179288/).
 
 Once installed, make sure you configure cblaster with your email address:
 
@@ -51,12 +44,16 @@ You can find example search files, along with generated output, in the [examples
 of the repository](https://github.com/gamcil/cblaster/tree/master/example).
 
 ## Dependencies
-`cblaster` is tested on Python 3.6, and its only external Python dependency is
-the `requests` module (used for interaction with NCBI APIs).
+`cblaster` itself is tested on Python 3.6, and its only external Python dependency are
+the `requests` module (used for interaction with NCBI APIs), and `cagecleaner` for 
+dereplicating hits.
 If you want to perform local searches, you should have `diamond` installed and available
 on your system $PATH.
 `cblaster` will throw an error if a local search is started but it cannot find
 `diamond` or `diamond-aligner` (alias when installed via apt) on the system.
+
+`cagecleaner` is tested on Python 3.10, and comes with its own dependencies. These should
+have been installed by conda. Head over to the [cagecleaner wiki](https://github.com/LucoDevro/cagecleaner/wiki/Software-requirements) to find a complete list if you need to install these manually.
 
 ## Usage
 `cblaster` accepts FASTA files and collections of valid NCBI sequence identifiers
