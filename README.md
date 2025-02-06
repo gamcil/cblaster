@@ -42,8 +42,13 @@ $ cblaster config --email name@domain.com
 
 You can find example search files, along with generated output, in the [examples folder
 of the repository](https://github.com/gamcil/cblaster/tree/master/example).
+For example output of the `cagecleaner` dereplication tool, head over to the [examples folder
+in its own repo](https://github.com/LucoDevro/cagecleaner/tree/main/examples).
 
 ## Dependencies
+All dependencies should have been managed by conda if you chose to use a conda environment,
+except for the NCBI Entrez-Direct utilities.
+
 `cblaster` itself is tested on Python 3.6, and its only external Python dependency are
 the `requests` module (used for interaction with NCBI APIs), and `cagecleaner` for 
 dereplicating hits.
