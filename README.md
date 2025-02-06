@@ -7,7 +7,7 @@
 
 **>>> Both cblaster and clinker can now be used without installation on the [CAGECAT webserver](http://cagecat.bioinformatics.nl/). <<<**
 
-**>>> The locally installable version of cblaster now also incorporates [`cagecleaner`](https://github.com/LucoDevro/cagecleaner), a tool to reduce genomic redundancy among cblaster hits. <<<**
+**>>> The locally installable version of cblaster now also integrates [`cagecleaner`](https://github.com/LucoDevro/cagecleaner), a tool to reduce genomic redundancy among cblaster hits. <<<**
 
 ## Outline
 
@@ -138,9 +138,21 @@ If you found this tool useful, please cite:
 Cameron L M Gilchrist, Thomas J Booth, Bram van Wersch, Liana van Grieken, Marnix H Medema, Yit-Heng Chooi, cblaster: a remote search tool for rapid identification and visualisation of homologous gene clusters, Bioinformatics Advances, 2021;, vbab016, https://doi.org/10.1093/bioadv/vbab016
 ```
 
+as well as
+
+```text
+Lucas De Vrieze, Joleen Masschelein, cagecleaner: reducing genomic redundancy in gene cluster mining, Bioinformatics, 2025 [in review]
+```
+
 `cblaster` makes use of the following tools:
 ```
 Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using DIAMOND. Nat. Methods 12, 59–60 (2015).
 
 Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
+```
+
+`cagecleaner` makes use of the following:
+```
+Salamzade, R., & Kalan, L. R. (2023). skDER: microbial genome dereplication approaches for comparative and metagenomic applications. https://doi.org/10.1101/2023.09.27.559801`
+Shaw, J., & Yu, Y. W. (2023). Fast and robust metagenomic sequence comparison through sparse chaining with skani. Nature Methods, 20(11), 1661–1665. https://doi.org/10.1038/s41592-023-02018-3
 ```
