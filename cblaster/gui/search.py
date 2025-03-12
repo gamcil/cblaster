@@ -135,10 +135,10 @@ input_frame = Frame(
             "Specify the protein sequences that you want to search. These can be "
             "provided by either using a FASTA file or entering the NCBI accessions "
             "of sequences. When running any of the HMMs, at least one HMM profile "
-            "has to be defined. A session file will be generated at the path specified."
+            "has to be defined. A session file will be generated at the path specified. "
             "Alternatively, by supplying an existing session file from a previous run "
             "these results are reloaded so that you do not have to repeat a search.",
-            size=(TEXT_WIDTH, 6),
+            size=(TEXT_WIDTH, 8),
         )],
         [TextLabel("File"),
          sg.InputText(size=(34, 1), key="query_file"),

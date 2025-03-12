@@ -141,7 +141,7 @@ Cameron L M Gilchrist, Thomas J Booth, Bram van Wersch, Liana van Grieken, Marni
 as well as
 
 ```text
-Lucas De Vrieze, Joleen Masschelein, cagecleaner: reducing genomic redundancy in gene cluster mining, Bioinformatics, 2025 [in review]
+De Vrieze, L., Biltjes, M., Lukashevich, S., Tsurumi, K., Masschelein, J. (2025) CAGEcleaner: reducing genomic redundancy in gene cluster mining. bioRxiv https://doi.org/10.1101/2025.02.19.639057
 ```
 
 `cblaster` makes use of the following tools:
