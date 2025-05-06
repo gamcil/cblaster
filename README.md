@@ -7,7 +7,7 @@
 
 **>>> Both cblaster and clinker can now be used without installation on the [CAGECAT webserver](http://cagecat.bioinformatics.nl/). <<<**
 
-**>>> The locally installable version of cblaster now also integrates [`cagecleaner`](https://github.com/LucoDevro/cagecleaner), a tool to reduce genomic redundancy among cblaster hits. <<<**
+**>>> cblaster now also comes with [`CAGEcleaner`](https://github.com/LucoDevro/CAGEcleaner) in remote mode, a tool to reduce genomic redundancy among cblaster hits. <<<**
 
 ## Outline
 
@@ -20,19 +20,36 @@ Given a collection of protein sequences, `cblaster` can search sequence database
 remotely (via NCBI BLAST API) or locally (via `DIAMOND`). Search results are parsed
 and filtered based on user thresholds for identity, coverage and e-value. The genomic
 coordinates of remaining hits are obtained from the NCBI's Identical Protein
-Group (IPG) database (or a local database in local searches). Finally,
-`cblaster` scans for instances of collocation and generates visualisations:
+Group (IPG) database (or a local database in local searches). Hits are dereplicated on
+the genome level to ease downstream processing (via `CAGEcleaner`). Finally,
+`cblaster` scans for instances of collocation and generates visualisations (via `clinker`):
 
 <img src="docs/source/_static/results.png" alt="cblaster search results" width=700>
 
 ## Installation
-It is highly recommended to install `cblaster` in a fresh conda environment using the yaml file in this repo:
-
+We recommend to install `cblaster` from Bioconda:
 ```bash
-$ conda env create -f env.yml
+conda install -c bioconda cblaster
 ```
 
-Make sure you have installed the NCBI Entrez-Direct Utilities as well. This can be done as described [here](https://www.ncbi.nlm.nih.gov/books/NBK179288/).
+or from the yaml in this repo:
+```bash
+conda env create -f env.yml
+```
+
+`cblaster` can also be installed via PyPi:
+```bash
+$ pip install cblaster --user
+```
+
+or by cloning the repository and installing with pip:
+
+```bash
+$ git clone https://github.com/gamcil/cblaster.git
+...
+$ cd cblaster/
+$ pip install .
+```
 
 Once installed, make sure you configure cblaster with your email address:
 
@@ -46,19 +63,16 @@ For example output of the `cagecleaner` dereplication tool, head over to the [ex
 in its own repo](https://github.com/LucoDevro/cagecleaner/tree/main/examples).
 
 ## Dependencies
-All dependencies should have been managed by conda if you chose to use a conda environment,
-except for the NCBI Entrez-Direct utilities.
-
-`cblaster` itself is tested on Python 3.6, and its only external Python dependency are
+`cblaster` is tested on Python 3.6, and its only external Python dependencies are
 the `requests` module (used for interaction with NCBI APIs), and `cagecleaner` for 
-dereplicating hits.
+genome-level dereplicating hits in remote mode.
 If you want to perform local searches, you should have `diamond` installed and available
 on your system $PATH.
 `cblaster` will throw an error if a local search is started but it cannot find
 `diamond` or `diamond-aligner` (alias when installed via apt) on the system.
 
-`cagecleaner` is tested on Python 3.10, and comes with its own dependencies. These should
-have been installed by conda. Head over to the [cagecleaner wiki](https://github.com/LucoDevro/cagecleaner/wiki/Software-requirements) to find a complete list if you need to install these manually.
+`cagecleaner` is tested on Python 3.12, and comes with its own set of dependencies. These should
+have been installed along with `cblaster`. Head over to the [cagecleaner wiki](https://github.com/LucoDevro/cagecleaner/wiki/Software-requirements) for a complete requirements list.
 
 ## Usage
 `cblaster` accepts FASTA files and collections of valid NCBI sequence identifiers
@@ -151,7 +165,7 @@ Buchfink, B., Xie, C. & Huson, D. H. Fast and sensitive protein alignment using 
 Acland, A. et al. Database resources of the National Center for Biotechnology Information. Nucleic Acids Res. 42, 7–17 (2014).
 ```
 
-`cagecleaner` makes use of the following:
+`CAGEcleaner` makes use of the following:
 ```
 Salamzade, R., & Kalan, L. R. (2023). skDER: microbial genome dereplication approaches for comparative and metagenomic applications. https://doi.org/10.1101/2023.09.27.559801`
 Shaw, J., & Yu, Y. W. (2023). Fast and robust metagenomic sequence comparison through sparse chaining with skani. Nature Methods, 20(11), 1661–1665. https://doi.org/10.1038/s41592-023-02018-3

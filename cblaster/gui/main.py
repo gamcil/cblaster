@@ -221,8 +221,8 @@ def run_cblaster(values, textbox):
 main_gui_layout = [
     [sg.Text("cblaster", font="Arial 18 bold", pad=(0, 0))],
     [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
-    [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
-    [sg.Text("Lucas De Vrieze, 2025", font="Arial 10", pad=(0, 0))],
+    [sg.Text("Original author: Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+    [sg.Text("CAGEcleaner integration: Lucas De Vrieze, 2025", font="Arial 10", pad=(0, 0))],
     [sg.TabGroup([
         [sg.Tab("Search", [[Column(search.layout, scrollable=True)]])],
         [sg.Tab("Neighbourhood", [[Column(gne.layout, scrollable=True)]])],
@@ -308,8 +308,8 @@ def create_command_window():
     command_gui_layout = [
         [sg.Text("cblaster command run", font="Arial 18 bold", pad=(0, 0))],
         [sg.Text(f"v{__version__}", font="Arial 10", pad=(0, 0))],
-        [sg.Text("Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
-        [sg.Text("Lucas De Vrieze, 2025", font="Arial 10", pad=(0, 0))],
+        [sg.Text("Original author: Cameron Gilchrist, 2020", font="Arial 10", pad=(0, 0))],
+        [sg.Text("CAGEcleaner integration: Lucas De Vrieze, 2025", font="Arial 10", pad=(0, 0))],
         [sg.Multiline(default_text="Welcome to cblaster", key="textbox", size=(500, 45),
                       disabled=True, autoscroll=True)],
 

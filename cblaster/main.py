@@ -7,6 +7,8 @@ import subprocess
 import os
 import shutil
 
+from tempfile import TemporaryDirectory
+
 from pathlib import Path
 
 from Bio import Entrez
@@ -95,7 +97,7 @@ def cblaster(
     query_profiles=None,
     mode=None,
     dereplicate=None,
-    dereplication_folder="dereplication",
+    dereplication_folder='',
     cores=1,
     keep_dereplication_files=False,
     keep_dereplication_reports=False,
@@ -366,32 +368,34 @@ def cblaster(
             )
             session.organisms.extend(organisms)
             
-        if dereplicate:
-            LOG.info('Writing temporary session file')
-            os.makedirs("dereplication", exist_ok=True)
-            with open('dereplication/temp_session.json', 'w') as fp:
-                session.to_json(fp, indent=indent)
-            LOG.info('Starting dereplication using cagecleaner')
-            command = ['cagecleaner', 
-                       '-s', os.path.join(dereplication_folder, 'temp_session.json'), 
-                       '-o', os.path.join(dereplication_folder, 'cagecleaner'),
-                       '-c', str(cores),
-                       '-a', str(ani),
-                       '--min_z_score', str(min_z_score),
-                       '--min_score_diff', str(min_score_diff)
-                      ]
-            if keep_dereplication_files:
-                command.append('--keep_intermediate')
-            if no_recovery_content:
-                command.append('--no_recovery_content')
-            if no_recovery_score:
-                command.append('--no_recovery_score')
-            subprocess.run(command, check = True)
-            LOG.info('Dereplication finished. Reading filtered session file')
-            session = Session.from_file("dereplication/cagecleaner/filtered_session.json")
-            if not keep_dereplication_reports and not keep_dereplication_files:
-                LOG.info('Removing temporary dereplication results folder')
-                shutil.rmtree('dereplication')
+            if dereplicate:
+                LOG.info('Setting up temporary folder for dereplication')
+                with TemporaryDirectory(dir = dereplication_folder) as dereplication_tmpdir:
+                    LOG.info('Writing temporary session file')
+                    with open(os.path.join(dereplication_tmpdir, 'temp_session.json'), 'w') as fp:
+                        session.to_json(fp, indent=indent)
+                    LOG.info('Starting dereplication using CAGEcleaner')
+                    command = ['cagecleaner', 
+                               '-s', os.path.join(dereplication_tmpdir, 'temp_session.json'), 
+                               '-o', os.path.join(dereplication_tmpdir, 'cagecleaner'),
+                               '-c', str(cores),
+                               '-a', str(ani),
+                               '--min_z_score', str(min_z_score),
+                               '--min_score_diff', str(min_score_diff)
+                              ]
+                    if keep_dereplication_files:
+                        command.append('--keep_intermediate')
+                    if no_recovery_content:
+                        command.append('--no_recovery_content')
+                    if no_recovery_score:
+                        command.append('--no_recovery_score')
+                    subprocess.run(command, check = True)
+                    LOG.info('Dereplication finished. Reading filtered session file')
+                    session = Session.from_file(os.path.join(dereplication_tmpdir, "cagecleaner", "filtered_session.json"))
+                    if keep_dereplication_reports or keep_dereplication_files:
+                        LOG.info('Saving requested temporary result files')
+                        shutil.copytree(os.path.join(dereplication_tmpdir, "cagecleaner"), "cagecleaner", dirs_exist_ok = True)
+                    LOG.info('Cleaning up temporary folder for dereplication')
 
         if sqlite_db:
             session.params["sqlite_db"] = str(sqlite_db)

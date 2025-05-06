@@ -41,6 +41,12 @@ citation_frame = sg.Frame(
             "Gilchrist, C.L.M., Chooi, Y.-H., 2020."
             " clinker & clustermap.js: Automatic generation of gene cluster comparison figures.",
         )
+        *get_citation(
+
+            "CAGEcleaner",
+            "De Vrieze, L., Biltjes, M., Lukashevich, S., Tsurumi, K., Masschelein, J., 2025."
+            " CAGEcleaner: reducing genomic redundancy in gene cluster mining. bioRxiv",
+        )
     ],
     title_color="blue",
     font="Arial 10 bold",
