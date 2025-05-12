@@ -445,7 +445,7 @@ def add_intermediate_genes_group(search):
     
     
 def add_dereplicating_group(search):
-    group = search.add_argument_group("Dereplicating")
+    group = search.add_argument_group("Dereplicating (only in remote search mode)")
     
     group.add_argument(
         '-drp',
