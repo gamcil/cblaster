@@ -178,7 +178,7 @@ def check(rid):
     raise ValueError("Search completed, but found no hits")
 
 
-def retrieve(rid, hitlist_size=500):
+def retrieve(rid, hitlist_size=100):
     """Retrieve BLAST results corresponding to a given Request Identifier (RID).
 
     Arguments:
@@ -205,6 +205,8 @@ def retrieve(rid, hitlist_size=500):
     response = requests.get(BLAST_API_URL, params=parameters)
 
     LOG.debug(response.url)
+    with open("blah.html", "w") as fp:
+        fp.write(response.text)
 
     # Remove HTML junk and info lines
     # BLAST results are stored inside <PRE></PRE> tags

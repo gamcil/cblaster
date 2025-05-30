@@ -12,49 +12,49 @@ from io import BytesIO
 from Bio import Entrez
 
 from cblaster.helpers import batch_function
-from cblaster.classes import Session
+from cblaster.classes import Serializer
 
 
-def parse_taxonomy_xml(records):
-    """Parses Entrez.read() record"""
-    entries = [
-        dict(
-            taxid=int(tax["TaxId"]),
-            parent=int(tax["ParentTaxId"]),
-            rank=tax.get("Rank", "no rank"),
-            name=tax["ScientificName"],
-            lineage=[
-                (int(x["TaxId"]), x["ScientificName"], x.get("Rank", "no rank"))
-                for x in tax.get("LineageEx", [])
-            ],
-            children=[]
-        )
-        for tax in records
-    ]
-    return entries
+class Taxonomy(Serializer):
+    def __init__(self, taxa=None, root=None):
+        self.taxa = taxa if taxa else {}
+        self.root = root if root else None
+        
+    @staticmethod
+    def parse_taxonomy_xml(records):
+        """Parses Entrez.read() record"""
+        entries = [
+            dict(
+                taxid=int(tax["TaxId"]),
+                parent=int(tax["ParentTaxId"]),
+                rank=tax.get("Rank", "no rank"),
+                name=tax["ScientificName"],
+                lineage=[
+                    (int(x["TaxId"]), x["ScientificName"], x.get("Rank", "no rank"))
+                    for x in tax.get("LineageEx", [])
+                ],
+                children=[]
+            )
+            for tax in records
+        ]
+        return entries
 
+    @staticmethod
+    def parse_xml_file(tax_xml_file):
+        with open(tax_xml_file) as fp:
+            raw_data = fp.read()
+            xml_data = Entrez.read(BytesIO(raw_data.encode()))
+            dicts = Taxonomy.parse_taxonomy_xml(xml_data)
+        return dicts
 
-def parse_xml_file(tax_xml_file):
-    with open(tax_xml_file) as fp:
-        raw_data = fp.read()
-        xml_data = Entrez.read(BytesIO(raw_data.encode()))
-        dicts = parse_taxonomy_xml(xml_data)
-    return dicts
-
-
-@batch_function(batch_size=100)
-def fetch_taxonomy_dicts(batch):
-    handle = Entrez.efetch(db="taxonomy", id=",".join(map(str, batch)), retmode="xml")
-    records = Entrez.read(handle)
-    handle.close()
-    entries = parse_taxonomy_xml(records)
-    return entries
-
-
-class Taxonomy:
-    def __init__(self):
-        self.taxa = {}
-        self.root = None
+    @staticmethod
+    @batch_function(batch_size=100)
+    def fetch_taxonomy_dicts(batch):
+        handle = Entrez.efetch(db="taxonomy", id=",".join(map(str, batch)), retmode="xml")
+        records = Entrez.read(handle)
+        handle.close()
+        entries = Taxonomy.parse_taxonomy_xml(records)
+        return entries
 
     def build_taxonomy_tree(self, dicts):
         """Builds initial tree from list of taxonomy entry dictionaries"""
@@ -128,9 +128,9 @@ class Taxonomy:
         counts = Counter(o.tax_id for o in session.organisms for _ in o.clusters)
         tids = list(counts)
         if (tax_xml_file):
-            dicts = parse_xml_file(tax_xml_file)
+            dicts = Taxonomy.parse_xml_file(tax_xml_file)
         else:
-            dicts = fetch_taxonomy_dicts(tids)
+            dicts = Taxonomy.fetch_taxonomy_dicts(tids)
         self.build_taxonomy_tree(dicts)
         self.fill_missing_taxa()
         self.set_root()
@@ -167,3 +167,10 @@ class Taxonomy:
         t = cls()
         t.build(session, tax_xml_file=tax_xml_file)
         return t
+    
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d["taxa"], d["root"])
+    
+    def to_dict(self):
+        return dict(taxa=self.taxa, root=self.root)

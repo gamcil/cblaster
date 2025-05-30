@@ -12,7 +12,7 @@ from functools import wraps
 from Bio import SeqIO, Entrez
 
 from cblaster import config, genome_parsers as gp
-from cblaster.classes import Cluster, Subject
+# from cblaster.classes import Cluster, Subject
 
 
 LOG = logging.getLogger(__name__)
@@ -121,6 +121,7 @@ def get_project_root():
 
 def dict_to_cluster(sequences, spacing=500):
     """Creates a mock Cluster from a sequence dictionary."""
+    from cblaster.classes import Cluster, Subject
     start = 0
     subjects = []
     for name, sequence in sequences.items():
@@ -134,6 +135,7 @@ def dict_to_cluster(sequences, spacing=500):
 
 def fasta_seqrecords_to_cluster(records, spacing=500):
     """Creates a mock Cluster from a SeqIO FASTA parser handle."""
+    from cblaster.classes import Cluster, Subject
     start = 0
     subjects = []
     for record in records:
@@ -153,6 +155,7 @@ def fasta_seqrecords_to_cluster(records, spacing=500):
 
 def seqrecord_to_cluster(record):
     """Creates a Cluster object from a SeqIO GenBank/EMBL parser handle."""
+    from cblaster.classes import Cluster, Subject
     _, *features = gp.seqrecord_to_tuples(record, "")
     subjects = []
     intermediate = []
