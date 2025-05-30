@@ -7,6 +7,7 @@ import time
 
 from collections import OrderedDict
 from pathlib import Path
+from functools import wraps
 
 from Bio import SeqIO, Entrez
 
@@ -15,6 +16,24 @@ from cblaster.classes import Cluster, Subject
 
 
 LOG = logging.getLogger(__name__)
+
+
+def batch_function(batch_size=1000, delay=0.34):
+    """Decorator for batching functionality"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(ids, *args, **kwargs):
+            all_results = []
+            id_list = list(ids)
+            for i in range(0, len(id_list), batch_size):
+                batch_ids = id_list[i:i + batch_size]
+                results = func(batch_ids, *args, **kwargs)
+                if results is not None:
+                    all_results.extend(results)
+                time.sleep(delay)
+            return all_results
+        return wrapper
+    return decorator
 
 
 def find_sqlite_db(path):

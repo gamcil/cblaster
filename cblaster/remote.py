@@ -174,7 +174,7 @@ def check(rid):
     raise ValueError("Search completed, but found no hits")
 
 
-def retrieve(rid, hitlist_size=5000):
+def retrieve(rid, hitlist_size=500):
     """Retrieve BLAST results corresponding to a given Request Identifier (RID).
 
     Arguments:

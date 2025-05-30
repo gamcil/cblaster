@@ -163,8 +163,9 @@ class Organism(Serializer):
         scaffolds (dict): Scaffold objects belonging to this organism.
     """
 
-    def __init__(self, name, strain, scaffolds=None):
+    def __init__(self, name, strain, tax_id=None, scaffolds=None):
         self.name = name
+        self.tax_id = tax_id
         self.strain = strain
         self.scaffolds = scaffolds if scaffolds else {}
 
@@ -207,6 +208,7 @@ class Organism(Serializer):
     def to_dict(self):
         return {
             "name": self.name,
+            "tax_id": self.tax_id,
             "strain": self.strain,
             "scaffolds": [scaffold.to_dict() for scaffold in self.scaffolds.values()],
         }
@@ -216,6 +218,7 @@ class Organism(Serializer):
         return cls(
             d["name"],
             d["strain"],
+            tax_id=d["tax_id"],
             scaffolds={
                 scaffold["accession"]: Scaffold.from_dict(scaffold)
                 for scaffold in d["scaffolds"]
