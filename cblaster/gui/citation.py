@@ -36,13 +36,11 @@ citation_frame = sg.Frame(
             " PLOS Computational Biology, 7(10) (2011)",
         ),
         *get_citation(
-
-            "CLINKER",
+            "clinker",
             "Gilchrist, C.L.M., Chooi, Y.-H., 2020."
             " clinker & clustermap.js: Automatic generation of gene cluster comparison figures.",
-        )
+        ),
         *get_citation(
-
             "CAGEcleaner",
             "De Vrieze, L., Biltjes, M., Lukashevich, S., Tsurumi, K., Masschelein, J., 2025."
             " CAGEcleaner: reducing genomic redundancy in gene cluster mining. bioRxiv",

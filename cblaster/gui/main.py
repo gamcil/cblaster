@@ -102,7 +102,7 @@ def run_cblaster(values, textbox):
                 min_z_score = values['dereplication_min_z_score'],
                 min_score_diff = values['dereplication_min_score_diff'],
                 keep_dereplication_files = values['dereplication_keep_all'],
-                keep_dereplication_reports = values['dereplication_keep_reports'],
+                keep_downloads = values['dereplication_keep_downloads'],
                 no_recovery_content = not values['dereplication_content_recovery'],
                 no_recovery_score = not values['dereplication_score_recovery'],
             )
@@ -257,7 +257,7 @@ def cblaster_gui():
             break
 
         # Disable dereplication, binary & summary table, figure options if not enabled
-        for key in ("workfolder", "no_cores", "keep_all", "keep_reports", "ani", "content_recovery", "score_recovery", "min_z_score", "min_score_diff"):
+        for key in ("workfolder", "no_cores", "keep_all", "keep_downloads", "ani", "content_recovery", "score_recovery", "min_z_score", "min_score_diff"):
             main_window[f"dereplication_{key}"].update(disabled=not values["dereplication_check"])
         
         for key in ("browse", "text", "delimiter", "decimals", "hide_headers", "key", "attr"):

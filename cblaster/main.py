@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-
 import logging
 import sys
 import subprocess
-import os
 import shutil
 
 from tempfile import TemporaryDirectory
+from contextlib import nullcontext
 
 from pathlib import Path
 
@@ -30,7 +29,6 @@ from cblaster.classes import Session
 from cblaster.plot import plot_session, plot_gne
 from cblaster.formatters import summarise_gne
 from cblaster.intermediate_genes import find_intermediate_genes
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -91,16 +89,76 @@ def gne(
     LOG.info("Done.")
 
 
+def cagecleaner(
+    session,
+    dereplication_folder=None,
+    indent=2,
+    cores=1,
+    ani=99.0,
+    min_z_score=2.0,
+    min_score_diff=0.1,
+    keep_dereplication_files=False,
+    keep_downloads=False,
+    no_recovery_content=False,
+    no_recovery_score=False
+):
+    if not shutil.which("cagecleaner"):
+        LOG.warning("cagecleaner not found on system PATH, will not run dereplication")
+        return session
+    
+    if dereplication_folder is None:
+        LOG.info("Using temporary folder for dereplication")
+        ctx = TemporaryDirectory()
+    else:
+        LOG.info("Using %r for dereplication", dereplication_folder)
+        Path(dereplication_folder).mkdir(parents=True, exist_ok=True)
+        ctx = nullcontext(str(dereplication_folder))
+
+    with ctx as workdir_str:
+        workdir = Path(workdir_str)
+        tmp_session = workdir / "temp_session.json"
+        filtered_session = workdir / "filtered_session.json"
+
+        LOG.info("Writing temporary session file")
+        with tmp_session.open('w') as fp:
+            session.to_json(fp, indent=indent) 
+ 
+        LOG.info("Starting dereplication using CAGEcleaner")
+        command = [
+            'cagecleaner', 
+            '-s', str(tmp_session),
+            '-o', str(workdir),
+            '-c', str(cores),
+            '-a', str(ani),
+            '--min_z_score', str(min_z_score),
+            '--min_score_diff', str(min_score_diff)
+        ]
+        if keep_dereplication_files:
+            command.append('--keep_intermediate')
+        if keep_downloads:
+            command.append('--keep_downloads')
+        if no_recovery_content:
+            command.append('--no_recovery_content')
+        if no_recovery_score:
+            command.append('--no_recovery_score')
+        subprocess.run(command, check=True)
+
+        LOG.info("Dereplication finished. Reading filtered session file")
+        session = Session.from_file(filtered_session)
+
+    return session
+
+
 def cblaster(
     query_file=None,
     query_ids=None,
     query_profiles=None,
     mode=None,
     dereplicate=None,
-    dereplication_folder='',
+    dereplication_folder=None,
     cores=1,
     keep_dereplication_files=False,
-    keep_dereplication_reports=False,
+    keep_downloads=False,
     ani=99.0,
     no_recovery_content=False,
     no_recovery_score=False,
@@ -210,6 +268,21 @@ def cblaster(
         session = Session.from_files(session_file)
 
         if recompute:
+            if dereplicate:
+                session = cagecleaner(
+                    session,
+                    dereplication_folder=dereplication_folder,
+                    indent=indent,
+                    cores=cores,
+                    ani=ani,
+                    min_z_score=min_z_score,
+                    min_score_diff=min_score_diff,
+                    keep_dereplication_files=keep_dereplication_files,
+                    keep_downloads=keep_downloads,
+                    no_recovery_content=no_recovery_content,
+                    no_recovery_score=no_recovery_score,
+                )
+
             LOG.info("Filtering session with new thresholds")
             context.filter_session(
                 session,
@@ -243,7 +316,7 @@ def cblaster(
             query_ids=query_ids,
             query_profiles=query_profiles,
         )
-        
+
         # Create a cblaster Session
         session = Session(
             query=query,
@@ -367,35 +440,21 @@ def cblaster(
                 percentage=percentage,
             )
             session.organisms.extend(organisms)
-            
+
             if dereplicate:
-                LOG.info('Setting up temporary folder for dereplication')
-                with TemporaryDirectory(dir = dereplication_folder) as dereplication_tmpdir:
-                    LOG.info('Writing temporary session file')
-                    with open(os.path.join(dereplication_tmpdir, 'temp_session.json'), 'w') as fp:
-                        session.to_json(fp, indent=indent)
-                    LOG.info('Starting dereplication using CAGEcleaner')
-                    command = ['cagecleaner', 
-                               '-s', os.path.join(dereplication_tmpdir, 'temp_session.json'), 
-                               '-o', os.path.join(dereplication_tmpdir, 'cagecleaner'),
-                               '-c', str(cores),
-                               '-a', str(ani),
-                               '--min_z_score', str(min_z_score),
-                               '--min_score_diff', str(min_score_diff)
-                              ]
-                    if keep_dereplication_files:
-                        command.append('--keep_intermediate')
-                    if no_recovery_content:
-                        command.append('--no_recovery_content')
-                    if no_recovery_score:
-                        command.append('--no_recovery_score')
-                    subprocess.run(command, check = True)
-                    LOG.info('Dereplication finished. Reading filtered session file')
-                    session = Session.from_file(os.path.join(dereplication_tmpdir, "cagecleaner", "filtered_session.json"))
-                    if keep_dereplication_reports or keep_dereplication_files:
-                        LOG.info('Saving requested temporary result files')
-                        shutil.copytree(os.path.join(dereplication_tmpdir, "cagecleaner"), "cagecleaner", dirs_exist_ok = True)
-                    LOG.info('Cleaning up temporary folder for dereplication')
+                session = cagecleaner(
+                    session,
+                    dereplication_folder=dereplication_folder,
+                    indent=indent,
+                    cores=cores,
+                    ani=ani,
+                    min_z_score=min_z_score,
+                    min_score_diff=min_score_diff,
+                    keep_dereplication_files=keep_dereplication_files,
+                    keep_downloads=keep_downloads,
+                    no_recovery_content=no_recovery_content,
+                    no_recovery_score=no_recovery_score,
+                )
 
         if sqlite_db:
             session.params["sqlite_db"] = str(sqlite_db)
@@ -492,7 +551,7 @@ def main():
             dereplication_folder=args.dereplication_folder,
             cores=args.cores,
             keep_dereplication_files=args.keep_dereplication_files,
-            keep_dereplication_reports=args.keep_dereplication_reports,
+            keep_downloads=args.keep_downloads,
             ani=args.ani,
             no_recovery_content=args.no_recovery_content,
             no_recovery_score=args.no_recovery_score,
