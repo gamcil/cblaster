@@ -246,12 +246,22 @@ def iter_overlapping_features(features):
 
     sorted_features = sorted(features, key=lambda f: f.location.start)
     first = sorted_features.pop(0)
-    group, border = [first], first.location.end
+    group = [first]
+
+    if first.location.start == 0:
+        border = min([p.end for p in first.location.parts])
+    else:
+        border = first.location.end
 
     for feature in sorted_features:
-        if feature.location.end <= border:
+        if feature.location.start == 0:
+            end = min([p.end for p in first.location.parts])
+        else:
+            end = feature.location.end
+
+        if end <= border:
             group.append(feature)
-            border = max(border, feature.location.end)
+            border = max(border, end)
         else:
             yield group
             group, border = [feature], feature.location.end
