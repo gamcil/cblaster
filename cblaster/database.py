@@ -42,6 +42,7 @@ def init_sqlite_db(path, force=False):
         LOG.info("Initialising cblaster SQLite3 database to %s", path)
     with SQLITE.connect(str(path)) as con:
         con.executescript(sql.SCHEMA)
+        con.commit()
 
 
 def seqrecords_to_sqlite(tuples, database):
@@ -55,6 +56,8 @@ def seqrecords_to_sqlite(tuples, database):
         with SQLITE.connect(str(database)) as con:
             cur = con.cursor()
             cur.executemany(sql.INSERT, tuples)
+            con.commit()
+        con.close()
     except SQLITE.IntegrityError:
         LOG.exception("Failed to insert %i records", len(tuples))
 
@@ -239,3 +242,4 @@ def makedb(paths, database, force=False, cpus=None, batch=None, compress=False):
     diamond_makedb(fasta_path, dmnd_path, cpus)
 
     LOG.info("Done!")
+
