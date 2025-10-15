@@ -69,7 +69,7 @@ def find_gene_name(qualifiers):
 
 def find_translation(record, feature):
     if not feature or "pseudo" in feature.qualifiers:
-        return ""
+        return None
     if "translation" in feature.qualifiers:
         translation = feature.qualifiers.pop("translation", "")
         if isinstance(translation, list):
@@ -276,6 +276,9 @@ def seqrecord_to_tuples(record, source):
         # Get name and translation, prefer CDS instead of gene
         name = find_gene_name(cds.qualifiers if cds else gene.qualifiers)
         translation = find_translation(record, cds)
+
+        if translation is None:
+            continue
 
         # Keep track of record ID and source
         record_id = str(record.id)
