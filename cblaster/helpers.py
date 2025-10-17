@@ -107,7 +107,7 @@ def dict_to_cluster(sequences, spacing=500):
     for name, sequence in sequences.items():
         length = len(sequence) * 3 if sequence else 1000
         end = start + length
-        subject = Subject(name=name, start=start, end=end, strand=1, sequence=sequence)
+        subject = Subject(name=name.replace(" ", "_"), start=start, end=end, strand=1, sequence=sequence)
         subjects.append(subject)
         start += length + spacing
     return Cluster(subjects=subjects)
@@ -121,7 +121,7 @@ def fasta_seqrecords_to_cluster(records, spacing=500):
         length = len(record) * 3
         end = start + length
         subject = Subject(
-            name=record.id,
+            name=record.id.replace(" ", "_"),
             start=start,
             end=end,
             strand=1,
@@ -139,7 +139,7 @@ def seqrecord_to_cluster(record):
     intermediate = []
     for _, name, start, end, strand, translation, *_ in features:
         subject = Subject(
-            name=name,
+            name=name.replace(" ", "_"),
             start=start,
             end=end,
             strand=strand,
