@@ -338,8 +338,8 @@ def add_searching_group(search):
         "-hs",
         "--hitlist_size",
         type=int,
-        default=5000,
-        help="Maximum total hits to save from a local or remote BLAST search (def. 5000). Setting"
+        default=500,
+        help="Maximum total hits to save from a local or remote BLAST search (def. 500). Setting"
              " this value too low may result in missed hits/clusters."
     )
     group.add_argument(
