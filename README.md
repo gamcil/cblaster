@@ -117,7 +117,7 @@ Aspergillus versicolor CBS 583.65          KV878126.1      3162095  3187090  1  
 Pseudomassariella vexata CBS 129021        MCFJ01000004.1  1606356  1628483  1           1           1           0           0           1           0           1           1         
 Hypoxylon sp. CO27-5                       KZ112517.1      92119    112957   1           1           1           0           0           0           1           0           1         
 Hypoxylon sp. EC38                         KZ111255.1      514739   535366   1           1           1           0           0           0           1           0           1         
-Epicoccum nigrum ICMP 19927                KZ107839.1      2116719  2142558  1           1           0           0           0           1           1           0           1         
+Epicoccum nigrum ICMP 19927                KZ107839.1      2116719  2142558  1           10           0           0           1           1           0           1         
 Aureobasidium subglaciale EXF-2481         NW_013566983.1  700476   718693   1           1           0           0           0           1           1           0           0         
 Aureobasidium pullulans EXF-6514           QZBF01000009.1  18721    34295    1           1           0           0           0           1           1           0           0         
 Aureobasidium pullulans EXF-5628           QZBI01000512.1  329      13401    1           0           0           0           0           1           1           0           0         
@@ -128,6 +128,15 @@ table. To view an example, click [here](https://cblaster.readthedocs.io/en/lates
 
 For further usage examples and API documentation, please refer to the
 [documentation](https://cblaster.readthedocs.io/en/latest/).
+
+## Useful downstream applications
+Here are some useful tools and scripts which use cblaster output for various tasks:
+
+* [LucoDevro/CAGEcleaner](https://github.com/LucoDevro/CAGEcleaner) filters redundancy in cblaster results using an average nucleotide identity (ANI)-based clustering approach ([doi.org/10.1093/bioinformatics/btaf373](doi.org/10.1093/bioinformatics/btaf373)) 
+* [Tim-Kirkwood/SyntenyQC](https://github.com/Tim-Kirkwood/SyntenyQC) also filters redundancy in cblaster results, but with a reciprocal best hits (RBH)-based approach instead
+* [AhmedElsherbini/blastCblast_stats](https://github.com/AhmedElsherbini/blastCblast_stats) generates trees visualising the taxonomic spread of clusters identified by cblaster (introduced here: https://github.com/gamcil/cblaster/issues/105)
+
+
 
 ## Citation
 If you found this tool useful, please cite:
