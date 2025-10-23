@@ -379,7 +379,7 @@ def cluster_to_record(
         else:
             qualifiers["cluster_role"] = "intermediate"
 
-	# Build the SeqFeature object corresponding to the CDS
+	    # Build the SeqFeature object corresponding to the CDS
         location = FeatureLocation(
             start=subject.start - cluster.intermediate_start,
             end=subject.end - cluster.intermediate_start,
@@ -389,9 +389,9 @@ def cluster_to_record(
         # If CDS has invalid translation annotation length replace with translated annotation (standard table)
         if (len(cds_feature.qualifiers.get("translation", "")) + 1) * 3 > subject.end - subject.start:
             try:
-                cds_feature.qualifiers["translation"] = cds_feature.translate(record.seq,to_stop=True)
-                #Ignore CDS if at border start, end or contains premature stop codons to ensure no truncated CDSs
-                if location.start == 0 or location.end == record.location.end or "*" in cds_feature.qualifiers["translation"]:
+                translation = cds_feature.translate(record.seq, to_stop=True)
+                cds_feature.qualifiers["translation"] = [str(translation)]
+                if "*" in str(translation):
                     continue
             except TranslationError:
                 #Failed translation likely truncated - ignore feature (missing start codon)
