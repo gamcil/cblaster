@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 from cblaster import __version__
 
 
-NCBI_DATABASES = ("nr", "refseq_protein", "swissprot", "pdbaa")
+NCBI_DATABASES = ("nr", "refseq_protein", "swissprot", "pdbaa", "nr_cluster_seq")
 
 
 def full_path(file_path, *acces_modes, dir=False):

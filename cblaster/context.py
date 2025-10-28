@@ -62,7 +62,7 @@ def efetch_request(ids: List[str]) -> http.client.HTTPResponse:
             rettype="ipg",
             retmode="text",
             id=ids,
-            retmax=10000,
+            retmax=1000,
         )
     except IOError:
         LOG.exception("Network error while retrieving genomic context")
@@ -85,8 +85,8 @@ def efetch_IPGs(ids, output_file=None):
     if not ids:
         raise ValueError("No ids specified")
     table = []
-    for start in range(0, len(ids), 10000):
-        chunk = ids[start: start + 10000]
+    for start in range(0, len(ids), 1000):
+        chunk = ids[start: start + 1000]
         handle = efetch_request(chunk)
         if handle.code != 200:
             raise RuntimeError(f"Bad response from NCBI [code {handle.code}]")
@@ -100,7 +100,7 @@ def efetch_IPGs(ids, output_file=None):
         LOG.info("Writing IPG table to %s", output_file)
         with open(output_file, "w") as fp:
             for line in table:
-                fp.write(line)
+                fp.write(line + "\n")
 
     return table
 

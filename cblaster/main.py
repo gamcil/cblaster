@@ -121,7 +121,7 @@ def cblaster(
     recompute=False,
     blast_file=None,
     ipg_file=None,
-    hitlist_size=None,
+    hitlist_size=500,
     cpus=None,
     intermediate_genes=False,
     intermediate_gene_distance=5000,
