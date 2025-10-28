@@ -14,6 +14,7 @@ from Bio.Blast import NCBIWWW
 
 from cblaster import helpers
 from cblaster.classes import Hit
+from cblaster.nr_cluster_parser import parse_nr_cluster_text
 
 
 LOG = logging.getLogger(__name__)
@@ -102,6 +103,9 @@ def start(
         "WORD_SIZE": word_size,
         "COMPOSITION_BASED_STATISTICS": comp_based_stats,
     }
+
+    if database == "nr_cluster_seq":
+        parameters["CLUSTERED_DB"] = "on"
 
     if entrez_query:
         parameters["ENTREZ_QUERY"] = entrez_query
@@ -211,6 +215,25 @@ def retrieve(rid, hitlist_size=500):
         .split("\n")
         if line and not line.startswith("#")
     ]
+    
+
+def retrieve_clustered(rid, hitlist_size=500):
+    """Retrieves search results for searches against clustered NR database."""
+    parameters = {
+        "CMD": "Get",
+        "RID": rid,
+        "ALIGNMENT_VIEW": "Pairwise",
+        "FORMAT_OBJECT": "Alignment",
+        "HITLIST_SIZE": hitlist_size,
+        "ALIGNMENTS": hitlist_size,
+        "DESCRIPTIONS": hitlist_size,
+        "FORMAT_TYPE": "Text",
+        "DOWNLOAD_TEMPL": "Results_Clust_All"
+    }
+    LOG.debug(parameters)
+    response = requests.get(BLAST_API_URL, params=parameters)
+    LOG.debug(response.url)
+    return [line for line in parse_nr_cluster_text(response.text)]
 
 
 def poll(rid, delay=60, max_retries=-1):
@@ -260,6 +283,7 @@ def parse(
     max_evalue=0.01,
     min_identity=30,
     min_coverage=50,
+    database="nr"
 ):
     """Parse Tabular results from remote BLAST search performed via API.
 
@@ -283,13 +307,15 @@ def parse(
     """
     if not sequences:
         sequences = helpers.get_sequences(query_file, query_ids)
-
     hits = []
     for line in handle:
-        qid, sid, pident, *_, qstart, qend, _, _, evalue, score, _ = line.split("\t")
-
-        # Manually calculate query coverage
-        coverage = (int(qend) - int(qstart) + 1) / len(sequences[qid]) * 100
+        if database == "nr_cluster_seq":
+            # Expect output from parse_nr_cluster_text()
+            qid, sid, pident, coverage, evalue, score = line.split("\t")
+        else:
+            # Manually calculate query coverage
+            qid, sid, pident, *_, qstart, qend, _, _, evalue, score, _ = line.split("\t")
+            coverage = (int(qend) - int(qstart) + 1) / len(sequences[qid]) * 100
 
         hit = Hit(
             query=qid,
@@ -323,6 +349,7 @@ def search(
     max_evalue=0.01,
     blast_file=None,
     hitlist_size=500,
+    database="nr",
     **kwargs,
 ):
     """Perform a remote BLAST search via the NCBI's BLAST API.
@@ -356,6 +383,7 @@ def search(
             query_ids=query_ids,
             hitlist_size=hitlist_size,
             evalue=max_evalue,
+            database=database,
             **kwargs
         )
 
@@ -369,7 +397,10 @@ def search(
     poll(rid)
 
     LOG.info("Retrieving results for search %s", rid)
-    results = retrieve(rid, hitlist_size=hitlist_size)
+    if database == "nr_cluster_seq":
+        results = retrieve_clustered(rid, hitlist_size=hitlist_size)
+    else:
+        results = retrieve(rid, hitlist_size=hitlist_size)
 
     if blast_file:
         LOG.info("Writing BLAST hit table to %s", blast_file)
@@ -387,6 +418,7 @@ def search(
         max_evalue=max_evalue,
         min_identity=min_identity,
         min_coverage=min_coverage,
+        database=database
     )
 
     return rid, results
