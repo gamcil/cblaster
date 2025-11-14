@@ -101,12 +101,6 @@ def efetch_IPGs(ids, output_file=None):
     return table
 
 
-def efetch_IPGs2():
-    tree = ET.parse('/Users/gamcil/repos/cblaster/ipg.xml')
-    root = tree.getroot()
-    return root.findall("IPGReport")
-
-
 def parse_IP_xml(ipg):
     Entry = namedtuple("Entry", [
         "source", "scaffold", "start", "end", "strand", "protein_id",
@@ -153,12 +147,6 @@ def parse_IP_groups(results):
         entry = parse_IP_xml(row)
         groups.update(entry)
     return groups
-
-
-def test_IP_groups():
-    ipgs = efetch_IPGs2()
-    rows = parse_IP_groups(ipgs)
-    return rows
 
 
 def find_IPG_hits(group, hit_dict):
