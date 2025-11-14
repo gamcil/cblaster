@@ -178,7 +178,7 @@ def check(rid):
     raise ValueError("Search completed, but found no hits")
 
 
-def retrieve(rid, hitlist_size=100):
+def retrieve(rid, hitlist_size=500):
     """Retrieve BLAST results corresponding to a given Request Identifier (RID).
 
     Arguments:
@@ -202,17 +202,15 @@ def retrieve(rid, hitlist_size=100):
 
     LOG.debug(parameters)
 
-    response = requests.get(BLAST_API_URL, params=parameters)
-
-    LOG.debug(response.url)
-    with open("blah.html", "w") as fp:
-        fp.write(response.text)
+    with requests.get(BLAST_API_URL, params=parameters) as response:
+        LOG.debug(response.url)
+        response = response.text
 
     # Remove HTML junk and info lines
     # BLAST results are stored inside <PRE></PRE> tags
     return [
         line
-        for line in re.search("<PRE>(.+?)</PRE>", response.text, re.DOTALL)
+        for line in re.search("<PRE>(.+?)</PRE>", response, re.DOTALL)
         .group(1)
         .split("\n")
         if line and not line.startswith("#")
@@ -233,9 +231,10 @@ def retrieve_clustered(rid, hitlist_size=500):
         "DOWNLOAD_TEMPL": "Results_Clust_All"
     }
     LOG.debug(parameters)
-    response = requests.get(BLAST_API_URL, params=parameters)
-    LOG.debug(response.url)
-    return [line for line in parse_nr_cluster_text(response.text)]
+    with requests.get(BLAST_API_URL, params=parameters) as response:
+        LOG.debug(response.url)
+        response = response.text
+    return [line for line in parse_nr_cluster_text(response)]
 
 
 def poll(rid, delay=60, max_retries=-1):
