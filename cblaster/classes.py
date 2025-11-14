@@ -7,15 +7,21 @@ This module stores the classes (Organism, Scaffold, Hit) used in cblaster.
 import re
 import json
 import itertools
-from abc import ABC, abstractmethod
+import xml.etree.ElementTree as ET
 
+from abc import ABC, abstractmethod
+from collections import Counter
+from io import BytesIO
+
+from Bio import Entrez
+
+from cblaster.helpers import batch_function
 from cblaster.formatters import (
     binary,
     summary,
     summarise_scaffold,
     summarise_organism,
 )
-
 
 class Serializer(ABC):
     """JSON serialisation mixin class.
@@ -77,12 +83,13 @@ class Session(Serializer):
     """
 
     def __init__(
-        self, queries=None, sequences=None, params=None, organisms=None, query=None
+        self, queries=None, sequences=None, params=None, organisms=None, query=None, taxonomy=None,
     ):
         self.queries = queries if queries else []
         self.params = params if params else {}
         self.organisms = organisms if organisms else []
         self.sequences = sequences if sequences else {}
+        self.taxonomy = taxonomy if taxonomy else {}
         self.query = query
 
     def __add__(self, other):
@@ -94,9 +101,13 @@ class Session(Serializer):
             queries=self.queries,
             query=self.query,
             sequences=self.sequences,
+            taxonomy=self.taxonomy,
             params=self.params,
             organisms=self.organisms + other.organisms,
         )
+        
+    def build_taxonomy(self):
+        self.taxonomy = Taxonomy.from_session(self)
 
     def to_dict(self):
         return {
@@ -104,6 +115,7 @@ class Session(Serializer):
             "queries": self.queries,
             "params": self.params,
             "organisms": [o.to_dict() for o in self.organisms],
+            "taxonomy": self.taxonomy.to_dict() if self.taxonomy else {}
         }
 
     @classmethod
@@ -129,6 +141,7 @@ class Session(Serializer):
             queries=d.get("queries", None),
             params=d.get("params", None),
             organisms=[Organism.from_dict(o) for o in d.get("organisms", [])],
+            taxonomy=Taxonomy.from_dict(d.get("taxonomy", {}))
         )
 
     def format(self, form, fp=None, **kwargs):
@@ -163,8 +176,9 @@ class Organism(Serializer):
         scaffolds (dict): Scaffold objects belonging to this organism.
     """
 
-    def __init__(self, name, strain, scaffolds=None):
+    def __init__(self, name, strain, tax_id=None, scaffolds=None):
         self.name = name
+        self.tax_id = tax_id
         self.strain = strain
         self.scaffolds = scaffolds if scaffolds else {}
 
@@ -207,6 +221,7 @@ class Organism(Serializer):
     def to_dict(self):
         return {
             "name": self.name,
+            "tax_id": self.tax_id,
             "strain": self.strain,
             "scaffolds": [scaffold.to_dict() for scaffold in self.scaffolds.values()],
         }
@@ -216,6 +231,7 @@ class Organism(Serializer):
         return cls(
             d["name"],
             d["strain"],
+            tax_id=d["tax_id"],
             scaffolds={
                 scaffold["accession"]: Scaffold.from_dict(scaffold)
                 for scaffold in d["scaffolds"]
@@ -646,3 +662,163 @@ class Hit(Serializer):
     @classmethod
     def from_dict(cls, d):
         return cls(**d)
+
+
+class Taxonomy(Serializer):
+    def __init__(self, taxa=None, root=None):
+        self.taxa = taxa if taxa else {}
+        self.root = root if root else None
+        
+    @staticmethod
+    def parse_taxonomy_xml(records):
+        """Parses Entrez.read() record"""
+        entries = [
+            dict(
+                taxid=int(tax["TaxId"]),
+                parent=int(tax["ParentTaxId"]),
+                rank=tax.get("Rank", "no rank"),
+                name=tax["ScientificName"],
+                lineage=[
+                    (int(x["TaxId"]), x["ScientificName"], x.get("Rank", "no rank"))
+                    for x in tax.get("LineageEx", [])
+                ],
+                children=[]
+            )
+            for tax in records
+        ]
+        return entries
+
+    @staticmethod
+    def parse_xml_file(tax_xml_file):
+        with open(tax_xml_file) as fp:
+            raw_data = fp.read()
+            xml_data = Entrez.read(BytesIO(raw_data.encode()))
+            dicts = Taxonomy.parse_taxonomy_xml(xml_data)
+        return dicts
+
+    @staticmethod
+    def fetch_taxonomy_dicts(batch):
+        handle = Entrez.efetch(db="taxonomy", id=",".join(map(str, batch)), retmode="xml")
+        records = Entrez.read(handle)
+        handle.close()
+        entries = Taxonomy.parse_taxonomy_xml(records)
+        return entries
+
+    def build_taxonomy_tree(self, dicts):
+        """Builds initial tree from list of taxonomy entry dictionaries"""
+        self.taxa = { taxon["taxid"] : taxon for taxon in dicts}
+        for tid, taxon in self.taxa.items():
+            parent = taxon["parent"]
+            if parent in self.taxa:
+                self.taxa[parent]['children'].append(tid)
+                
+    def fill_missing_taxa(self):
+        """Adds in intermediary nodes from lineages of fetched records"""
+        for record in list(self.taxa.values()):
+            lineage = record["lineage"]
+            for i in range(len(lineage) - 1, -1, -1):
+                lineage_id, lineage_name, lineage_rank = lineage[i]
+                if lineage_id not in self.taxa:
+                    self.taxa[lineage_id] = dict(
+                        taxid=lineage_id,
+                        parent=None,
+                        rank=lineage_rank,
+                        name=lineage_name,
+                        lineage=[],
+                        children=[],
+                        count=0
+                    )
+                if i > 0:
+                    parent_id, parent_name, parent_rank = lineage[i - 1]
+                    if parent_id not in self.taxa: 
+                        self.taxa[parent_id] = dict(
+                            taxid=parent_id,
+                            parent=None,
+                            rank=parent_rank,
+                            name=parent_name,
+                            lineage=[],
+                            children=[],
+                            count=0
+                        )
+                    self.taxa[lineage_id]["parent"] = parent_id
+                    if lineage_id not in self.taxa[parent_id]["children"]:
+                        self.taxa[parent_id]["children"].append(lineage_id)
+            if lineage:
+                parent_id = lineage[-1][0]
+                record["parent"] = parent_id
+                if record["taxid"] not in self.taxa[parent_id]["children"]:
+                    self.taxa[parent_id]["children"].append(record["taxid"])
+                    
+    def set_root(self):
+        """Finds and saves the root node in the hierarchy"""
+        self.root = next(iter(self.taxa))  # Pick any taxid (e.g., first in the dict)
+        while "parent" in self.taxa[self.root] and self.taxa[self.root]["parent"] in self.taxa:
+            self.root = self.taxa[self.root]["parent"]
+
+    def set_counts(self, counts):
+        """Sets initial count values from a Counter()"""
+        for tid, count in counts.items():
+            self.taxa[tid]["count"] = count
+            
+    def accumulate_counts(self, tid):
+        """Computes cumulative counts for all nodes in the hierarchy"""
+        def _accumulate(tid):
+            node = self.taxa[tid]
+            total = node.get("count", 0)
+            for child_id in node.get("children", []):
+                total += _accumulate(child_id)
+            node["accumulated"] = total
+            return total
+        _accumulate(tid)
+
+    def build(self, session, tax_xml_file=None):
+        """Builds taxonomy from a Session"""
+        counts = Counter(o.tax_id for o in session.organisms for _ in o.clusters)
+        tids = list(counts)
+        if (tax_xml_file):
+            dicts = Taxonomy.parse_xml_file(tax_xml_file)
+        else:
+            dicts = Taxonomy.fetch_taxonomy_dicts(tids)
+        self.build_taxonomy_tree(dicts)
+        self.fill_missing_taxa()
+        self.set_root()
+        self.set_counts(counts)
+        self.accumulate_counts(self.root)
+    
+    def format_kraken2(self):
+        """Generates Kraken2-style taxonomy report"""
+
+        root = self.taxa[self.root]
+        root_total = root.get("accumulated", root.get("count", 0))
+
+        def _format(tid, depth=0):
+            node = self.taxa[tid]
+            acc = node.get("accumulated", node.get("count", 0))
+            raw = node.get("count", 0)
+            percent_raw = 100 * raw / root_total if root_total else 0
+            indent = "  " * depth
+            line = f"{percent_raw:.2f}\t{acc}\t{raw}\t{node['rank'].lower()}\t{tid}\t{indent}{node['name']}"
+            lines = [line]
+            for child_id in sorted(node["children"], key=lambda x: self.taxa[x]["name"]):
+                lines += _format(child_id, depth + 1)
+            return lines
+        
+        report = [
+            f"0.00\t0\t0\tno rank\t0\tunclassified",
+            f"100.00\t{root_total}\t0\tno rank\t1\troot",
+            *_format(self.root)
+        ]
+        return '\n'.join(report)
+    
+    @classmethod
+    def from_session(cls, session, tax_xml_file=None):
+        t = cls()
+        t.build(session, tax_xml_file=tax_xml_file)
+        return t
+    
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d.get("taxa", {}), d.get("root", None))
+    
+    def to_dict(self):
+        return dict(taxa=self.taxa, root=self.root)

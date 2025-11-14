@@ -7,14 +7,33 @@ import time
 
 from collections import OrderedDict
 from pathlib import Path
+from functools import wraps
 
 from Bio import SeqIO, Entrez
 
 from cblaster import config, genome_parsers as gp
-from cblaster.classes import Cluster, Subject
+# from cblaster.classes import Cluster, Subject
 
 
 LOG = logging.getLogger(__name__)
+
+
+def batch_function(batch_size=1000, delay=0.34):
+    """Decorator for batching functionality"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(ids, *args, **kwargs):
+            all_results = []
+            id_list = list(ids)
+            for i in range(0, len(id_list), batch_size):
+                batch_ids = id_list[i:i + batch_size]
+                results = func(batch_ids, *args, **kwargs)
+                if results is not None:
+                    all_results.extend(results)
+                time.sleep(delay)
+            return all_results
+        return wrapper
+    return decorator
 
 
 def find_sqlite_db(path):
@@ -102,6 +121,7 @@ def get_project_root():
 
 def dict_to_cluster(sequences, spacing=500):
     """Creates a mock Cluster from a sequence dictionary."""
+    from cblaster.classes import Cluster, Subject
     start = 0
     subjects = []
     for name, sequence in sequences.items():
@@ -115,6 +135,7 @@ def dict_to_cluster(sequences, spacing=500):
 
 def fasta_seqrecords_to_cluster(records, spacing=500):
     """Creates a mock Cluster from a SeqIO FASTA parser handle."""
+    from cblaster.classes import Cluster, Subject
     start = 0
     subjects = []
     for record in records:
@@ -134,6 +155,7 @@ def fasta_seqrecords_to_cluster(records, spacing=500):
 
 def seqrecord_to_cluster(record):
     """Creates a Cluster object from a SeqIO GenBank/EMBL parser handle."""
+    from cblaster.classes import Cluster, Subject
     _, *features = gp.seqrecord_to_tuples(record, "")
     subjects = []
     intermediate = []

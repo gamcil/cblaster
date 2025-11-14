@@ -342,6 +342,9 @@ def cblaster(
                 percentage=percentage,
             )
             session.organisms.extend(organisms)
+            
+            LOG.info("Fetching taxonomic hierarchy of hits")
+            session.build_taxonomy()
 
         if sqlite_db:
             session.params["sqlite_db"] = str(sqlite_db)

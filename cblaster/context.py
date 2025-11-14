@@ -27,8 +27,10 @@ objects linking them to the query sequences.
 """
 
 
+import time
 import logging
 import http.client
+import xml.etree.ElementTree as ET
 
 from collections import defaultdict, namedtuple
 from itertools import combinations, product
@@ -36,12 +38,12 @@ from operator import attrgetter
 from functools import partial
 from typing import List
 
-import requests
 import numpy as np
 
 from Bio import Entrez
 
 from cblaster import database
+from cblaster.helpers import batch_function
 from cblaster.classes import Organism, Scaffold, Subject
 
 
@@ -57,16 +59,21 @@ def efetch_request(ids: List[str]) -> http.client.HTTPResponse:
         HTTP response from NCBI Entrez
     """
     try:
-        return Entrez.efetch(
-            "ipg",
-            rettype="ipg",
-            retmode="text",
-            id=ids,
-            retmax=1000,
-        )
-    except IOError:
+        handle = Entrez.efetch("ipg", retmode="xml", id=ids, retmax=10000)
+        if handle.code != 200:
+            raise RuntimeError(f"Bad response from NCBI while fetching IPG [code {handle.code}]")
+        tree = ET.parse(handle)
+        root = tree.getroot()
+        handle.close()
+        return root.findall("IPGReport")
+    except (IOError, RuntimeError):
         LOG.exception("Network error while retrieving genomic context")
         raise
+    
+
+@batch_function(batch_size=1000)
+def efetch_IPG_table(ids):
+    return efetch_request(ids)
 
 
 def efetch_IPGs(ids, output_file=None):
@@ -84,25 +91,43 @@ def efetch_IPGs(ids, output_file=None):
     """
     if not ids:
         raise ValueError("No ids specified")
-    table = []
-    for start in range(0, len(ids), 1000):
-        chunk = ids[start: start + 1000]
-        handle = efetch_request(chunk)
-        if handle.code != 200:
-            raise RuntimeError(f"Bad response from NCBI [code {handle.code}]")
-        for line in handle:
-            if isinstance(line, bytes):
-                line = line.decode()
-            line = line.strip('\n')
-            table.append(line)
-
+    table = efetch_IPG_table(ids)
     if output_file:
-        LOG.info("Writing IPG table to %s", output_file)
-        with open(output_file, "w") as fp:
-            for line in table:
-                fp.write(line + "\n")
-
+        root = ET.Element("IPGReports")
+        for report in table:
+            root.append(report)
+        tree = ET.ElementTree(root)
+        tree.write(output_file, encoding="utf-8", xml_declaration=True)
     return table
+
+
+def parse_IP_xml(ipg):
+    Entry = namedtuple("Entry", [
+        "source", "scaffold", "start", "end", "strand", "protein_id",
+        "protein_name", "organism", "strain", "assembly", "tax_id"
+    ])
+    ipg_id = ipg.attrib.get("ipg", "") 
+    if not ipg:
+        return
+    table = []
+    for protein in ipg.findall(".//Protein"):
+        for cds in protein.findall("./CDSList/CDS"):
+            raw = {
+                "source": protein.attrib.get("source", ""),
+                "scaffold": cds.attrib.get("accver", ""),
+                "start": cds.attrib.get("start", ""),
+                "end": cds.attrib.get("stop", ""),
+                "strand": cds.attrib.get("strand", ""),
+                "protein_id": protein.attrib.get("accver", ""),
+                "protein_name": protein.attrib.get("name", ""),
+                "organism": cds.attrib.get("org", ""),
+                "strain": cds.attrib.get("strain", ""),
+                "assembly": cds.attrib.get("assembly", ""),
+                "tax_id": int(cds.attrib.get("taxid", 0)),
+            }
+            entry = Entry(**raw)                   
+            table.append(entry)
+    return { ipg_id: table }
 
 
 def parse_IP_groups(results):
@@ -117,35 +142,10 @@ def parse_IP_groups(results):
     Returns:
         Dictionary of table entries (namedtuple objects) grouped by IPG.
     """
-    fields = [
-        "source",
-        "scaffold",
-        "start",
-        "end",
-        "strand",
-        "protein_id",
-        "protein_name",
-        "organism",
-        "strain",
-        "assembly",
-    ]
-    Entry = namedtuple("Entry", fields)
     groups = defaultdict(list)
-    for line in results:
-        if not line \
-            or line.startswith("Id\tSource") \
-            or line.isspace() \
-            or "skipping" in line:
-            continue
-        ipg, *fields = line.strip("\n").split("\t")
-        if fields == [] or not line.strip():
-            continue
-        try:
-            entry = Entry(*fields)
-        except ValueError:
-            LOG.warning("Failed to parse row in IPG table: %s", fields)
-            continue
-        groups[ipg].append(entry)
+    for row in results:
+        entry = parse_IP_xml(row)
+        groups.update(entry)
     return groups
 
 
@@ -241,7 +241,7 @@ def parse_IPG_table(results, hits):
             if st in org:
                 org = org.replace(st, "").strip()
             if st not in organisms[org]:
-                organisms[org][st] = Organism(name=org, strain=st)
+                organisms[org][st] = Organism(name=org, strain=st, tax_id=entry.tax_id)
             if acc not in organisms[org][st].scaffolds:
                 organisms[org][st].scaffolds[acc] = Scaffold(acc)
 
