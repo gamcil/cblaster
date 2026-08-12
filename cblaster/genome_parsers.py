@@ -19,7 +19,8 @@ LOG = logging.getLogger("cblaster")
 
 FASTA_SUFFIXES = (".fa", ".fsa", ".fna", ".fasta", ".faa", 
     ".fa.gz", ".fsa.gz", ".fna.gz", ".fasta.gz", ".faa.gz")
-GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff")
+GBK_SUFFIXES = (".gbk", ".gb", ".genbank", ".gbf", ".gbff",
+    ".gbk.gz", ".gb.gz", ".genbank.gz", ".gbf.gz", ".gbff.gz")
 GFF_SUFFIXES = (".gtf", ".gff", ".gff3")
 EMBL_SUFFIXES = (".embl", ".emb")
 LIST_SUFFIXES = (".txt")
